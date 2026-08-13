@@ -2,6 +2,9 @@
 
 # dependencies
 /node_modules
+/.next/
+/.vinext/
+/.wrangler/
 /.pnp
 .pnp.*
 .yarn/*
@@ -12,11 +15,6 @@
 
 # testing
 /coverage
-
-# next.js
-/.next/
-/.vinext/
-/out/
 
 # misc
 .DS_Store
@@ -35,6 +33,3 @@ yarn-error.log*
 .vercel
 
 /dist/
-/.wrangler/
-/outputs/
-/work/

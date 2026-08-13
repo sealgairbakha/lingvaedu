@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 type Page = "overview" | "courses" | "editor" | "people" | "groups" | "roles" | "reports" | "calls" | "calendar";
 type BlockKind = "text" | "media" | "quiz" | "html" | "file";
@@ -72,4 +73,27 @@ function Roles() { return <main className="content fade"><PageTitle title="Ро�
 
 function Modal({title,close,children}:{title:string;close:()=>void;children:React.ReactNode}) { return <div className="modalLayer"><button className="modalScrim" onClick={close}/><section className="modal"><div className="modalHead"><h2>{title}</h2><button onClick={close}>×</button></div>{children}</section></div> }
 
-export default function Home() { const [page,setPage]=useState<Page>("overview"); const content = page==="overview"?<Overview go={setPage}/>:page==="courses"?<Courses go={setPage}/>:page==="editor"?<Editor back={()=>setPage("courses")}/>:page==="people"?<People/>:page==="groups"?<Groups/>:page==="reports"?<Reports/>:page==="calls"?<Calls/>:page==="calendar"?<Calendar/>:<Roles/>; return <Shell page={page} setPage={setPage}>{content}</Shell> }
+const paths: Record<Page, string> = {
+  overview: "/",
+  courses: "/courses",
+  editor: "/courses/editor",
+  people: "/users",
+  groups: "/groups",
+  roles: "/roles",
+  reports: "/reports",
+  calls: "/video-rooms",
+  calendar: "/calendar",
+};
+
+const pageByPath = Object.fromEntries(
+  Object.entries(paths).map(([page, path]) => [path, page]),
+) as Record<string, Page>;
+
+export default function App() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const page = pageByPath[location.pathname] ?? "overview";
+  const setPage = (next: Page) => navigate(paths[next]);
+  const content = page === "overview" ? <Overview go={setPage}/> : page === "courses" ? <Courses go={setPage}/> : page === "editor" ? <Editor back={() => setPage("courses")}/> : page === "people" ? <People/> : page === "groups" ? <Groups/> : page === "reports" ? <Reports/> : page === "calls" ? <Calls/> : page === "calendar" ? <Calendar/> : <Roles/>;
+  return <Shell page={page} setPage={setPage}>{content}</Shell>;
+}
