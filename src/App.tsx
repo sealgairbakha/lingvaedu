@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "./auth/AuthProvider";
 
 type Page = "overview" | "courses" | "editor" | "people" | "groups" | "roles" | "reports" | "calls" | "calendar";
 type BlockKind = "text" | "media" | "quiz" | "html" | "file";
@@ -34,7 +35,7 @@ function Sidebar({ page, setPage, open, close }: { page: Page; setPage: (p: Page
   return <><aside className={`sidebar ${open ? "mobileOpen" : ""}`}><div className="sideTop"><Logo/><button className="closeNav" onClick={close}>×</button></div><button className="workspace"><span>L</span><div><b>Lingva Academy</b><small>Рабочее пространство</small></div><i>⌄</i></button><nav>{nav.map((group, gi) => <div className="navGroup" key={gi}>{group.section && <small>{group.section}</small>}{group.items.map(item => <button key={item.id} className={page === item.id || (page === "editor" && item.id === "courses") ? "active" : ""} onClick={() => { setPage(item.id); close(); }}><i>{item.icon}</i>{item.label}{item.id === "people" && <em>1 248</em>}</button>)}</div>)}</nav><div className="sideBottom"><button><i>?</i>Помощь</button><div className="profile"><span>БА</span><div><b>Баха Админ</b><small>Владелец</small></div><button>•••</button></div></div></aside>{open && <button className="scrim" onClick={close} aria-label="Закрыть меню"/>}</>;
 }
 
-function Header({ title, openNav }: { title: string; openNav: () => void }) { return <header className="topbar"><button className="menuBtn" onClick={openNav}>☰</button><div className="crumb"><span>LingvaEdu</span><i>/</i><b>{title}</b></div><label className="globalSearch"><span>⌕</span><input placeholder="Найти курс, ученика или отчёт"/><kbd>⌘ K</kbd></label><button className="topIcon">?</button><button className="topIcon notice">♢<i/></button><button className="topAvatar">БА</button></header> }
+function Header({ title, openNav }: { title: string; openNav: () => void }) { const { user, signOut } = useAuth(); const initials = (user?.user_metadata?.full_name || user?.email || "LE").split(/[\s@]/).filter(Boolean).slice(0,2).map((x:string)=>x[0]).join("").toUpperCase(); return <header className="topbar"><button className="menuBtn" onClick={openNav}>☰</button><div className="crumb"><span>LingvaEdu</span><i>/</i><b>{title}</b></div><label className="globalSearch"><span>⌕</span><input placeholder="Найти курс, ученика или отчёт"/><kbd>⌘ K</kbd></label><button className="topIcon">?</button><button className="topIcon notice">♢<i/></button><button className="topAvatar" onClick={signOut} title="Выйти из аккаунта">{initials}</button></header> }
 
 function Shell({ page, setPage, children }: { page: Page; setPage:(p:Page)=>void; children:React.ReactNode }) { const [open,setOpen]=useState(false); const title = page === "editor" ? "Редактор курса" : nav.flatMap(n=>n.items).find(i=>i.id===page)?.label || "Обзор"; return <div className="app"><Sidebar page={page} setPage={setPage} open={open} close={()=>setOpen(false)}/><div className="mainShell"><Header title={title} openNav={()=>setOpen(true)}/>{children}</div></div> }
 

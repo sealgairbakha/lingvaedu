@@ -35,3 +35,22 @@ npm run build
 - Install Command: `npm install`
 
 Файл `vercel.json` перенаправляет все маршруты приложения на `index.html`, поэтому прямые переходы на `/courses`, `/reports`, `/calendar` и другие страницы работают без ошибки 404.
+
+## Регистрация и подтверждение почты
+
+Авторизация работает через Supabase Auth. Пользователь регистрируется с email и паролем, а аккаунт становится доступен только после перехода по ссылке из письма.
+
+1. Создайте проект на [Supabase](https://supabase.com/dashboard).
+2. В `Authentication → Providers → Email` включите Email provider и `Confirm email`.
+3. В `Authentication → URL Configuration` укажите production-домен Vercel как `Site URL` и добавьте его в `Redirect URLs`.
+4. Скопируйте `Project URL` и публичный `anon` key из `Project Settings → API`.
+5. Добавьте в Vercel для Production, Preview и Development:
+
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-public-key
+```
+
+6. Запустите новый deployment в Vercel.
+
+Публичный `anon` key предназначен для frontend и не является секретным service-role ключом. `service_role` в Vercel frontend добавлять нельзя.
