@@ -37,7 +37,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
           password,
           options: {
             emailRedirectTo: window.location.origin,
-            data: { full_name: name.trim(), role: "student" },
+            data: { full_name: name.trim() },
           },
         });
         if (signUpError) throw signUpError;

@@ -54,3 +54,22 @@ VITE_SUPABASE_ANON_KEY=your-anon-public-key
 6. Запустите новый deployment в Vercel.
 
 Публичный `anon` key предназначен для frontend и не является секретным service-role ключом. `service_role` в Vercel frontend добавлять нельзя.
+
+## Создание первого администратора
+
+Роль администратора хранится в защищённом `app_metadata` Supabase. Она не задаётся из браузера и не может быть изменена обычным пользователем.
+
+В PowerShell выполните команду, подставив значения своего проекта и надёжный временный пароль:
+
+```powershell
+$env:SUPABASE_URL="https://your-project.supabase.co"
+$env:SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
+$env:ADMIN_EMAIL="admin@lingva.kz"
+$env:ADMIN_PASSWORD="temporary-password-12+"
+$env:ADMIN_NAME="Имя Администратора"
+npm run admin:create
+```
+
+Скрипт создаст подтверждённого пользователя с ролью `admin`. Если пользователь с такой почтой уже существует, скрипт назначит ему роль администратора и обновит имя и пароль.
+
+`SUPABASE_SERVICE_ROLE_KEY` используется только локально для этой команды. Его нельзя добавлять в frontend-переменные `VITE_*`, коммитить в GitHub или хранить в клиентском коде.

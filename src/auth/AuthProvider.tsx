@@ -6,6 +6,10 @@ type AuthContextValue = {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  displayName: string;
+  initials: string;
+  role: "admin" | "student";
+  isAdmin: boolean;
   signOut: () => Promise<void>;
 };
 
@@ -28,12 +32,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => data.subscription.unsubscribe();
   }, []);
 
-  const value = useMemo<AuthContextValue>(() => ({
-    user: session?.user ?? null,
-    session,
-    loading,
-    signOut: async () => { await supabase?.auth.signOut(); },
-  }), [session, loading]);
+  const value = useMemo<AuthContextValue>(() => {
+    const user = session?.user ?? null;
+    const displayName = String(
+      user?.user_metadata?.full_name ||
+        user?.email?.split("@")[0] ||
+        "Пользователь",
+    );
+    const initials = displayName
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0])
+      .join("")
+      .toUpperCase();
+    const role = user?.app_metadata?.role === "admin" ? "admin" : "student";
+    return {
+      user,
+      session,
+      loading,
+      displayName,
+      initials,
+      role,
+      isAdmin: role === "admin",
+      signOut: async () => {
+        await supabase?.auth.signOut();
+      },
+    };
+  }, [session, loading]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
