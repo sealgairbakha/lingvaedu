@@ -5,11 +5,13 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "./auth/AuthProvider";
 import { CoursesPage } from "./features/courses/CoursesPage";
 import { CourseEditorPage } from "./features/courses/CourseEditorPage";
+import { CoursePlayerPage } from "./features/courses/CoursePlayerPage";
 
 type Page =
   | "overview"
   | "courses"
   | "editor"
+  | "player"
   | "people"
   | "groups"
   | "roles"
@@ -208,7 +210,7 @@ function Sidebar({
                     key={item.id}
                     className={
                       page === item.id ||
-                      (page === "editor" && item.id === "courses")
+                      ((page === "editor" || page === "player") && item.id === "courses")
                         ? "active"
                         : ""
                     }
@@ -1485,6 +1487,7 @@ const paths: Record<Page, string> = {
   overview: "/",
   courses: "/courses",
   editor: "/courses/editor",
+  player: "/courses/learn",
   people: "/users",
   groups: "/groups",
   roles: "/roles",
@@ -1521,6 +1524,8 @@ export default function App() {
       <CoursesPage />
     ) : page === "editor" ? (
       <CourseEditorPage />
+    ) : page === "player" ? (
+      <CoursePlayerPage />
     ) : page === "people" ? (
       <People />
     ) : page === "groups" ? (
