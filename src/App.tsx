@@ -175,11 +175,13 @@ function Sidebar({
   setPage,
   open,
   close,
+  hide,
 }: {
   page: Page;
   setPage: (p: Page) => void;
   open: boolean;
   close: () => void;
+  hide: () => void;
 }) {
   const { displayName, initials, isAdmin, signOut } = useAuth();
   const adminOnlyPages: Page[] = [
@@ -193,8 +195,8 @@ function Sidebar({
       <aside className={`sidebar ${open ? "mobileOpen" : ""}`}>
         <div className="sideTop">
           <Logo />
-          <button className="closeNav" onClick={close}>
-            ×
+          <button className="closeNav" onClick={hide} aria-label="Скрыть меню" title="Скрыть меню">
+            <span/><span/>
           </button>
         </div>
         <button className="workspace">
@@ -313,6 +315,13 @@ function Shell({
       return next;
     });
   };
+  const hideNav = () => {
+    if (window.matchMedia("(max-width: 820px)").matches) setOpen(false);
+    else {
+      setCollapsed(true);
+      localStorage.setItem("lingvaedu-sidebar-collapsed", "true");
+    }
+  };
   const title =
     page === "editor"
       ? "Редактор курса"
@@ -325,6 +334,7 @@ function Shell({
         setPage={setPage}
         open={open}
         close={() => setOpen(false)}
+        hide={hideNav}
       />
       <div className="mainShell">
         <Header title={title} toggleNav={toggleNav} />
