@@ -199,16 +199,6 @@ function Sidebar({
             <span/><span/>
           </button>
         </div>
-        <button className="workspace">
-          <span>L</span>
-          <div>
-            <b>Lingva Academy</b>
-            <small>
-              {isAdmin ? "Панель администратора" : "Личный кабинет"}
-            </small>
-          </div>
-          <i>⌄</i>
-        </button>
         <nav>
           {nav.map((group, gi) => {
             const items = group.items.filter(
