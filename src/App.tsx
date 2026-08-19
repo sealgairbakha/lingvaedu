@@ -262,12 +262,12 @@ function Sidebar({
   );
 }
 
-function Header({ title, openNav }: { title: string; openNav: () => void }) {
+function Header({ title, toggleNav }: { title: string; toggleNav: () => void }) {
   const { initials, displayName, signOut } = useAuth();
   return (
     <header className="topbar">
-      <button className="menuBtn" onClick={openNav}>
-        ☰
+      <button className="menuBtn" onClick={toggleNav} aria-label="Показать или скрыть меню" title="Показать или скрыть меню">
+        <span/><span/><span/>
       </button>
       <div className="crumb">
         <span>LingvaEdu</span>
@@ -304,13 +304,22 @@ function Shell({
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem("lingvaedu-sidebar-collapsed") === "true");
+  const toggleNav = () => {
+    if (window.matchMedia("(max-width: 820px)").matches) setOpen(true);
+    else setCollapsed((current) => {
+      const next = !current;
+      localStorage.setItem("lingvaedu-sidebar-collapsed", String(next));
+      return next;
+    });
+  };
   const title =
     page === "editor"
       ? "Редактор курса"
       : nav.flatMap((n) => n.items).find((i) => i.id === page)?.label ||
         "Обзор";
   return (
-    <div className="app">
+    <div className={`app ${collapsed ? "sidebarCollapsed" : ""}`}>
       <Sidebar
         page={page}
         setPage={setPage}
@@ -318,7 +327,7 @@ function Shell({
         close={() => setOpen(false)}
       />
       <div className="mainShell">
-        <Header title={title} openNav={() => setOpen(true)} />
+        <Header title={title} toggleNav={toggleNav} />
         {children}
       </div>
     </div>
