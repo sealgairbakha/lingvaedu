@@ -146,17 +146,28 @@ const people = [
   },
 ];
 
-function Logo({ compact = false }: { compact?: boolean }) {
+function Logo() {
   return (
     <div className="logo">
-      <span>lv</span>
-      {!compact && (
-        <b>
-          Lingva<span>Edu</span>
-        </b>
-      )}
+      <b>Lingva<span>Edu</span></b>
     </div>
   );
+}
+
+function NavIcon({ name }: { name: Page | "help" | "logout" }) {
+  const paths: Partial<Record<typeof name, React.ReactNode>> = {
+    overview: <><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V21h13V9.5M9 21v-6h6v6"/></>,
+    courses: <><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 5.5v16M8 7h8M8 11h8"/></>,
+    people: <><circle cx="12" cy="8" r="3"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/></>,
+    groups: <><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0M16 5.5a3 3 0 0 1 0 5.8M17 15a5 5 0 0 1 4 5"/></>,
+    calendar: <><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></>,
+    calls: <><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3z"/></>,
+    reports: <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></>,
+    roles: <><path d="M12 3 4 6v5c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10V6z"/><path d="m9 12 2 2 4-4"/></>,
+    help: <><circle cx="12" cy="12" r="9"/><path d="M9.8 9a2.4 2.4 0 1 1 3.2 2.3c-.7.3-1 .8-1 1.7M12 17h.01"/></>,
+    logout: <><path d="M10 5H5v14h5M14 8l4 4-4 4M18 12H9"/></>,
+  };
+  return <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">{paths[name]}</svg>;
 }
 
 function Sidebar({
@@ -219,7 +230,7 @@ function Sidebar({
                       close();
                     }}
                   >
-                    <i>{item.icon}</i>
+                    <i><NavIcon name={item.id} /></i>
                     {item.label}
                     {item.id === "people" && <em>1 248</em>}
                   </button>
@@ -230,7 +241,7 @@ function Sidebar({
         </nav>
         <div className="sideBottom">
           <button>
-            <i>?</i>Помощь
+            <i><NavIcon name="help" /></i>Помощь
           </button>
           <div className="profile">
             <span>{initials}</span>
@@ -239,7 +250,7 @@ function Sidebar({
               <small>{isAdmin ? "Администратор" : "Ученик"}</small>
             </div>
             <button onClick={signOut} title="Выйти">
-              ↗
+              <NavIcon name="logout" />
             </button>
           </div>
         </div>
