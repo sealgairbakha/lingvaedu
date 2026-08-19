@@ -1,0 +1,44 @@
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useAuth } from "../../auth/AuthProvider";
+import { useCourses } from "./CourseProvider";
+import { uid, type BlockKind, type Course, type LessonBlock } from "./types";
+
+const palette: { kind: BlockKind; icon: string; title: string; hint: string }[] = [
+  {kind:"text",icon:"T",title:"Текст",hint:"Текст и инструкции"},{kind:"media",icon:"▶",title:"Медиа",hint:"Ссылка на видео, аудио или изображение"},{kind:"quiz",icon:"✓",title:"Задание",hint:"Вопрос и варианты ответов"},{kind:"html",icon:"</>",title:"HTML-код",hint:"Встраиваемый HTML"},{kind:"file",icon:"↥",title:"Файл",hint:"Ссылка на PDF, PPT или документ"},
+];
+const makeBlock = (kind: BlockKind): LessonBlock => ({ id: uid(), kind, title: palette.find(x=>x.kind===kind)!.title, content: kind === "quiz" ? "Какой вариант правильный?\nПравильный ответ\nДругой ответ" : "" });
+
+export function CourseEditorPage() {
+  const navigate = useNavigate(); const [params] = useSearchParams(); const { canEditCourses } = useAuth(); const store = useCourses();
+  const source = store.courses.find(x => x.id === params.get("course"));
+  const [course, setCourse] = useState<Course | null>(source || null); const [moduleId,setModuleId]=useState(source?.modules[0]?.id || ""); const [lessonId,setLessonId]=useState(source?.modules[0]?.lessons[0]?.id || ""); const [selected,setSelected]=useState(""); const [saved,setSaved]=useState(true); const [preview,setPreview]=useState(false);
+  useEffect(() => {
+    if (course || !source) return;
+    const timer = window.setTimeout(() => {
+      setCourse(source);
+      setModuleId(source.modules[0]?.id || "");
+      setLessonId(source.modules[0]?.lessons[0]?.id || "");
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [course, source]);
+  const module = course?.modules.find(x=>x.id===moduleId) || course?.modules[0]; const lesson = module?.lessons.find(x=>x.id===lessonId) || module?.lessons[0]; const block = lesson?.blocks.find(x=>x.id===selected);
+  const mutate = (fn:(draft:Course)=>Course) => { if(course){setCourse(fn(structuredClone(course)));setSaved(false);} };
+  const updateLesson = (patch: object) => mutate(c=>({...c,modules:c.modules.map(m=>m.id===module?.id?{...m,lessons:m.lessons.map(l=>l.id===lesson?.id?{...l,...patch}:l)}:m)}));
+  const updateBlocks = (blocks:LessonBlock[]) => updateLesson({blocks});
+  const addModule=()=>mutate(c=>{const id=uid(),lid=uid();setModuleId(id);setLessonId(lid);return {...c,modules:[...c.modules,{id,title:`Модуль ${c.modules.length+1}`,lessons:[{id:lid,title:"Новый урок",description:"",timeLimit:0,attempts:0,blocks:[]}]}]}});
+  const addLesson=()=>{if(!module)return;const id=uid();setLessonId(id);mutate(c=>({...c,modules:c.modules.map(m=>m.id===module.id?{...m,lessons:[...m.lessons,{id,title:"Новый урок",description:"",timeLimit:0,attempts:0,blocks:[]}]}:m)}));};
+  const addBlock=(kind:BlockKind)=>{const b=makeBlock(kind);updateBlocks([...(lesson?.blocks||[]),b]);setSelected(b.id);};
+  const move=(index:number,delta:number)=>{if(!lesson)return;const next=[...lesson.blocks],target=index+delta;if(target<0||target>=next.length)return;[next[index],next[target]]=[next[target],next[index]];updateBlocks(next);};
+  const save=async()=>{if(course){await store.saveCourse(course);setSaved(true);}};
+  const rendered=useMemo(()=>lesson?.blocks||[],[lesson?.blocks]);
+  if(!canEditCourses) return <main className="content"><div className="courseEmpty"><h2>Нет доступа к редактору</h2><button className="btn primary" onClick={()=>navigate("/courses")}>К курсам</button></div></main>;
+  if(!course) return <main className="content"><div className="courseEmpty"><h2>Курс не найден</h2><button className="btn primary" onClick={()=>navigate("/courses")}>К списку курсов</button></div></main>;
+  return <main className="editorPage courseEditor fade">
+    <div className="editorTop"><button className="backBtn" onClick={()=>navigate("/courses")}>←</button><div><input className="courseTitleInput" value={course.title} onChange={e=>mutate(c=>({...c,title:e.target.value}))}/><b>{lesson?.title||"Добавьте урок"}</b></div><div className="saveState"><i className={saved?"saved":""}/>{saved?"Все изменения сохранены":"Есть несохранённые изменения"}</div><button className="btn ghost" onClick={()=>setPreview(true)}>Предпросмотр</button><button className="btn primary" onClick={save}>Сохранить</button></div>
+    <div className="editorLayout"><aside className="lessonTree"><div className="treeHead"><span>СОДЕРЖАНИЕ КУРСА</span><button onClick={addModule}>＋</button></div>{course.modules.map((m,mi)=><div className="module" key={m.id}><div className="moduleEdit"><small>МОДУЛЬ {mi+1}</small><input value={m.title} onChange={e=>mutate(c=>({...c,modules:c.modules.map(x=>x.id===m.id?{...x,title:e.target.value}:x)}))}/><button onClick={()=>{setModuleId(m.id);addLesson()}}>＋</button></div>{m.lessons.map((l,li)=><button key={l.id} className={`treeLesson ${lesson?.id===l.id?"active":""}`} onClick={()=>{setModuleId(m.id);setLessonId(l.id);setSelected("")}}><i>{li+1}</i><span>{l.title}<small>{l.blocks.length} блоков</small></span></button>)}</div>)}<button className="addModule" onClick={addModule}>＋ Добавить модуль</button></aside>
+    <section className="canvas"><div className="canvasHead"><div><span>УРОК</span><input value={lesson?.title||""} onChange={e=>updateLesson({title:e.target.value})}/><textarea value={lesson?.description||""} onChange={e=>updateLesson({description:e.target.value})} placeholder="Описание урока"/></div><div className="lessonSettings"><label>Лимит, мин<input type="number" min="0" value={lesson?.timeLimit||0} onChange={e=>updateLesson({timeLimit:+e.target.value})}/></label><label>Попытки<input type="number" min="0" value={lesson?.attempts||0} onChange={e=>updateLesson({attempts:+e.target.value})}/></label></div></div><div className="blockCanvas">{lesson?.blocks.map((b,i)=><article key={b.id} className={`lessonBlock ${selected===b.id?"selected":""}`} onClick={()=>setSelected(b.id)}><span className="drag">⋮⋮</span><div className={`blockGlyph ${b.kind}`}>{palette.find(p=>p.kind===b.kind)?.icon}</div><div><b>{b.title}</b><p>{palette.find(p=>p.kind===b.kind)?.hint}</p></div><div className="blockActions"><button onClick={e=>{e.stopPropagation();move(i,-1)}}>↑</button><button onClick={e=>{e.stopPropagation();move(i,1)}}>↓</button><button onClick={e=>{e.stopPropagation();updateBlocks(lesson.blocks.filter(x=>x.id!==b.id))}}>×</button></div></article>)}{!lesson?.blocks.length&&<div className="emptyCanvas">Выберите блок справа, чтобы начать собирать урок.</div>}</div></section>
+    <aside className="blockPalette"><div><span>{block?"НАСТРОЙКА БЛОКА":"БЛОКИ"}</span><p>{block?"Изменения применяются сразу":"Добавьте блок в урок"}</p></div>{block?<div className="blockInspector"><label>Название<input value={block.title} onChange={e=>updateBlocks(lesson!.blocks.map(x=>x.id===block.id?{...x,title:e.target.value}:x))}/></label><label>Содержимое<textarea rows={12} value={block.content} onChange={e=>updateBlocks(lesson!.blocks.map(x=>x.id===block.id?{...x,content:e.target.value}:x))}/></label><button className="btn ghost" onClick={()=>setSelected("")}>Готово</button></div>:palette.map(p=><button key={p.kind} onClick={()=>addBlock(p.kind)}><i className={p.kind}>{p.icon}</i><span><b>{p.title}</b><small>{p.hint}</small></span><em>＋</em></button>)}</aside></div>
+    {preview&&<div className="courseModal" onClick={()=>setPreview(false)}><div onClick={e=>e.stopPropagation()}><button className="modalClose" onClick={()=>setPreview(false)}>×</button><small>{course.title}</small><h1>{lesson?.title}</h1><p>{lesson?.description}</p>{rendered.map(b=><section className="previewBlock" key={b.id}><h3>{b.title}</h3>{b.kind==="html"?<div className="htmlPreview">HTML-код скрыт в безопасном предпросмотре</div>:b.kind==="media"||b.kind==="file"?<a href={b.content} target="_blank" rel="noreferrer">Открыть материал →</a>:b.kind==="quiz"?<div>{b.content.split("\n").map((x,i)=>i===0?<b key={i}>{x}</b>:<label key={i}><input type="radio" name={b.id}/>{x}</label>)}</div>:<p>{b.content}</p>}</section>)}</div></div>}
+  </main>;
+}

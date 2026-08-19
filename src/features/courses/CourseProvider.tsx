@@ -1,0 +1,64 @@
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useAuth } from "../../auth/AuthProvider";
+import { isSupabaseConfigured, supabase } from "../../lib/supabase";
+import { blankCourse, type Course } from "./types";
+
+type Store = {
+  courses: Course[]; loading: boolean; storage: "cloud" | "local";
+  createCourse: () => Course; saveCourse: (course: Course) => Promise<void>;
+  removeCourse: (id: string) => Promise<void>; duplicateCourse: (id: string) => Promise<void>;
+};
+const Context = createContext<Store | null>(null);
+const KEY = "lingvaedu-courses-v1";
+
+const readLocal = (): Course[] => {
+  try { return JSON.parse(localStorage.getItem(KEY) || "[]") as Course[]; } catch { return []; }
+};
+
+export function CourseProvider({ children }: { children: React.ReactNode }) {
+  const { displayName, user } = useAuth();
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [storage, setStorage] = useState<"cloud" | "local">("local");
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      if (supabase) {
+        const { data, error } = await supabase.from("courses").select("content").order("updated_at", { ascending: false });
+        if (!error && active) { setCourses((data || []).map((x) => x.content as Course)); setStorage("cloud"); setLoading(false); return; }
+      }
+      if (active) { setCourses(readLocal()); setStorage("local"); setLoading(false); }
+    })();
+    return () => { active = false; };
+  }, [user?.id]);
+
+  const cache = useCallback((next: Course[]) => { setCourses(next); localStorage.setItem(KEY, JSON.stringify(next)); }, []);
+  const createCourse = useCallback(() => {
+    const course = blankCourse(displayName);
+    cache([course, ...courses]);
+    return course;
+  }, [cache, courses, displayName]);
+  const saveCourse = useCallback(async (value: Course) => {
+    const course = { ...value, updatedAt: new Date().toISOString() };
+    cache([course, ...courses.filter((x) => x.id !== course.id)]);
+    if (supabase && isSupabaseConfigured) {
+      const { error } = await supabase.from("courses").upsert({ id: course.id, title: course.title, status: course.status, language: course.language, author_id: user?.id, content: course, updated_at: course.updatedAt });
+      if (!error) setStorage("cloud"); else setStorage("local");
+    }
+  }, [cache, courses, user?.id]);
+  const removeCourse = useCallback(async (id: string) => {
+    cache(courses.filter((x) => x.id !== id));
+    if (supabase && storage === "cloud") await supabase.from("courses").delete().eq("id", id);
+  }, [cache, courses, storage]);
+  const duplicateCourse = useCallback(async (id: string) => {
+    const source = courses.find((x) => x.id === id); if (!source) return;
+    const copy = { ...structuredClone(source), id: crypto.randomUUID(), title: `${source.title} — копия`, status: "draft" as const, students: 0 };
+    await saveCourse(copy);
+  }, [courses, saveCourse]);
+  const value = useMemo(() => ({ courses, loading, storage, createCourse, saveCourse, removeCourse, duplicateCourse }), [courses, loading, storage, createCourse, saveCourse, removeCourse, duplicateCourse]);
+  return <Context.Provider value={value}>{children}</Context.Provider>;
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function useCourses() { const value = useContext(Context); if (!value) throw new Error("useCourses must be used inside CourseProvider"); return value; }

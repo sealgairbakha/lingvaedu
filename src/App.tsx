@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "./auth/AuthProvider";
+import { CoursesPage } from "./features/courses/CoursesPage";
+import { CourseEditorPage } from "./features/courses/CourseEditorPage";
 
 type Page =
   | "overview"
@@ -172,7 +174,6 @@ function Sidebar({
     "groups",
     "roles",
     "reports",
-    "editor",
   ];
   return (
     <>
@@ -1499,11 +1500,11 @@ const pageByPath = Object.fromEntries(
 export default function App() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  const { isAdmin, canEditCourses } = useAuth();
   const page = pageByPath[location.pathname] ?? "overview";
   const setPage = (next: Page) => navigate(paths[next]);
-  const adminOnlyPages: Page[] = ["editor", "people", "groups", "reports", "roles"];
-  const denied = !isAdmin && adminOnlyPages.includes(page);
+  const adminOnlyPages: Page[] = ["people", "groups", "reports", "roles"];
+  const denied = (!isAdmin && adminOnlyPages.includes(page)) || (page === "editor" && !canEditCourses);
   const content =
     denied ? (
       <main className="content fade">
@@ -1517,9 +1518,9 @@ export default function App() {
     ) : page === "overview" ? (
       <Overview go={setPage} />
     ) : page === "courses" ? (
-      <Courses go={setPage} />
+      <CoursesPage />
     ) : page === "editor" ? (
-      <Editor back={() => setPage("courses")} />
+      <CourseEditorPage />
     ) : page === "people" ? (
       <People />
     ) : page === "groups" ? (

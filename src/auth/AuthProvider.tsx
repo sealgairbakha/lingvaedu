@@ -8,8 +8,9 @@ type AuthContextValue = {
   loading: boolean;
   displayName: string;
   initials: string;
-  role: "admin" | "student";
+  role: "admin" | "staff" | "student";
   isAdmin: boolean;
+  canEditCourses: boolean;
   signOut: () => Promise<void>;
 };
 
@@ -46,7 +47,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .map((part) => part[0])
       .join("")
       .toUpperCase();
-    const role = user?.app_metadata?.role === "admin" ? "admin" : "student";
+    const rawRole = user?.app_metadata?.role;
+    const role = rawRole === "admin" || rawRole === "staff" ? rawRole : "student";
     return {
       user,
       session,
@@ -55,6 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       initials,
       role,
       isAdmin: role === "admin",
+      canEditCourses: role === "admin" || role === "staff",
       signOut: async () => {
         await supabase?.auth.signOut();
       },
