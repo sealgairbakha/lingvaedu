@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
+import { supabase } from "../../lib/supabase";
 import { useCourses } from "./CourseProvider";
 import type { LessonBlock } from "./types";
 
@@ -16,11 +17,12 @@ function BlockView({ block }: { block: LessonBlock }) {
 }
 
 export function CoursePlayerPage() {
-  const navigate = useNavigate(); const [params] = useSearchParams(); const { courses, loading } = useCourses(); const { user, canEditCourses } = useAuth();
+  const navigate = useNavigate(); const [params] = useSearchParams(); const { courses, loading } = useCourses(); const { user, role, canEditCourses } = useAuth();
   const course = courses.find((x) => x.id === params.get("course"));
   const lessons = useMemo(() => course?.modules.flatMap((module) => module.lessons.map((lesson) => ({ module, lesson }))) || [], [course]);
   const [lessonId, setLessonId] = useState(params.get("lesson") || ""); const [completed, setCompleted] = useState<string[]>([]);
   useEffect(() => { if (!course || !user) return; const value = localStorage.getItem(`lingvaedu-progress-${user.id}-${course.id}`); const timer = setTimeout(() => setCompleted(value ? JSON.parse(value) : []), 0); return () => clearTimeout(timer); }, [course, user]);
+  useEffect(() => { if (!supabase || !course || !user || role !== "student" || course.status !== "published") return; void supabase.from("course_enrollments").upsert({course_id:course.id,user_id:user.id},{onConflict:"course_id,user_id"}); }, [course, role, user]);
   const currentIndex = Math.max(0, lessons.findIndex((x) => x.lesson.id === lessonId)); const current = lessons[currentIndex]?.lesson || lessons[0]?.lesson;
   const selectLesson = (id: string) => { setLessonId(id); window.scrollTo({ top: 0, behavior: "smooth" }); };
   const complete = () => { if (!current || !course || !user) return; const next = [...new Set([...completed, current.id])]; setCompleted(next); localStorage.setItem(`lingvaedu-progress-${user.id}-${course.id}`, JSON.stringify(next)); if (currentIndex < lessons.length - 1) selectLesson(lessons[currentIndex + 1].lesson.id); };

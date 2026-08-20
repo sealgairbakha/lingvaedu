@@ -16,7 +16,7 @@ const readLocal = (): Course[] => {
 };
 
 export function CourseProvider({ children }: { children: React.ReactNode }) {
-  const { displayName, user } = useAuth();
+  const { displayName, avatarUrl, user } = useAuth();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [storage, setStorage] = useState<"cloud" | "local">("local");
@@ -25,8 +25,8 @@ export function CourseProvider({ children }: { children: React.ReactNode }) {
     let active = true;
     (async () => {
       if (supabase) {
-        const { data, error } = await supabase.from("courses").select("content").order("updated_at", { ascending: false });
-        if (!error && active) { setCourses((data || []).map((x) => x.content as Course)); setStorage("cloud"); setLoading(false); return; }
+        const { data, error } = await supabase.from("courses").select("content,author_id").order("updated_at", { ascending: false });
+        if (!error && active) { const {data:enrollments}=await supabase.from("course_enrollments").select("course_id");const counts=new Map<string,number>();for(const row of enrollments||[])counts.set(row.course_id,(counts.get(row.course_id)||0)+1);setCourses((data || []).map((x) => {const course=x.content as Course;return {...course,authorId:course.authorId||x.author_id||undefined,students:enrollments?counts.get(course.id)||0:course.students};})); setStorage("cloud"); setLoading(false); return; }
       }
       if (active) { setCourses(readLocal()); setStorage("local"); setLoading(false); }
     })();
@@ -35,18 +35,18 @@ export function CourseProvider({ children }: { children: React.ReactNode }) {
 
   const cache = useCallback((next: Course[]) => { setCourses(next); localStorage.setItem(KEY, JSON.stringify(next)); }, []);
   const createCourse = useCallback(() => {
-    const course = blankCourse(displayName);
+    const course = blankCourse(displayName, user?.id, avatarUrl);
     cache([course, ...courses]);
     return course;
-  }, [cache, courses, displayName]);
+  }, [avatarUrl, cache, courses, displayName, user?.id]);
   const saveCourse = useCallback(async (value: Course) => {
-    const course = { ...value, updatedAt: new Date().toISOString() };
+    const course = { ...value, authorId: value.authorId || user?.id, author: value.author || displayName, mentor: value.mentor || displayName, mentorAvatar: value.mentorAvatar || avatarUrl, updatedAt: new Date().toISOString() };
     cache([course, ...courses.filter((x) => x.id !== course.id)]);
     if (supabase && isSupabaseConfigured) {
       const { error } = await supabase.from("courses").upsert({ id: course.id, title: course.title, status: course.status, language: course.language, author_id: user?.id, content: course, updated_at: course.updatedAt });
       if (!error) setStorage("cloud"); else setStorage("local");
     }
-  }, [cache, courses, user?.id]);
+  }, [avatarUrl, cache, courses, displayName, user?.id]);
   const removeCourse = useCallback(async (id: string) => {
     cache(courses.filter((x) => x.id !== id));
     if (supabase && storage === "cloud") await supabase.from("courses").delete().eq("id", id);

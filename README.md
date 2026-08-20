@@ -83,3 +83,5 @@ npm run admin:create
 Для загрузки видео и аудио выполните второй файл `supabase/migrations/002_course_media_storage.sql` в `Supabase → SQL Editor`. Он создаёт публичный Storage bucket `course-media`; загружать и удалять материалы смогут только пользователи с ролью `admin` или `staff`.
 
 Для загрузки аватаров выполните файл `supabase/migrations/003_profile_avatars.sql` в `Supabase → SQL Editor`. Пользователь сможет изменять файлы только внутри собственной папки Storage.
+
+Для реального подсчёта учеников выполните файл `supabase/migrations/004_course_enrollments.sql`. Ученик учитывается один раз при первом открытии опубликованного курса; администраторы и сотрудники в число учеников не входят.
