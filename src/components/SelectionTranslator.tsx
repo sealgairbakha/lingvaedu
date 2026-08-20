@@ -8,7 +8,7 @@ type SelectionTranslatorProps = {
 type PopupState = {
   text: string;
   translation: string;
-  status: "loading" | "success" | "error";
+  status: "loading" | "success" | "error" | "limit";
   rect: { top: number; right: number; bottom: number; left: number };
   x: number;
   y: number;
@@ -30,7 +30,7 @@ export function SelectionTranslator({ scopeSelector = ".coursePlayer", onAddToVo
   const timerRef = useRef<number | null>(null);
   const [popup, setPopup] = useState<PopupState | null>(null);
   const [vocabularyNote, setVocabularyNote] = useState("");
-  const canSpeak = typeof window !== "undefined" && "speechSynthesis" in window && !!popup && isEnglishText(popup.text);
+  const canSpeak = typeof window !== "undefined" && "speechSynthesis" in window && !!popup && popup.status !== "limit" && isEnglishText(popup.text);
 
   useLayoutEffect(() => {
     if (!popup || !popupRef.current) return;
@@ -54,7 +54,7 @@ export function SelectionTranslator({ scopeSelector = ".coursePlayer", onAddToVo
       const selection = window.getSelection();
       if (!selection || selection.isCollapsed || selection.rangeCount === 0) return close();
       const text = selection.toString().trim();
-      if (!text || text.length > MAX_SELECTION_LENGTH) return close();
+      if (!text) return close();
       const range = selection.getRangeAt(0);
       const ancestor = range.commonAncestorContainer instanceof Element
         ? range.commonAncestorContainer
@@ -63,6 +63,12 @@ export function SelectionTranslator({ scopeSelector = ".coursePlayer", onAddToVo
       const rangeRect = range.getBoundingClientRect();
       if (!rangeRect.width && !rangeRect.height) return close();
       const rect = { top: rangeRect.top, right: rangeRect.right, bottom: rangeRect.bottom, left: rangeRect.left };
+      if (text.length > MAX_SELECTION_LENGTH) {
+        abortRef.current?.abort();
+        setVocabularyNote("");
+        setPopup({ text: "", translation: "", status: "limit", rect, x: rect.left, y: rect.bottom + POPUP_GAP });
+        return;
+      }
       const cached = translationCache.get(text);
       setVocabularyNote("");
       if (cached) {
@@ -146,16 +152,17 @@ export function SelectionTranslator({ scopeSelector = ".coursePlayer", onAddToVo
   };
 
   return <div ref={popupRef} className="selectionTranslator" role="dialog" aria-label="Перевод выделенного текста" style={{ left: popup.x, top: popup.y }}>
-    <div className="selectionTranslatorSource">
-      {canSpeak && <button type="button" onClick={speak} aria-label="Прослушать произношение" title="Прослушать">🔊</button>}
+    {popup.status !== "limit" && <div className="selectionTranslatorSource">
+      {canSpeak && <button type="button" onClick={speak} aria-label="Прослушать произношение" title="Прослушать"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9v6h4l5 4V5L9 9H5Z"/><path d="M17 9.2a4 4 0 0 1 0 5.6M19.5 6.8a7.5 7.5 0 0 1 0 10.4"/></svg></button>}
       <b>{popup.text}</b>
-    </div>
+    </div>}
     <div className={`selectionTranslatorResult ${popup.status}`} aria-live="polite">
       {popup.status === "loading" && <><i />Переводим…</>}
       {popup.status === "error" && "Не удалось выполнить перевод"}
+      {popup.status === "limit" && "Для перевода выделите текст до 100 символов"}
       {popup.status === "success" && popup.translation}
     </div>
-    <button type="button" className="selectionVocabularyButton" disabled={popup.status !== "success"} onClick={() => void addToVocabulary()}>☆ Добавить в словарь</button>
+    {popup.status !== "limit" && <button type="button" className="selectionVocabularyButton" disabled={popup.status !== "success"} onClick={() => void addToVocabulary()}>☆ Добавить в словарь</button>}
     {vocabularyNote && <small className="selectionVocabularyNote" aria-live="polite">{vocabularyNote}</small>}
   </div>;
 }
