@@ -1,5 +1,5 @@
 export type CourseStatus = "published" | "draft" | "archived";
-export type BlockKind = "text" | "media" | "quiz" | "html" | "file";
+export type BlockKind = "text" | "media" | "video" | "audio" | "quiz" | "html" | "file";
 
 export type LessonBlock = {
   id: string;
