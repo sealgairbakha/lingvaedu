@@ -6,12 +6,14 @@ import { useAuth } from "./auth/AuthProvider";
 import { CoursesPage } from "./features/courses/CoursesPage";
 import { CourseEditorPage } from "./features/courses/CourseEditorPage";
 import { CoursePlayerPage } from "./features/courses/CoursePlayerPage";
+import { ProfilePage } from "./features/profile/ProfilePage";
 
 type Page =
   | "overview"
   | "courses"
   | "editor"
   | "player"
+  | "profile"
   | "people"
   | "groups"
   | "roles"
@@ -183,7 +185,7 @@ function Sidebar({
   close: () => void;
   hide: () => void;
 }) {
-  const { displayName, initials, isAdmin, signOut } = useAuth();
+  const { displayName, initials, avatarUrl, isAdmin, signOut } = useAuth();
   const adminOnlyPages: Page[] = [
     "people",
     "groups",
@@ -236,7 +238,7 @@ function Sidebar({
             <i><NavIcon name="help" /></i>Помощь
           </button>
           <div className="profile">
-            <span>{initials}</span>
+            <span>{avatarUrl ? <img src={avatarUrl} alt={displayName}/> : initials}</span>
             <div>
               <b>{displayName}</b>
               <small>{isAdmin ? "Администратор" : "Ученик"}</small>
@@ -255,12 +257,13 @@ function Sidebar({
 }
 
 function Header({ title, toggleNav }: { title: string; toggleNav: () => void }) {
-  const { initials, displayName, user, role, signOut } = useAuth();
+  const navigate = useNavigate();
+  const { initials, displayName, avatarUrl, user, signOut } = useAuth();
   const [accountMenu, setAccountMenu] = useState(false);
-  const [accountDialog, setAccountDialog] = useState<"profile" | "settings" | "logout" | null>(null);
+  const [accountDialog, setAccountDialog] = useState<"settings" | "logout" | null>(null);
   const [notifications, setNotifications] = useState(() => localStorage.getItem("lingvaedu-notifications") !== "false");
   const [darkTheme, setDarkTheme] = useState(() => document.documentElement.dataset.theme === "dark");
-  const openDialog = (dialog: "profile" | "settings" | "logout") => { setAccountMenu(false); setAccountDialog(dialog); };
+  const openDialog = (dialog: "settings" | "logout") => { setAccountMenu(false); setAccountDialog(dialog); };
   const toggleTheme = () => {
     const next = !darkTheme;
     setDarkTheme(next);
@@ -288,10 +291,9 @@ function Header({ title, toggleNav }: { title: string; toggleNav: () => void }) 
         ♢<i />
       </button>
       <div className="accountMenuWrap">
-        <button className={`topAvatar ${accountMenu ? "active" : ""}`} onClick={() => setAccountMenu((value) => !value)} aria-expanded={accountMenu} aria-label="Меню аккаунта" title={displayName}>{initials}</button>
-        {accountMenu && <><button className="accountMenuScrim" aria-label="Закрыть меню аккаунта" onClick={() => setAccountMenu(false)} /><div className="accountDropdown"><div className="accountSummary"><span>{initials}</span><div><b>{displayName}</b><small>{user?.email}</small></div></div><button onClick={() => openDialog("profile")}><span>○</span>Мой профиль</button><button onClick={() => openDialog("settings")}><span>⚙</span>Настройки</button><button onClick={toggleTheme}><span className="themeMenuIcon">{darkTheme ? "☀" : "◐"}</span>{darkTheme ? "Светлая тема" : "Тёмная тема"}<i className={`themeState ${darkTheme ? "on" : ""}`} /></button><hr/><button className="accountLogout" onClick={() => openDialog("logout")}><span>↗</span>Выйти</button></div></>}
+        <button className={`topAvatar ${accountMenu ? "active" : ""}`} onClick={() => setAccountMenu((value) => !value)} aria-expanded={accountMenu} aria-label="Меню аккаунта" title={displayName}>{avatarUrl ? <img src={avatarUrl} alt={displayName}/> : initials}</button>
+        {accountMenu && <><button className="accountMenuScrim" aria-label="Закрыть меню аккаунта" onClick={() => setAccountMenu(false)} /><div className="accountDropdown"><div className="accountSummary"><span>{avatarUrl ? <img src={avatarUrl} alt={displayName}/> : initials}</span><div><b>{displayName}</b><small>{user?.email}</small></div></div><button onClick={() => { setAccountMenu(false); navigate("/profile"); }}><span>○</span>Мой профиль</button><button onClick={() => openDialog("settings")}><span>⚙</span>Настройки</button><button onClick={toggleTheme}><span className="themeMenuIcon">{darkTheme ? "☀" : "◐"}</span>{darkTheme ? "Светлая тема" : "Тёмная тема"}<i className={`themeState ${darkTheme ? "on" : ""}`} /></button><hr/><button className="accountLogout" onClick={() => openDialog("logout")}><span>↗</span>Выйти</button></div></>}
       </div>
-      {accountDialog === "profile" && <Modal title="Мой профиль" close={() => setAccountDialog(null)}><div className="profileDialog"><span>{initials}</span><h3>{displayName}</h3><p>{user?.email}</p><dl><div><dt>Роль</dt><dd>{role === "admin" ? "Администратор" : role === "staff" ? "Сотрудник" : "Ученик"}</dd></div><div><dt>Аккаунт</dt><dd>Активен</dd></div></dl><button className="btn primary full" onClick={() => setAccountDialog(null)}>Готово</button></div></Modal>}
       {accountDialog === "settings" && <Modal title="Настройки" close={() => setAccountDialog(null)}><div className="accountSettings"><label><div><b>Уведомления</b><small>Показывать новости курсов и напоминания</small></div><input type="checkbox" checked={notifications} onChange={(e) => setNotifications(e.target.checked)}/><i/></label><button className="btn primary full" onClick={() => { localStorage.setItem("lingvaedu-notifications", String(notifications)); setAccountDialog(null); }}>Сохранить настройки</button></div></Modal>}
       {accountDialog === "logout" && <Modal title="Выйти из аккаунта?" close={() => setAccountDialog(null)}><div className="logoutDialog"><p>Вы действительно хотите завершить текущий сеанс?</p><div><button className="btn ghost" onClick={() => setAccountDialog(null)}>Отмена</button><button className="btn logoutConfirm" onClick={async () => { setAccountDialog(null); await signOut(); }}>Выйти</button></div></div></Modal>}
     </header>
@@ -327,6 +329,8 @@ function Shell({
   const title =
     page === "editor"
       ? "Редактор курса"
+      : page === "profile"
+        ? "Мой профиль"
       : nav.flatMap((n) => n.items).find((i) => i.id === page)?.label ||
         "Обзор";
   return (
@@ -1520,6 +1524,7 @@ const paths: Record<Page, string> = {
   courses: "/courses",
   editor: "/courses/editor",
   player: "/courses/learn",
+  profile: "/profile",
   people: "/users",
   groups: "/groups",
   roles: "/roles",
@@ -1558,6 +1563,8 @@ export default function App() {
       <CourseEditorPage />
     ) : page === "player" ? (
       <CoursePlayerPage />
+    ) : page === "profile" ? (
+      <ProfilePage />
     ) : page === "people" ? (
       <People />
     ) : page === "groups" ? (

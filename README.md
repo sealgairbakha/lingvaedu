@@ -81,3 +81,5 @@ npm run admin:create
 Редактировать курсы могут пользователи, у которых в защищённом `app_metadata.role` указано `admin` или `staff`. Ученики могут просматривать курсы, но не видят управляющие действия.
 
 Для загрузки видео и аудио выполните второй файл `supabase/migrations/002_course_media_storage.sql` в `Supabase → SQL Editor`. Он создаёт публичный Storage bucket `course-media`; загружать и удалять материалы смогут только пользователи с ролью `admin` или `staff`.
+
+Для загрузки аватаров выполните файл `supabase/migrations/003_profile_avatars.sql` в `Supabase → SQL Editor`. Пользователь сможет изменять файлы только внутри собственной папки Storage.

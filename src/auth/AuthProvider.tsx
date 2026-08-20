@@ -8,6 +8,7 @@ type AuthContextValue = {
   loading: boolean;
   displayName: string;
   initials: string;
+  avatarUrl: string;
   role: "admin" | "staff" | "student";
   isAdmin: boolean;
   canEditCourses: boolean;
@@ -47,6 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .map((part) => part[0])
       .join("")
       .toUpperCase();
+    const avatarUrl = String(user?.user_metadata?.avatar_url || "");
     const rawRole = user?.app_metadata?.role;
     const role = rawRole === "admin" || rawRole === "staff" ? rawRole : "student";
     return {
@@ -55,6 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       loading,
       displayName,
       initials,
+      avatarUrl,
       role,
       isAdmin: role === "admin",
       canEditCourses: role === "admin" || role === "staff",
