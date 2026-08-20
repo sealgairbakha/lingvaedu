@@ -8,6 +8,11 @@ import { AuthProvider } from "./auth/AuthProvider";
 import { CourseProvider } from "./features/courses/CourseProvider";
 import "./styles/index.css";
 
+const savedTheme = localStorage.getItem("lingvaedu-theme");
+const initialTheme = savedTheme === "dark" || (!savedTheme && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
+document.documentElement.dataset.theme = initialTheme;
+document.documentElement.style.colorScheme = initialTheme;
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>

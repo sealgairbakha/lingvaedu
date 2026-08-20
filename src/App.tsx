@@ -259,7 +259,15 @@ function Header({ title, toggleNav }: { title: string; toggleNav: () => void }) 
   const [accountMenu, setAccountMenu] = useState(false);
   const [accountDialog, setAccountDialog] = useState<"profile" | "settings" | "logout" | null>(null);
   const [notifications, setNotifications] = useState(() => localStorage.getItem("lingvaedu-notifications") !== "false");
+  const [darkTheme, setDarkTheme] = useState(() => document.documentElement.dataset.theme === "dark");
   const openDialog = (dialog: "profile" | "settings" | "logout") => { setAccountMenu(false); setAccountDialog(dialog); };
+  const toggleTheme = () => {
+    const next = !darkTheme;
+    setDarkTheme(next);
+    document.documentElement.dataset.theme = next ? "dark" : "light";
+    document.documentElement.style.colorScheme = next ? "dark" : "light";
+    localStorage.setItem("lingvaedu-theme", next ? "dark" : "light");
+  };
   return (
     <header className="topbar">
       <button className="menuBtn" onClick={toggleNav} aria-label="Показать или скрыть меню" title="Показать или скрыть меню">
@@ -281,7 +289,7 @@ function Header({ title, toggleNav }: { title: string; toggleNav: () => void }) 
       </button>
       <div className="accountMenuWrap">
         <button className={`topAvatar ${accountMenu ? "active" : ""}`} onClick={() => setAccountMenu((value) => !value)} aria-expanded={accountMenu} aria-label="Меню аккаунта" title={displayName}>{initials}</button>
-        {accountMenu && <><button className="accountMenuScrim" aria-label="Закрыть меню аккаунта" onClick={() => setAccountMenu(false)} /><div className="accountDropdown"><div className="accountSummary"><span>{initials}</span><div><b>{displayName}</b><small>{user?.email}</small></div></div><button onClick={() => openDialog("profile")}><span>○</span>Мой профиль</button><button onClick={() => openDialog("settings")}><span>⚙</span>Настройки</button><hr/><button className="accountLogout" onClick={() => openDialog("logout")}><span>↗</span>Выйти</button></div></>}
+        {accountMenu && <><button className="accountMenuScrim" aria-label="Закрыть меню аккаунта" onClick={() => setAccountMenu(false)} /><div className="accountDropdown"><div className="accountSummary"><span>{initials}</span><div><b>{displayName}</b><small>{user?.email}</small></div></div><button onClick={() => openDialog("profile")}><span>○</span>Мой профиль</button><button onClick={() => openDialog("settings")}><span>⚙</span>Настройки</button><button onClick={toggleTheme}><span className="themeMenuIcon">{darkTheme ? "☀" : "◐"}</span>{darkTheme ? "Светлая тема" : "Тёмная тема"}<i className={`themeState ${darkTheme ? "on" : ""}`} /></button><hr/><button className="accountLogout" onClick={() => openDialog("logout")}><span>↗</span>Выйти</button></div></>}
       </div>
       {accountDialog === "profile" && <Modal title="Мой профиль" close={() => setAccountDialog(null)}><div className="profileDialog"><span>{initials}</span><h3>{displayName}</h3><p>{user?.email}</p><dl><div><dt>Роль</dt><dd>{role === "admin" ? "Администратор" : role === "staff" ? "Сотрудник" : "Ученик"}</dd></div><div><dt>Аккаунт</dt><dd>Активен</dd></div></dl><button className="btn primary full" onClick={() => setAccountDialog(null)}>Готово</button></div></Modal>}
       {accountDialog === "settings" && <Modal title="Настройки" close={() => setAccountDialog(null)}><div className="accountSettings"><label><div><b>Уведомления</b><small>Показывать новости курсов и напоминания</small></div><input type="checkbox" checked={notifications} onChange={(e) => setNotifications(e.target.checked)}/><i/></label><button className="btn primary full" onClick={() => { localStorage.setItem("lingvaedu-notifications", String(notifications)); setAccountDialog(null); }}>Сохранить настройки</button></div></Modal>}
