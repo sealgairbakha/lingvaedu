@@ -139,6 +139,19 @@ export function CourseEditorPage() {
     startX: number;
     startWidth: number;
   } | null>(null);
+  const [treeWidth, setTreeWidth] = useState(() =>
+    Math.min(
+      420,
+      Math.max(
+        210,
+        Number(localStorage.getItem("lingvaedu-editor-tree-width")) || 250,
+      ),
+    ),
+  );
+  const [treeResize, setTreeResize] = useState<{
+    startX: number;
+    startWidth: number;
+  } | null>(null);
   useEffect(() => {
     if (!paletteResize) return;
     const clamp = (value: number) => Math.min(520, Math.max(340, value));
@@ -163,6 +176,30 @@ export function CourseEditorPage() {
       window.removeEventListener("pointerup", stop);
     };
   }, [paletteResize]);
+  useEffect(() => {
+    if (!treeResize) return;
+    const clamp = (value: number) => Math.min(420, Math.max(210, value));
+    const move = (event: PointerEvent) =>
+      setTreeWidth(
+        clamp(treeResize.startWidth + event.clientX - treeResize.startX),
+      );
+    const stop = (event: PointerEvent) => {
+      const width = clamp(
+        treeResize.startWidth + event.clientX - treeResize.startX,
+      );
+      setTreeWidth(width);
+      localStorage.setItem("lingvaedu-editor-tree-width", String(width));
+      setTreeResize(null);
+    };
+    document.body.classList.add("resizingEditorTree");
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", stop, { once: true });
+    return () => {
+      document.body.classList.remove("resizingEditorTree");
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", stop);
+    };
+  }, [treeResize]);
   useEffect(() => {
     if (course || !source) return;
     const timer = window.setTimeout(() => {
@@ -414,7 +451,12 @@ export function CourseEditorPage() {
       </div>
       <div
         className="editorLayout"
-        style={{ "--palette-width": `${paletteWidth}px` } as CSSProperties}
+        style={
+          {
+            "--palette-width": `${paletteWidth}px`,
+            "--tree-width": `${treeWidth}px`,
+          } as CSSProperties
+        }
       >
         <aside className="lessonTree">
           <div className="treeHead">
@@ -468,6 +510,22 @@ export function CourseEditorPage() {
             ＋ Добавить модуль
           </button>
         </aside>
+        <div
+          className="paletteResizer treeResizer"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Изменить ширину панели содержания курса"
+          title="Потяните, чтобы изменить ширину"
+          onPointerDown={(event) => {
+            event.preventDefault();
+            setTreeResize({
+              startX: event.clientX,
+              startWidth: treeWidth,
+            });
+          }}
+        >
+          <span />
+        </div>
         <section className="canvas">
           <div className="canvasHead">
             <div>
