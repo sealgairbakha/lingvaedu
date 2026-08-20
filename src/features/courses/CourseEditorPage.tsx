@@ -78,6 +78,37 @@ function BlockIcon({ kind }: { kind: BlockKind }) {
     </svg>
   );
 }
+
+function setFullDragImage(
+  element: HTMLElement,
+  dataTransfer: DataTransfer,
+  clientX: number,
+  clientY: number,
+) {
+  const rect = element.getBoundingClientRect();
+  const host = document.createElement("div");
+  host.className = element.classList.contains("lessonBlock")
+    ? "editorDragGhostHost blockCanvas"
+    : "editorDragGhostHost blockPalette";
+  const clone = element.cloneNode(true) as HTMLElement;
+  clone.classList.remove(
+    "dragging",
+    "paletteDragging",
+    "selected",
+    "dropBefore",
+    "dropAfter",
+  );
+  clone.classList.add("editorDragGhost");
+  clone.style.width = `${rect.width}px`;
+  host.appendChild(clone);
+  document.body.appendChild(host);
+  dataTransfer.setDragImage(
+    clone,
+    Math.max(0, Math.min(rect.width, clientX - rect.left)),
+    Math.max(0, Math.min(rect.height, clientY - rect.top)),
+  );
+  window.setTimeout(() => host.remove(), 0);
+}
 const makeBlock = (kind: BlockKind): LessonBlock => ({
   id: uid(),
   kind,
@@ -106,6 +137,7 @@ export function CourseEditorPage() {
     source ? structuredClone(source) : null,
   );
   const colorPickerRef = useRef<HTMLDetailsElement>(null);
+  const blockPaletteRef = useRef<HTMLElement>(null);
   const [course, setCourse] = useState<Course | null>(source || null);
   const [moduleId, setModuleId] = useState(source?.modules[0]?.id || "");
   const [lessonId, setLessonId] = useState(
@@ -126,6 +158,9 @@ export function CourseEditorPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [preview, setPreview] = useState(false);
+  const [mobilePanel, setMobilePanel] = useState<"tree" | "blocks" | null>(
+    null,
+  );
   const [paletteWidth, setPaletteWidth] = useState(() =>
     Math.min(
       520,
@@ -200,6 +235,19 @@ export function CourseEditorPage() {
       window.removeEventListener("pointerup", stop);
     };
   }, [treeResize]);
+  useEffect(() => {
+    if (mobilePanel !== "blocks") return;
+    const frame = window.requestAnimationFrame(() => {
+      const panel = blockPaletteRef.current;
+      const header = panel?.querySelector<HTMLElement>(".paletteHeader");
+      if (panel && header)
+        panel.scrollTo({
+          top: Math.max(0, header.offsetTop - 14),
+          behavior: "smooth",
+        });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [mobilePanel]);
   useEffect(() => {
     if (course || !source) return;
     const timer = window.setTimeout(() => {
@@ -421,6 +469,39 @@ export function CourseEditorPage() {
           />
           <b>{lesson?.title || "Добавьте урок"}</b>
         </div>
+        <div className="editorPanelToggles">
+          <button
+            type="button"
+            className={mobilePanel === "tree" ? "active" : ""}
+            aria-pressed={mobilePanel === "tree"}
+            onClick={() =>
+              setMobilePanel((current) => (current === "tree" ? null : "tree"))
+            }
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 6h14M5 12h14M5 18h14" />
+            </svg>
+            <span>Содержание</span>
+          </button>
+          <button
+            type="button"
+            className={mobilePanel === "blocks" ? "active" : ""}
+            aria-pressed={mobilePanel === "blocks"}
+            onClick={() =>
+              setMobilePanel((current) =>
+                current === "blocks" ? null : "blocks",
+              )
+            }
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="4" y="4" width="6" height="6" rx="1" />
+              <rect x="14" y="4" width="6" height="6" rx="1" />
+              <rect x="4" y="14" width="6" height="6" rx="1" />
+              <path d="M17 14v6M14 17h6" />
+            </svg>
+            <span>Блоки</span>
+          </button>
+        </div>
         <div className="saveState">
           <i className={saved ? "saved" : ""} />
           {saving
@@ -449,6 +530,14 @@ export function CourseEditorPage() {
           {saving ? "Сохраняем…" : saved ? "Сохранено" : "Сохранить"}
         </button>
       </div>
+      {mobilePanel && (
+        <button
+          type="button"
+          className="editorPanelScrim"
+          aria-label="Закрыть боковую панель редактора"
+          onClick={() => setMobilePanel(null)}
+        />
+      )}
       <div
         className="editorLayout"
         style={
@@ -458,7 +547,9 @@ export function CourseEditorPage() {
           } as CSSProperties
         }
       >
-        <aside className="lessonTree">
+        <aside
+          className={`lessonTree ${mobilePanel === "tree" ? "editorPanelOpen" : ""}`}
+        >
           <div className="treeHead">
             <span>СОДЕРЖАНИЕ КУРСА</span>
             <button onClick={addModule}>＋</button>
@@ -495,6 +586,7 @@ export function CourseEditorPage() {
                     setModuleId(m.id);
                     setLessonId(l.id);
                     setSelected("");
+                    setMobilePanel(null);
                   }}
                 >
                   <i>{li + 1}</i>
@@ -633,6 +725,14 @@ export function CourseEditorPage() {
                     e.stopPropagation();
                     e.dataTransfer.effectAllowed = "move";
                     e.dataTransfer.setData("text/plain", b.id);
+                    const card = e.currentTarget.closest(".lessonBlock");
+                    if (card instanceof HTMLElement)
+                      setFullDragImage(
+                        card,
+                        e.dataTransfer,
+                        e.clientX,
+                        e.clientY,
+                      );
                     setDragging(b.id);
                   }}
                   onDragEnd={() => {
@@ -695,7 +795,10 @@ export function CourseEditorPage() {
         >
           <span />
         </div>
-        <aside className="blockPalette">
+        <aside
+          ref={blockPaletteRef}
+          className={`blockPalette ${mobilePanel === "blocks" ? "editorPanelOpen" : ""}`}
+        >
           <section className="coursePanelSettings">
             <div>
               <span>НАСТРОЙКИ КУРСА</span>
@@ -919,6 +1022,12 @@ export function CourseEditorPage() {
                   e.dataTransfer.setData(
                     "application/x-lingva-block-kind",
                     p.kind,
+                  );
+                  setFullDragImage(
+                    e.currentTarget,
+                    e.dataTransfer,
+                    e.clientX,
+                    e.clientY,
                   );
                   setSelected("");
                   setPaletteDragging(p.kind);
