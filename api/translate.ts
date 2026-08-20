@@ -1,0 +1,48 @@
+type DeepLResponse = {
+  translations?: Array<{ text?: string; detected_source_language?: string }>;
+};
+
+const json = (body: Record<string, unknown>, status = 200, headers?: HeadersInit) => Response.json(body, {
+  status,
+  headers: { "Cache-Control": "no-store", ...headers },
+});
+
+export default {
+  async fetch(request: Request) {
+    if (request.method !== "POST") return json({ error: "Method not allowed" }, 405, { Allow: "POST" });
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return json({ error: "Invalid request" }, 400);
+    }
+    const text = typeof body === "object" && body !== null && "text" in body && typeof body.text === "string"
+      ? body.text.trim()
+      : "";
+    if (!text || text.length > 100) return json({ error: "Text must contain from 1 to 100 characters" }, 400);
+
+    const apiKey = process.env.DEEPL_API_KEY;
+    if (!apiKey) return json({ error: "Translation service is not configured" }, 503);
+    const targetLanguage = /[а-яё]/i.test(text) ? "EN" : "RU";
+    const host = apiKey.endsWith(":fx") ? "https://api-free.deepl.com" : "https://api.deepl.com";
+
+    try {
+      const response = await fetch(`${host}/v2/translate`, {
+        method: "POST",
+        headers: {
+          Authorization: `DeepL-Auth-Key ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text: [text], target_lang: targetLanguage }),
+        signal: AbortSignal.timeout(8_000),
+      });
+      if (!response.ok) return json({ error: "Translation service is unavailable" }, 502);
+      const data = await response.json() as DeepLResponse;
+      const translation = data.translations?.[0]?.text?.trim();
+      if (!translation) return json({ error: "Translation service returned an empty result" }, 502);
+      return json({ translation, targetLanguage: targetLanguage.toLowerCase() });
+    } catch {
+      return json({ error: "Translation service is unavailable" }, 502);
+    }
+  },
+};

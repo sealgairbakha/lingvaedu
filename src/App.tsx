@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "./auth/AuthProvider";
+import { SelectionTranslator } from "./components/SelectionTranslator";
 import { CoursesPage } from "./features/courses/CoursesPage";
 import { CourseEditorPage } from "./features/courses/CourseEditorPage";
 import { CoursePlayerPage } from "./features/courses/CoursePlayerPage";
@@ -1581,6 +1582,7 @@ export default function App() {
   return (
     <Shell page={page} setPage={setPage}>
       {content}
+      {page === "player" && <SelectionTranslator />}
     </Shell>
   );
 }

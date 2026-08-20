@@ -25,4 +25,8 @@ export default tseslint.config(
       "react-hooks/purity": "off",
     },
   },
+  {
+    files: ["api/**/*.ts"],
+    languageOptions: { globals: globals.node },
+  },
 );
