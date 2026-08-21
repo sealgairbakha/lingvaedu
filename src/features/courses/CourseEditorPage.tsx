@@ -756,6 +756,15 @@ export function CourseEditorPage() {
               </div>
             </div>
             <div className="lessonSettings">
+              <div className="lessonSettingsTitle">
+                <span className="lessonSettingsTitleIcon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="7.5" />
+                    <path d="M12 8v4l2.7 1.7M9 3h6" />
+                  </svg>
+                </span>
+                <span>ТАЙМЕР И ПОПЫТКИ</span>
+              </div>
               <label className="lessonSettingField">
                 <span className="lessonSettingIcon" aria-hidden="true">
                   <svg viewBox="0 0 24 24">
@@ -765,7 +774,6 @@ export function CourseEditorPage() {
                 </span>
                 <span className="lessonSettingCopy">
                   <b>Таймер</b>
-                  <small>ч : мин : сек</small>
                 </span>
                 <span className="lessonTimerInput" aria-label="Таймер урока">
                   <input
@@ -805,7 +813,6 @@ export function CourseEditorPage() {
                 </span>
                 <span className="lessonSettingCopy">
                   <b>Попытки</b>
-                  <small>раз</small>
                 </span>
                 <input
                   aria-label="Количество попыток прохождения урока"
