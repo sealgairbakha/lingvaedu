@@ -619,16 +619,6 @@ export function CourseEditorPage() {
                     }))
                   }
                 />
-                <button
-                  aria-label={`Добавить урок в модуль «${m.title}»`}
-                  title="Добавить урок"
-                  onClick={() => {
-                    setModuleId(m.id);
-                    addLesson();
-                  }}
-                >
-                  ＋
-                </button>
               </div>
               {m.lessons.map((l, li) => (
                 <button
@@ -648,6 +638,17 @@ export function CourseEditorPage() {
                   </span>
                 </button>
               ))}
+              <button
+                className="moduleAddLesson"
+                aria-label={`Добавить урок в модуль «${m.title}»`}
+                title="Добавить урок"
+                onClick={() => {
+                  setModuleId(m.id);
+                  addLesson();
+                }}
+              >
+                ＋
+              </button>
             </div>
           ))}
           <button className="addModule" onClick={addModule}>
