@@ -148,6 +148,7 @@ export function CourseEditorPage() {
   } | null>(null);
   const [saved, setSaved] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [timerInputDigits, setTimerInputDigits] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [preview, setPreview] = useState(false);
@@ -273,11 +274,17 @@ export function CourseEditorPage() {
     0,
     Math.round((lesson?.timeLimit || 0) * 60),
   );
-  const timerParts = {
-    hours: Math.floor(totalTimeSeconds / 3600),
-    minutes: Math.floor((totalTimeSeconds % 3600) / 60),
-    seconds: totalTimeSeconds % 60,
-  };
+  const totalHours = Math.floor(totalTimeSeconds / 3600);
+  const totalMinutes = Math.floor((totalTimeSeconds % 3600) / 60);
+  const totalSeconds = totalTimeSeconds % 60;
+  const savedTimerDigits =
+    `${totalHours}${String(totalMinutes).padStart(2, "0")}${String(totalSeconds).padStart(2, "0")}`.replace(
+      /^0+(?=\d)/,
+      "",
+    );
+  const currentTimerDigits = timerInputDigits ?? savedTimerDigits ?? "0";
+  const timerValue = currentTimerDigits.padStart(5, "0");
+  const timerDisplay = `${timerValue.slice(0, -4) || "0"}:${timerValue.slice(-4, -2)}:${timerValue.slice(-2)}`;
   useEffect(() => {
     const field = lessonDescriptionRef.current;
     if (!field) return;
@@ -305,15 +312,16 @@ export function CourseEditorPage() {
       ),
     }));
   const updateBlocks = (blocks: LessonBlock[]) => updateLesson({ blocks });
-  const updateTimerPart = (
-    part: "hours" | "minutes" | "seconds",
-    rawValue: string,
-  ) => {
-    const maximum = part === "hours" ? 99 : 59;
-    const value = Math.min(maximum, Math.max(0, Number(rawValue) || 0));
-    const next = { ...timerParts, [part]: value };
+  const updateTimerDigits = (rawValue: string) => {
+    const digits = rawValue.replace(/\D/g, "").slice(-6) || "0";
+    const normalized = digits.replace(/^0+(?=\d)/, "");
+    const padded = normalized.padStart(5, "0");
+    const hours = Number(padded.slice(0, -4)) || 0;
+    const minutes = Number(padded.slice(-4, -2)) || 0;
+    const seconds = Number(padded.slice(-2)) || 0;
+    setTimerInputDigits(normalized);
     updateLesson({
-      timeLimit: (next.hours * 3600 + next.minutes * 60 + next.seconds) / 60,
+      timeLimit: (hours * 3600 + minutes * 60 + seconds) / 60,
     });
   };
   const startDragVisual = (
@@ -761,30 +769,30 @@ export function CourseEditorPage() {
                 </span>
                 <span className="lessonTimerInput" aria-label="Таймер урока">
                   <input
-                    aria-label="Часы"
+                    aria-label="Таймер урока"
                     inputMode="numeric"
-                    maxLength={2}
-                    value={timerParts.hours}
-                    onFocus={(e) => e.currentTarget.select()}
-                    onChange={(e) => updateTimerPart("hours", e.target.value)}
-                  />
-                  <i>:</i>
-                  <input
-                    aria-label="Минуты"
-                    inputMode="numeric"
-                    maxLength={2}
-                    value={String(timerParts.minutes).padStart(2, "0")}
-                    onFocus={(e) => e.currentTarget.select()}
-                    onChange={(e) => updateTimerPart("minutes", e.target.value)}
-                  />
-                  <i>:</i>
-                  <input
-                    aria-label="Секунды"
-                    inputMode="numeric"
-                    maxLength={2}
-                    value={String(timerParts.seconds).padStart(2, "0")}
-                    onFocus={(e) => e.currentTarget.select()}
-                    onChange={(e) => updateTimerPart("seconds", e.target.value)}
+                    value={timerDisplay}
+                    onFocus={() => setTimerInputDigits(currentTimerDigits)}
+                    onBlur={() => setTimerInputDigits(null)}
+                    onChange={(e) => updateTimerDigits(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (/^\d$/.test(e.key)) {
+                        e.preventDefault();
+                        updateTimerDigits(`${currentTimerDigits}${e.key}`);
+                      } else if (e.key === "Backspace") {
+                        e.preventDefault();
+                        updateTimerDigits(currentTimerDigits.slice(0, -1));
+                      } else if (e.key === "Delete") {
+                        e.preventDefault();
+                        updateTimerDigits("0");
+                      }
+                    }}
+                    onPaste={(e) => {
+                      e.preventDefault();
+                      updateTimerDigits(
+                        `${currentTimerDigits}${e.clipboardData.getData("text")}`,
+                      );
+                    }}
                   />
                 </span>
               </label>
