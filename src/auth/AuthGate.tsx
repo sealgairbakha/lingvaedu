@@ -10,7 +10,11 @@ function validatePassword(password: string) {
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  const [mode, setMode] = useState<Mode>("login");
+  const [mode, setMode] = useState<Mode>(() =>
+    new URLSearchParams(window.location.search).get("register") === "1"
+      ? "register"
+      : "login",
+  );
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

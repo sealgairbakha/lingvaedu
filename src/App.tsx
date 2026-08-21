@@ -8,6 +8,7 @@ import { CoursesPage } from "./features/courses/CoursesPage";
 import { CourseEditorPage } from "./features/courses/CourseEditorPage";
 import { CoursePlayerPage } from "./features/courses/CoursePlayerPage";
 import { ProfilePage } from "./features/profile/ProfilePage";
+import { UsersPage } from "./features/users/UsersPage";
 
 type Page =
   | "overview"
@@ -227,7 +228,6 @@ function Sidebar({
                   >
                     <i><NavIcon name={item.id} /></i>
                     {item.label}
-                    {item.id === "people" && <em>1 248</em>}
                   </button>
                 ))}
               </div>
@@ -1567,7 +1567,7 @@ export default function App() {
     ) : page === "profile" ? (
       <ProfilePage />
     ) : page === "people" ? (
-      <People />
+      <UsersPage />
     ) : page === "groups" ? (
       <Groups />
     ) : page === "reports" ? (
