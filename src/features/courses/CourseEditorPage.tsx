@@ -128,6 +128,7 @@ export function CourseEditorPage() {
   );
   const colorPickerRef = useRef<HTMLDetailsElement>(null);
   const blockPaletteRef = useRef<HTMLElement>(null);
+  const lessonDescriptionRef = useRef<HTMLTextAreaElement>(null);
   const [course, setCourse] = useState<Course | null>(source || null);
   const [moduleId, setModuleId] = useState(source?.modules[0]?.id || "");
   const [lessonId, setLessonId] = useState(
@@ -268,6 +269,21 @@ export function CourseEditorPage() {
   const lesson =
     module?.lessons.find((x) => x.id === lessonId) || module?.lessons[0];
   const block = lesson?.blocks.find((x) => x.id === selected);
+  const totalTimeSeconds = Math.max(
+    0,
+    Math.round((lesson?.timeLimit || 0) * 60),
+  );
+  const timerParts = {
+    hours: Math.floor(totalTimeSeconds / 3600),
+    minutes: Math.floor((totalTimeSeconds % 3600) / 60),
+    seconds: totalTimeSeconds % 60,
+  };
+  useEffect(() => {
+    const field = lessonDescriptionRef.current;
+    if (!field) return;
+    field.style.height = "0px";
+    field.style.height = `${field.scrollHeight}px`;
+  }, [lesson?.description, lesson?.id]);
   const mutate = (fn: (draft: Course) => Course) => {
     if (course) {
       setCourse(fn(structuredClone(course)));
@@ -289,6 +305,17 @@ export function CourseEditorPage() {
       ),
     }));
   const updateBlocks = (blocks: LessonBlock[]) => updateLesson({ blocks });
+  const updateTimerPart = (
+    part: "hours" | "minutes" | "seconds",
+    rawValue: string,
+  ) => {
+    const maximum = part === "hours" ? 99 : 59;
+    const value = Math.min(maximum, Math.max(0, Number(rawValue) || 0));
+    const next = { ...timerParts, [part]: value };
+    updateLesson({
+      timeLimit: (next.hours * 3600 + next.minutes * 60 + next.seconds) / 60,
+    });
+  };
   const startDragVisual = (
     element: HTMLElement,
     kind: BlockKind,
@@ -516,10 +543,6 @@ export function CourseEditorPage() {
           </svg>
         </button>
         <div className="courseIdentity">
-          <div className="courseIdentityLabel">
-            <span>НАЗВАНИЕ КУРСА</span>
-            <em>Можно редактировать</em>
-          </div>
           <label className="courseTitleControl">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="m4 16.5-.5 4 4-.5L18.7 8.8a2.1 2.1 0 0 0-3-3z" />
@@ -533,7 +556,6 @@ export function CourseEditorPage() {
               onChange={(e) => mutate((c) => ({ ...c, title: e.target.value }))}
             />
           </label>
-          <b>Текущий урок: {lesson?.title || "не выбран"}</b>
         </div>
         <div className="editorPanelToggles">
           <button
@@ -705,12 +727,17 @@ export function CourseEditorPage() {
                 onChange={(e) => updateLesson({ title: e.target.value })}
               />
               <textarea
+                ref={lessonDescriptionRef}
                 aria-label="Описание урока"
                 maxLength={250}
                 value={(lesson?.description || "").slice(0, 250)}
                 onChange={(e) =>
                   updateLesson({ description: e.target.value.slice(0, 250) })
                 }
+                onInput={(e) => {
+                  e.currentTarget.style.height = "0px";
+                  e.currentTarget.style.height = `${e.currentTarget.scrollHeight}px`;
+                }}
                 placeholder="Описание урока"
               />
               <div className="lessonDescriptionMeta">
@@ -730,15 +757,36 @@ export function CourseEditorPage() {
                 </span>
                 <span className="lessonSettingCopy">
                   <b>Таймер</b>
-                  <small>минут</small>
+                  <small>ч : мин : сек</small>
                 </span>
-                <input
-                  aria-label="Лимит времени урока в минутах"
-                  type="number"
-                  min="0"
-                  value={lesson?.timeLimit || 0}
-                  onChange={(e) => updateLesson({ timeLimit: +e.target.value })}
-                />
+                <span className="lessonTimerInput" aria-label="Таймер урока">
+                  <input
+                    aria-label="Часы"
+                    inputMode="numeric"
+                    maxLength={2}
+                    value={timerParts.hours}
+                    onFocus={(e) => e.currentTarget.select()}
+                    onChange={(e) => updateTimerPart("hours", e.target.value)}
+                  />
+                  <i>:</i>
+                  <input
+                    aria-label="Минуты"
+                    inputMode="numeric"
+                    maxLength={2}
+                    value={String(timerParts.minutes).padStart(2, "0")}
+                    onFocus={(e) => e.currentTarget.select()}
+                    onChange={(e) => updateTimerPart("minutes", e.target.value)}
+                  />
+                  <i>:</i>
+                  <input
+                    aria-label="Секунды"
+                    inputMode="numeric"
+                    maxLength={2}
+                    value={String(timerParts.seconds).padStart(2, "0")}
+                    onFocus={(e) => e.currentTarget.select()}
+                    onChange={(e) => updateTimerPart("seconds", e.target.value)}
+                  />
+                </span>
               </label>
               <label className="lessonSettingField">
                 <span className="lessonSettingIcon" aria-hidden="true">
