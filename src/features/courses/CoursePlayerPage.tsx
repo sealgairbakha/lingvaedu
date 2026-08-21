@@ -350,7 +350,15 @@ export function CoursePlayerPage() {
   return (
     <main className="coursePlayer fade">
       <header className="playerHeader">
-        <button onClick={() => navigate("/courses")}>← Все курсы</button>
+        <button
+          className="playerCoursesBack"
+          onClick={() => navigate("/courses")}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m14.5 6.5-5.5 5.5 5.5 5.5" />
+          </svg>
+          <span>КУРСЫ</span>
+        </button>
         <div>
           <small>{course.language}</small>
           <b>{course.title}</b>
