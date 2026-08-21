@@ -505,8 +505,15 @@ export function CourseEditorPage() {
   return (
     <main className="editorPage courseEditor fade">
       <div className="editorTop">
-        <button className="backBtn" onClick={() => navigate("/courses")}>
-          ←
+        <button
+          className="backBtn"
+          aria-label="Вернуться к курсам"
+          title="Вернуться к курсам"
+          onClick={() => navigate("/courses")}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m14.5 6-6 6 6 6" />
+          </svg>
         </button>
         <div className="courseIdentity">
           <small>НАЗВАНИЕ КУРСА</small>
@@ -673,31 +680,65 @@ export function CourseEditorPage() {
         </div>
         <section className="canvas">
           <div className="canvasHead">
-            <div>
-              <span>УРОК</span>
+            <div className="lessonOverview">
+              <div className="lessonEyebrow">
+                <span className="lessonEyebrowIcon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M7 3.5h7l3 3V20.5H7z" />
+                    <path d="M14 3.5v3h3M9.5 11h5M9.5 14.5h5" />
+                  </svg>
+                </span>
+                <span>УРОК</span>
+              </div>
               <input
+                aria-label="Название урока"
                 value={lesson?.title || ""}
                 onChange={(e) => updateLesson({ title: e.target.value })}
               />
               <textarea
+                aria-label="Описание урока"
                 value={lesson?.description || ""}
                 onChange={(e) => updateLesson({ description: e.target.value })}
                 placeholder="Описание урока"
               />
             </div>
             <div className="lessonSettings">
-              <label>
-                Лимит, мин
+              <div className="lessonSettingsHead">
+                <span>Ограничения</span>
+                <small>0 — без ограничений</small>
+              </div>
+              <label className="lessonSettingField">
+                <span className="lessonSettingIcon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="13" r="7" />
+                    <path d="M12 9v4l2.5 1.5M9 3h6" />
+                  </svg>
+                </span>
+                <span className="lessonSettingCopy">
+                  <b>Таймер</b>
+                  <small>минут</small>
+                </span>
                 <input
+                  aria-label="Лимит времени урока в минутах"
                   type="number"
                   min="0"
                   value={lesson?.timeLimit || 0}
                   onChange={(e) => updateLesson({ timeLimit: +e.target.value })}
                 />
               </label>
-              <label>
-                Попытки
+              <label className="lessonSettingField">
+                <span className="lessonSettingIcon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M6.2 8.2A7 7 0 1 1 5 15" />
+                    <path d="M6 4.5v4h4" />
+                  </svg>
+                </span>
+                <span className="lessonSettingCopy">
+                  <b>Попытки</b>
+                  <small>раз</small>
+                </span>
                 <input
+                  aria-label="Количество попыток прохождения урока"
                   type="number"
                   min="0"
                   value={lesson?.attempts || 0}
