@@ -516,15 +516,24 @@ export function CourseEditorPage() {
           </svg>
         </button>
         <div className="courseIdentity">
-          <small>НАЗВАНИЕ КУРСА</small>
-          <input
-            aria-label="Название курса"
-            className="courseTitleInput"
-            value={course.title}
-            placeholder="Введите название курса"
-            onChange={(e) => mutate((c) => ({ ...c, title: e.target.value }))}
-          />
-          <b>{lesson?.title || "Добавьте урок"}</b>
+          <div className="courseIdentityLabel">
+            <span>НАЗВАНИЕ КУРСА</span>
+            <em>Можно редактировать</em>
+          </div>
+          <label className="courseTitleControl">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m4 16.5-.5 4 4-.5L18.7 8.8a2.1 2.1 0 0 0-3-3z" />
+              <path d="m14.5 7 2.5 2.5" />
+            </svg>
+            <input
+              aria-label="Название курса"
+              className="courseTitleInput"
+              value={course.title}
+              placeholder="Введите название курса"
+              onChange={(e) => mutate((c) => ({ ...c, title: e.target.value }))}
+            />
+          </label>
+          <b>Текущий урок: {lesson?.title || "не выбран"}</b>
         </div>
         <div className="editorPanelToggles">
           <button
@@ -688,7 +697,7 @@ export function CourseEditorPage() {
                     <path d="M14 3.5v3h3M9.5 11h5M9.5 14.5h5" />
                   </svg>
                 </span>
-                <span>УРОК</span>
+                <span>ОГЛАВЛЕНИЕ УРОКА</span>
               </div>
               <input
                 aria-label="Название урока"
@@ -697,16 +706,21 @@ export function CourseEditorPage() {
               />
               <textarea
                 aria-label="Описание урока"
-                value={lesson?.description || ""}
-                onChange={(e) => updateLesson({ description: e.target.value })}
+                maxLength={250}
+                value={(lesson?.description || "").slice(0, 250)}
+                onChange={(e) =>
+                  updateLesson({ description: e.target.value.slice(0, 250) })
+                }
                 placeholder="Описание урока"
               />
+              <div className="lessonDescriptionMeta">
+                <small>Краткое описание содержания урока</small>
+                <span>
+                  {Math.min(lesson?.description.length || 0, 250)} / 250
+                </span>
+              </div>
             </div>
             <div className="lessonSettings">
-              <div className="lessonSettingsHead">
-                <span>Ограничения</span>
-                <small>0 — без ограничений</small>
-              </div>
               <label className="lessonSettingField">
                 <span className="lessonSettingIcon" aria-hidden="true">
                   <svg viewBox="0 0 24 24">
@@ -745,6 +759,9 @@ export function CourseEditorPage() {
                   onChange={(e) => updateLesson({ attempts: +e.target.value })}
                 />
               </label>
+              <small className="lessonSettingsHint">
+                Значение 0 — без ограничений
+              </small>
             </div>
           </div>
           <div
