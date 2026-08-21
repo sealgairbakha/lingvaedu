@@ -79,36 +79,26 @@ function BlockIcon({ kind }: { kind: BlockKind }) {
   );
 }
 
-function setFullDragImage(
-  element: HTMLElement,
-  dataTransfer: DataTransfer,
-  clientX: number,
-  clientY: number,
-) {
-  const rect = element.getBoundingClientRect();
-  const host = document.createElement("div");
-  host.className = element.classList.contains("lessonBlock")
-    ? "editorDragGhostHost blockCanvas"
-    : "editorDragGhostHost blockPalette";
-  const clone = element.cloneNode(true) as HTMLElement;
-  clone.classList.remove(
-    "dragging",
-    "paletteDragging",
-    "selected",
-    "dropBefore",
-    "dropAfter",
-  );
-  clone.classList.add("editorDragGhost");
-  clone.style.width = `${rect.width}px`;
-  host.appendChild(clone);
-  document.body.appendChild(host);
-  dataTransfer.setDragImage(
-    clone,
-    Math.max(0, Math.min(rect.width, clientX - rect.left)),
-    Math.max(0, Math.min(rect.height, clientY - rect.top)),
-  );
-  window.setTimeout(() => host.remove(), 0);
+function hideNativeDragImage(dataTransfer: DataTransfer) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1;
+  canvas.height = 1;
+  dataTransfer.setDragImage(canvas, 0, 0);
 }
+
+type DragVisual = {
+  kind: BlockKind;
+  title: string;
+  hint: string;
+  x: number;
+  y: number;
+  offsetX: number;
+  offsetY: number;
+  sourceX: number;
+  sourceY: number;
+  width: number;
+  returning?: boolean;
+};
 const makeBlock = (kind: BlockKind): LessonBlock => ({
   id: uid(),
   kind,
@@ -149,6 +139,8 @@ export function CourseEditorPage() {
     null,
   );
   const [paletteDropActive, setPaletteDropActive] = useState(false);
+  const [dragVisual, setDragVisual] = useState<DragVisual | null>(null);
+  const dragDroppedRef = useRef(false);
   const [dropTarget, setDropTarget] = useState<{
     id: string;
     edge: "before" | "after";
@@ -249,6 +241,19 @@ export function CourseEditorPage() {
     return () => window.cancelAnimationFrame(frame);
   }, [mobilePanel]);
   useEffect(() => {
+    if (!dragging && !paletteDragging) return;
+    const followPointer = (event: DragEvent) => {
+      if (!event.clientX && !event.clientY) return;
+      setDragVisual((current) =>
+        current && !current.returning
+          ? { ...current, x: event.clientX, y: event.clientY }
+          : current,
+      );
+    };
+    window.addEventListener("dragover", followPointer);
+    return () => window.removeEventListener("dragover", followPointer);
+  }, [dragging, paletteDragging]);
+  useEffect(() => {
     if (course || !source) return;
     const timer = window.setTimeout(() => {
       setCourse(source);
@@ -284,6 +289,51 @@ export function CourseEditorPage() {
       ),
     }));
   const updateBlocks = (blocks: LessonBlock[]) => updateLesson({ blocks });
+  const startDragVisual = (
+    element: HTMLElement,
+    kind: BlockKind,
+    title: string,
+    hint: string,
+    clientX: number,
+    clientY: number,
+  ) => {
+    const rect = element.getBoundingClientRect();
+    dragDroppedRef.current = false;
+    setDragVisual({
+      kind,
+      title,
+      hint,
+      x: clientX,
+      y: clientY,
+      offsetX: Math.max(0, Math.min(rect.width, clientX - rect.left)),
+      offsetY: Math.max(0, Math.min(rect.height, clientY - rect.top)),
+      sourceX: rect.left,
+      sourceY: rect.top,
+      width: rect.width,
+    });
+  };
+  const completeDragDrop = () => {
+    dragDroppedRef.current = true;
+    setDragVisual(null);
+  };
+  const finishDragVisual = () => {
+    if (dragDroppedRef.current) {
+      dragDroppedRef.current = false;
+      setDragVisual(null);
+      return;
+    }
+    setDragVisual((current) =>
+      current
+        ? {
+            ...current,
+            x: current.sourceX + current.offsetX,
+            y: current.sourceY + current.offsetY,
+            returning: true,
+          }
+        : null,
+    );
+    window.setTimeout(() => setDragVisual(null), 280);
+  };
   const addModule = () =>
     mutate((c) => {
       const id = uid(),
@@ -674,6 +724,7 @@ export function CourseEditorPage() {
               if (!paletteDragging) return;
               e.preventDefault();
               dropPaletteBlock(paletteDragging);
+              completeDragDrop();
               setPaletteDragging(null);
               setPaletteDropActive(false);
               setDropTarget(null);
@@ -710,6 +761,8 @@ export function CourseEditorPage() {
                       dropTarget.id,
                       dropTarget.edge,
                     );
+                  if ((dragging || paletteDragging) && dropTarget)
+                    completeDragDrop();
                   setDragging(null);
                   setPaletteDragging(null);
                   setPaletteDropActive(false);
@@ -725,17 +778,26 @@ export function CourseEditorPage() {
                     e.stopPropagation();
                     e.dataTransfer.effectAllowed = "move";
                     e.dataTransfer.setData("text/plain", b.id);
+                    hideNativeDragImage(e.dataTransfer);
                     const card = e.currentTarget.closest(".lessonBlock");
-                    if (card instanceof HTMLElement)
-                      setFullDragImage(
+                    const descriptor = palette.find(
+                      (item) =>
+                        item.kind === (b.kind === "media" ? "video" : b.kind),
+                    );
+                    if (card instanceof HTMLElement) {
+                      startDragVisual(
                         card,
-                        e.dataTransfer,
+                        b.kind,
+                        b.title,
+                        descriptor?.hint || "",
                         e.clientX,
                         e.clientY,
                       );
+                    }
                     setDragging(b.id);
                   }}
                   onDragEnd={() => {
+                    finishDragVisual();
                     setDragging(null);
                     setDropTarget(null);
                   }}
@@ -1023,9 +1085,12 @@ export function CourseEditorPage() {
                     "application/x-lingva-block-kind",
                     p.kind,
                   );
-                  setFullDragImage(
+                  hideNativeDragImage(e.dataTransfer);
+                  startDragVisual(
                     e.currentTarget,
-                    e.dataTransfer,
+                    p.kind,
+                    p.title,
+                    p.hint,
                     e.clientX,
                     e.clientY,
                   );
@@ -1033,6 +1098,7 @@ export function CourseEditorPage() {
                   setPaletteDragging(p.kind);
                 }}
                 onDragEnd={() => {
+                  finishDragVisual();
                   setPaletteDragging(null);
                   setPaletteDropActive(false);
                   setDropTarget(null);
@@ -1055,6 +1121,30 @@ export function CourseEditorPage() {
           )}
         </aside>
       </div>
+      {dragVisual && (
+        <div
+          className={`editorFloatingDrag ${dragVisual.returning ? "returning" : ""}`}
+          style={
+            {
+              left: dragVisual.x - dragVisual.offsetX,
+              top: dragVisual.y - dragVisual.offsetY,
+              width: dragVisual.width,
+            } as CSSProperties
+          }
+          aria-hidden="true"
+        >
+          <span className="drag">⋮⋮</span>
+          <i
+            className={`blockGlyph ${dragVisual.kind === "media" ? "video" : dragVisual.kind}`}
+          >
+            <BlockIcon kind={dragVisual.kind} />
+          </i>
+          <span>
+            <b>{dragVisual.title}</b>
+            <small>{dragVisual.hint}</small>
+          </span>
+        </div>
+      )}
       {preview && (
         <div className="courseModal" onClick={() => setPreview(false)}>
           <div onClick={(e) => e.stopPropagation()}>
