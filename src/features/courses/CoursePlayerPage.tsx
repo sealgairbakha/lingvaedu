@@ -158,6 +158,7 @@ export function CoursePlayerPage() {
   );
   const [lessonId, setLessonId] = useState(params.get("lesson") || "");
   const [completed, setCompleted] = useState<string[]>([]);
+  const [mobileTreeOpen, setMobileTreeOpen] = useState(false);
   const [lessonRuns, setLessonRuns] = useState<Record<string, LessonRun>>({});
   const [runsReady, setRunsReady] = useState(false);
   const [now, setNow] = useState(() => Date.now());
@@ -216,6 +217,8 @@ export function CoursePlayerPage() {
     lessons.findIndex((x) => x.lesson.id === lessonId),
   );
   const current = lessons[currentIndex]?.lesson || lessons[0]?.lesson;
+  const currentModule = lessons[currentIndex]?.module || lessons[0]?.module;
+  const isLastLesson = currentIndex === lessons.length - 1;
   const currentRun = current ? lessonRuns[current.id] : undefined;
   const isRestricted = Boolean(
     current && (current.timeLimit > 0 || current.attempts > 0),
@@ -278,6 +281,7 @@ export function CoursePlayerPage() {
   }, [current, currentRun?.deadline, currentRun?.expired]);
   const selectLesson = (id: string) => {
     setLessonId(id);
+    setMobileTreeOpen(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
   const complete = () => {
@@ -370,30 +374,54 @@ export function CoursePlayerPage() {
         )}
       </header>
       <div className="playerLayout">
-        <aside className="playerTree">
-          {course.modules.map((module, mi) => (
-            <div key={module.id}>
-              <h3>
-                <span>{mi + 1}</span>
-                {module.title}
-              </h3>
-              {module.lessons.map((lesson, li) => (
-                <button
-                  key={lesson.id}
-                  className={current?.id === lesson.id ? "active" : ""}
-                  onClick={() => selectLesson(lesson.id)}
-                >
-                  <i className={completed.includes(lesson.id) ? "done" : ""}>
-                    {completed.includes(lesson.id) ? "✓" : li + 1}
-                  </i>
-                  <span>
-                    {lesson.title}
-                    <small>{lesson.blocks.length} блоков</small>
-                  </span>
-                </button>
-              ))}
-            </div>
-          ))}
+        <aside
+          className={`playerTree ${mobileTreeOpen ? "mobileTreeOpen" : ""}`}
+        >
+          <button
+            className="playerTreeToggle"
+            aria-expanded={mobileTreeOpen}
+            aria-controls="course-player-lessons"
+            onClick={() => setMobileTreeOpen((open) => !open)}
+          >
+            <span>
+              <small>{currentModule?.title || "Содержание курса"}</small>
+              <b>{current?.title || "Выберите урок"}</b>
+            </span>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m7 10 5 5 5-5" />
+            </svg>
+          </button>
+          <div className="playerTreeContent" id="course-player-lessons">
+            {course.modules.map((module, mi) => (
+              <div key={module.id}>
+                <h3>
+                  <span>{mi + 1}</span>
+                  {module.title}
+                </h3>
+                {module.lessons.map((lesson, li) => (
+                  <button
+                    key={lesson.id}
+                    className={current?.id === lesson.id ? "active" : ""}
+                    onClick={() => selectLesson(lesson.id)}
+                  >
+                    <i className={completed.includes(lesson.id) ? "done" : ""}>
+                      {completed.includes(lesson.id) ? (
+                        <svg viewBox="0 0 20 20" aria-hidden="true">
+                          <path d="m5.5 10.2 2.8 2.8 6.2-6.2" />
+                        </svg>
+                      ) : (
+                        li + 1
+                      )}
+                    </i>
+                    <span>
+                      {lesson.title}
+                      <small>{lesson.blocks.length} блоков</small>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            ))}
+          </div>
         </aside>
         <article className="lessonReader">
           {current ? (
@@ -486,18 +514,19 @@ export function CoursePlayerPage() {
                   )}
                   <footer className="readerFooter">
                     <button
-                      className="btn ghost"
+                      className="btn ghost readerBackButton"
                       disabled={currentIndex === 0}
                       onClick={() =>
                         selectLesson(lessons[currentIndex - 1].lesson.id)
                       }
                     >
-                      ← Назад
+                      Назад
                     </button>
-                    <button className="btn primary" onClick={complete}>
-                      {currentIndex === lessons.length - 1
-                        ? "Завершить курс ✓"
-                        : "Завершить и продолжить →"}
+                    <button
+                      className="btn primary readerNextButton"
+                      onClick={complete}
+                    >
+                      {isLastLesson ? "Завершить курс" : "Дальше"}
                     </button>
                   </footer>
                 </>
