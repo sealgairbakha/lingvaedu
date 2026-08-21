@@ -620,6 +620,8 @@ export function CourseEditorPage() {
                   }
                 />
                 <button
+                  aria-label={`Добавить урок в модуль «${m.title}»`}
+                  title="Добавить урок"
                   onClick={() => {
                     setModuleId(m.id);
                     addLesson();
