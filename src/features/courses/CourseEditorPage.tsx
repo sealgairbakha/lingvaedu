@@ -862,9 +862,9 @@ export function CourseEditorPage() {
           className={`blockPalette ${mobilePanel === "blocks" ? "editorPanelOpen" : ""}`}
         >
           <section className="coursePanelSettings">
-            <div>
-              <span>НАСТРОЙКИ КУРСА</span>
-              <small>Основные параметры</small>
+            <div className="paletteHeader courseSettingsHeader">
+              <span>Настройки</span>
+              <p>Основные параметры курса</p>
             </div>
             <label>
               <span>Язык курса</span>
@@ -936,7 +936,7 @@ export function CourseEditorPage() {
               </select>
             </label>
             <div className="courseStylePreview">
-              <small>ПРЕВЬЮ КАРТОЧКИ</small>
+              <small>Превью карточки</small>
               <div className="courseStylePreviewCard">
                 <div
                   className="courseStylePreviewCover"
@@ -964,7 +964,7 @@ export function CourseEditorPage() {
             </div>
           </section>
           <div className="paletteHeader">
-            <span>{block ? "НАСТРОЙКА БЛОКА" : "БЛОКИ"}</span>
+            <span>{block ? "Настройка блока" : "Блоки"}</span>
             <p>
               {block
                 ? "Изменения применяются сразу"
