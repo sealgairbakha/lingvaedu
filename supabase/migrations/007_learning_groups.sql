@@ -68,3 +68,13 @@ for select to authenticated using (
 grant select, insert, update, delete on public.learning_groups to authenticated;
 grant select, insert, update, delete on public.learning_group_members to authenticated;
 grant select, insert, update, delete on public.learning_group_courses to authenticated;
+
+-- The Vercel groups API uses service_role to read Auth users and synchronize
+-- group course access. Explicit grants keep this migration portable between
+-- projects with different default privilege settings.
+grant usage on schema public to service_role;
+grant select on public.courses to service_role;
+grant select, insert, update, delete on public.course_enrollments to service_role;
+grant select, insert, update, delete on public.learning_groups to service_role;
+grant select, insert, update, delete on public.learning_group_members to service_role;
+grant select, insert, update, delete on public.learning_group_courses to service_role;

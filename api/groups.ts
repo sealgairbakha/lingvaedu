@@ -79,7 +79,12 @@ export default {
         ]);
       const firstError = groupsResult.error || membersResult.error || coursesResult.error ||
         usersResult.error || catalogResult.error;
-      if (firstError) return json({ error: firstError.message }, 502);
+      if (firstError) {
+        const permissionHint = firstError.message.toLowerCase().includes("permission denied")
+          ? " Проверьте, что SUPABASE_SERVICE_ROLE_KEY содержит именно service_role key, и выполните миграцию 008_groups_service_permissions.sql."
+          : "";
+        return json({ error: `${firstError.message}.${permissionHint}` }, 502);
+      }
 
       const users = usersResult.data.users.map(publicUser);
       const userMap = new Map(users.map((user) => [user.id, user]));
