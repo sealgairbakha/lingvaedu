@@ -4,7 +4,11 @@ values (
   'course-media',
   true,
   524288000,
-  array['video/mp4', 'video/webm', 'video/quicktime', 'audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4', 'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif']
+  array[
+    'video/mp4', 'video/webm', 'video/quicktime',
+    'audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4',
+    'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'
+  ]
 )
 on conflict (id) do update set
   public = excluded.public,

@@ -71,6 +71,23 @@ function BlockView({ block }: { block: LessonBlock }) {
         )}
       </section>
     );
+  if (block.kind === "image")
+    return (
+      <section className="learningBlock imageLearning">
+        <div className="mediaBlockHeading">
+          <span>▧</span>
+          <div>
+            <small>ФОТО</small>
+            <h3>{block.title}</h3>
+          </div>
+        </div>
+        {block.content ? (
+          <img src={block.content} alt={block.title} loading="lazy" />
+        ) : (
+          <p className="emptyMaterial">Фото пока не добавлено.</p>
+        )}
+      </section>
+    );
   if (block.kind === "video" || block.kind === "media") {
     const youtubeId = block.content.match(
       /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{6,})/,

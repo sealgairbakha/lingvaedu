@@ -28,6 +28,11 @@ const palette: {
     hint: "MP3, WAV, OGG и другие форматы",
   },
   {
+    kind: "image",
+    title: "Фото",
+    hint: "PNG, JPG, WebP или вставка через Ctrl + V",
+  },
+  {
     kind: "quiz",
     title: "Задание",
     hint: "Вопрос и варианты ответов",
@@ -56,6 +61,13 @@ function BlockIcon({ kind }: { kind: BlockKind }) {
           <path d="M9 18V7l8-2v11" />
           <circle cx="6.5" cy="18" r="2.5" />
           <circle cx="14.5" cy="16" r="2.5" />
+        </>
+      )}
+      {normalized === "image" && (
+        <>
+          <rect x="3.5" y="4.5" width="17" height="15" rx="3" />
+          <circle cx="9" cy="9" r="1.7" />
+          <path d="m5.5 17 4.2-4.2 2.7 2.7 2.3-2.3 3.8 3.8" />
         </>
       )}
       {normalized === "quiz" && (
@@ -256,6 +268,15 @@ export function CourseEditorPage() {
     return () => window.removeEventListener("dragover", followPointer);
   }, [dragging, paletteDragging]);
   useEffect(() => {
+    if (!selected) return;
+    const frame = window.requestAnimationFrame(() => {
+      document
+        .querySelector<HTMLElement>(`[data-block-id="${selected}"]`)
+        ?.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [selected]);
+  useEffect(() => {
     if (course || !source) return;
     const timer = window.setTimeout(() => {
       setCourse(source);
@@ -312,6 +333,14 @@ export function CourseEditorPage() {
       ),
     }));
   const updateBlocks = (blocks: LessonBlock[]) => updateLesson({ blocks });
+  const updateBlock = (id: string, patch: Partial<LessonBlock>) => {
+    if (!lesson) return;
+    updateBlocks(
+      lesson.blocks.map((item) =>
+        item.id === id ? { ...item, ...patch } : item,
+      ),
+    );
+  };
   const updateTimerDigits = (rawValue: string) => {
     const digits = rawValue.replace(/\D/g, "").slice(-6) || "0";
     const normalized = digits.replace(/^0+(?=\d)/, "");
@@ -460,11 +489,18 @@ export function CourseEditorPage() {
     next.splice(insert, 0, item);
     updateBlocks(next);
   };
-  const uploadMedia = async (file: File) => {
-    if (!block || !lesson || !course || !supabase || !user) return;
+  const uploadAsset = async (targetBlock: LessonBlock, file: File) => {
+    if (!lesson || !course || !supabase || !user) return;
     setUploading(true);
     setUploadError("");
     try {
+      const validType =
+        (targetBlock.kind === "image" && file.type.startsWith("image/")) ||
+        (targetBlock.kind === "audio" && file.type.startsWith("audio/")) ||
+        ((targetBlock.kind === "video" || targetBlock.kind === "media") &&
+          file.type.startsWith("video/"));
+      if (!validType)
+        throw new Error("Формат файла не соответствует выбранному блоку");
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
       const path = `${user.id}/${course.id}/${uid()}-${safeName}`;
       const { error } = await supabase.storage
@@ -474,17 +510,92 @@ export function CourseEditorPage() {
       const { data } = supabase.storage.from("course-media").getPublicUrl(path);
       updateBlocks(
         lesson.blocks.map((x) =>
-          x.id === block.id ? { ...x, content: data.publicUrl } : x,
+          x.id === targetBlock.id ? { ...x, content: data.publicUrl } : x,
         ),
       );
     } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Не удалось загрузить файл";
       setUploadError(
-        error instanceof Error ? error.message : "Не удалось загрузить файл",
+        /bucket not found/i.test(message)
+          ? "Хранилище course-media не создано. Выполните миграцию 005_course_media_images.sql в Supabase."
+          : message,
       );
     } finally {
       setUploading(false);
     }
   };
+  const lessonSettingsEditor = (
+    <div className="lessonSettings lessonSettingsSidebar">
+      <div className="lessonSettingsTitle">
+        <span className="lessonSettingsTitleIcon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="7.5" />
+            <path d="M12 8v4l2.7 1.7M9 3h6" />
+          </svg>
+        </span>
+        <span>ТАЙМЕР И ПОПЫТКИ</span>
+      </div>
+      <label className="lessonSettingField">
+        <span className="lessonSettingIcon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <circle cx="12" cy="13" r="7" />
+            <path d="M12 9v4l2.5 1.5M9 3h6" />
+          </svg>
+        </span>
+        <span className="lessonSettingCopy">
+          <b>Таймер</b>
+        </span>
+        <span className="lessonTimerInput" aria-label="Таймер урока">
+          <input
+            aria-label="Таймер урока"
+            inputMode="numeric"
+            value={timerDisplay}
+            onFocus={() => setTimerInputDigits(currentTimerDigits)}
+            onBlur={() => setTimerInputDigits(null)}
+            onChange={(event) => updateTimerDigits(event.target.value)}
+            onKeyDown={(event) => {
+              if (/^\d$/.test(event.key)) {
+                event.preventDefault();
+                updateTimerDigits(`${currentTimerDigits}${event.key}`);
+              } else if (event.key === "Backspace") {
+                event.preventDefault();
+                updateTimerDigits(currentTimerDigits.slice(0, -1));
+              } else if (event.key === "Delete") {
+                event.preventDefault();
+                updateTimerDigits("0");
+              }
+            }}
+            onPaste={(event) => {
+              event.preventDefault();
+              updateTimerDigits(
+                `${currentTimerDigits}${event.clipboardData.getData("text")}`,
+              );
+            }}
+          />
+        </span>
+      </label>
+      <label className="lessonSettingField">
+        <span className="lessonSettingIcon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M6.2 8.2A7 7 0 1 1 5 15" />
+            <path d="M6 4.5v4h4" />
+          </svg>
+        </span>
+        <span className="lessonSettingCopy">
+          <b>Попытки</b>
+        </span>
+        <input
+          aria-label="Количество попыток прохождения урока"
+          type="number"
+          min="0"
+          value={lesson?.attempts || 0}
+          onChange={(event) => updateLesson({ attempts: +event.target.value })}
+        />
+      </label>
+      <small className="lessonSettingsHint">Значение 0 — без ограничений</small>
+    </div>
+  );
   const save = async () => {
     if (course && !saved && !saving) {
       setSaving(true);
@@ -755,77 +866,6 @@ export function CourseEditorPage() {
                 </span>
               </div>
             </div>
-            <div className="lessonSettings">
-              <div className="lessonSettingsTitle">
-                <span className="lessonSettingsTitleIcon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="7.5" />
-                    <path d="M12 8v4l2.7 1.7M9 3h6" />
-                  </svg>
-                </span>
-                <span>ТАЙМЕР И ПОПЫТКИ</span>
-              </div>
-              <label className="lessonSettingField">
-                <span className="lessonSettingIcon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24">
-                    <circle cx="12" cy="13" r="7" />
-                    <path d="M12 9v4l2.5 1.5M9 3h6" />
-                  </svg>
-                </span>
-                <span className="lessonSettingCopy">
-                  <b>Таймер</b>
-                </span>
-                <span className="lessonTimerInput" aria-label="Таймер урока">
-                  <input
-                    aria-label="Таймер урока"
-                    inputMode="numeric"
-                    value={timerDisplay}
-                    onFocus={() => setTimerInputDigits(currentTimerDigits)}
-                    onBlur={() => setTimerInputDigits(null)}
-                    onChange={(e) => updateTimerDigits(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (/^\d$/.test(e.key)) {
-                        e.preventDefault();
-                        updateTimerDigits(`${currentTimerDigits}${e.key}`);
-                      } else if (e.key === "Backspace") {
-                        e.preventDefault();
-                        updateTimerDigits(currentTimerDigits.slice(0, -1));
-                      } else if (e.key === "Delete") {
-                        e.preventDefault();
-                        updateTimerDigits("0");
-                      }
-                    }}
-                    onPaste={(e) => {
-                      e.preventDefault();
-                      updateTimerDigits(
-                        `${currentTimerDigits}${e.clipboardData.getData("text")}`,
-                      );
-                    }}
-                  />
-                </span>
-              </label>
-              <label className="lessonSettingField">
-                <span className="lessonSettingIcon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24">
-                    <path d="M6.2 8.2A7 7 0 1 1 5 15" />
-                    <path d="M6 4.5v4h4" />
-                  </svg>
-                </span>
-                <span className="lessonSettingCopy">
-                  <b>Попытки</b>
-                </span>
-                <input
-                  aria-label="Количество попыток прохождения урока"
-                  type="number"
-                  min="0"
-                  value={lesson?.attempts || 0}
-                  onChange={(e) => updateLesson({ attempts: +e.target.value })}
-                />
-              </label>
-              <small className="lessonSettingsHint">
-                Значение 0 — без ограничений
-              </small>
-            </div>
           </div>
           <div
             className={`blockCanvas ${paletteDropActive ? "paletteDropActive" : ""}`}
@@ -855,108 +895,258 @@ export function CourseEditorPage() {
             }}
           >
             {lesson?.blocks.map((b) => (
-              <article
+              <div
                 key={b.id}
-                className={`lessonBlock ${selected === b.id ? "selected" : ""} ${dragging === b.id ? "dragging" : ""} ${dropTarget?.id === b.id && dragging !== b.id ? (dropTarget.edge === "before" ? "dropBefore" : "dropAfter") : ""}`}
-                onClick={() => setSelected(b.id)}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  e.dataTransfer.dropEffect = paletteDragging ? "copy" : "move";
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  const edge =
-                    e.clientY < rect.top + rect.height / 2 ? "before" : "after";
-                  if (dropTarget?.id !== b.id || dropTarget.edge !== edge)
-                    setDropTarget({ id: b.id, edge });
-                }}
-                onDragLeave={(e) => {
-                  if (!e.currentTarget.contains(e.relatedTarget as Node))
-                    setDropTarget((current) =>
-                      current?.id === b.id ? null : current,
-                    );
-                }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  if (dragging && dropTarget)
-                    reorder(dragging, dropTarget.id, dropTarget.edge);
-                  if (paletteDragging && dropTarget)
-                    dropPaletteBlock(
-                      paletteDragging,
-                      dropTarget.id,
-                      dropTarget.edge,
-                    );
-                  if ((dragging || paletteDragging) && dropTarget)
-                    completeDragDrop();
-                  setDragging(null);
-                  setPaletteDragging(null);
-                  setPaletteDropActive(false);
-                  setDropTarget(null);
+                className="blockEditorGroup"
+                data-block-id={b.id}
+                tabIndex={-1}
+                onPaste={(event) => {
+                  if (b.kind !== "image") return;
+                  const file = [...event.clipboardData.files].find((item) =>
+                    item.type.startsWith("image/"),
+                  );
+                  if (!file) return;
+                  event.preventDefault();
+                  void uploadAsset(b, file);
                 }}
               >
-                <span
-                  className="drag"
-                  draggable
-                  title="Перетащить блок"
-                  aria-label="Перетащить блок"
-                  onDragStart={(e) => {
-                    e.stopPropagation();
-                    e.dataTransfer.effectAllowed = "move";
-                    e.dataTransfer.setData("text/plain", b.id);
-                    hideNativeDragImage(e.dataTransfer);
-                    const card = e.currentTarget.closest(".lessonBlock");
-                    const descriptor = palette.find(
-                      (item) =>
-                        item.kind === (b.kind === "media" ? "video" : b.kind),
-                    );
-                    if (card instanceof HTMLElement) {
-                      startDragVisual(
-                        card,
-                        b.kind,
-                        b.title,
-                        descriptor?.hint || "",
-                        e.clientX,
-                        e.clientY,
-                      );
-                    }
-                    setDragging(b.id);
+                <article
+                  className={`lessonBlock ${selected === b.id ? "selected" : ""} ${dragging === b.id ? "dragging" : ""} ${dropTarget?.id === b.id && dragging !== b.id ? (dropTarget.edge === "before" ? "dropBefore" : "dropAfter") : ""}`}
+                  onClick={(event) => {
+                    event.currentTarget.parentElement?.focus();
+                    setSelected((current) => (current === b.id ? "" : b.id));
                   }}
-                  onDragEnd={() => {
-                    finishDragVisual();
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = paletteDragging
+                      ? "copy"
+                      : "move";
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const edge =
+                      e.clientY < rect.top + rect.height / 2
+                        ? "before"
+                        : "after";
+                    if (dropTarget?.id !== b.id || dropTarget.edge !== edge)
+                      setDropTarget({ id: b.id, edge });
+                  }}
+                  onDragLeave={(e) => {
+                    if (!e.currentTarget.contains(e.relatedTarget as Node))
+                      setDropTarget((current) =>
+                        current?.id === b.id ? null : current,
+                      );
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (dragging && dropTarget)
+                      reorder(dragging, dropTarget.id, dropTarget.edge);
+                    if (paletteDragging && dropTarget)
+                      dropPaletteBlock(
+                        paletteDragging,
+                        dropTarget.id,
+                        dropTarget.edge,
+                      );
+                    if ((dragging || paletteDragging) && dropTarget)
+                      completeDragDrop();
                     setDragging(null);
+                    setPaletteDragging(null);
+                    setPaletteDropActive(false);
                     setDropTarget(null);
                   }}
                 >
-                  ⋮⋮
-                </span>
-                <div
-                  className={`blockGlyph ${b.kind === "media" ? "video" : b.kind}`}
-                >
-                  <BlockIcon kind={b.kind} />
-                </div>
-                <div>
-                  <b>{b.title}</b>
-                  <p>
-                    {
-                      palette.find(
-                        (p) =>
-                          p.kind === (b.kind === "media" ? "video" : b.kind),
-                      )?.hint
-                    }
-                  </p>
-                </div>
-                <div className="blockActions">
-                  <button
-                    aria-label="Удалить блок"
-                    title="Удалить блок"
-                    onClick={(e) => {
+                  <span
+                    className="drag"
+                    draggable
+                    title="Перетащить блок"
+                    aria-label="Перетащить блок"
+                    onDragStart={(e) => {
                       e.stopPropagation();
-                      updateBlocks(lesson.blocks.filter((x) => x.id !== b.id));
+                      e.dataTransfer.effectAllowed = "move";
+                      e.dataTransfer.setData("text/plain", b.id);
+                      hideNativeDragImage(e.dataTransfer);
+                      const card = e.currentTarget.closest(".lessonBlock");
+                      const descriptor = palette.find(
+                        (item) =>
+                          item.kind === (b.kind === "media" ? "video" : b.kind),
+                      );
+                      if (card instanceof HTMLElement) {
+                        startDragVisual(
+                          card,
+                          b.kind,
+                          b.title,
+                          descriptor?.hint || "",
+                          e.clientX,
+                          e.clientY,
+                        );
+                      }
+                      setDragging(b.id);
+                    }}
+                    onDragEnd={() => {
+                      finishDragVisual();
+                      setDragging(null);
+                      setDropTarget(null);
                     }}
                   >
-                    ×
-                  </button>
-                </div>
-              </article>
+                    ⋮⋮
+                  </span>
+                  <div
+                    className={`blockGlyph ${b.kind === "media" ? "video" : b.kind}`}
+                  >
+                    <BlockIcon kind={b.kind} />
+                  </div>
+                  <div>
+                    <b>{b.title}</b>
+                    <p>
+                      {
+                        palette.find(
+                          (p) =>
+                            p.kind === (b.kind === "media" ? "video" : b.kind),
+                        )?.hint
+                      }
+                    </p>
+                  </div>
+                  <div className="blockActions">
+                    <button
+                      aria-label="Удалить блок"
+                      title="Удалить блок"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        updateBlocks(
+                          lesson.blocks.filter((x) => x.id !== b.id),
+                        );
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                </article>
+                {selected === b.id && (
+                  <div
+                    className="blockInspector inlineBlockInspector"
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    <div className="inlineBlockInspectorHead">
+                      <div>
+                        <small>РЕДАКТОР БЛОКА</small>
+                        <b>{b.title}</b>
+                      </div>
+                      <button
+                        type="button"
+                        aria-label="Закрыть редактор блока"
+                        onClick={() => setSelected("")}
+                      >
+                        ×
+                      </button>
+                    </div>
+                    <label>
+                      Название
+                      <input
+                        value={b.title}
+                        onChange={(event) =>
+                          updateBlock(b.id, { title: event.target.value })
+                        }
+                      />
+                    </label>
+                    <label>
+                      {b.kind === "video" || b.kind === "media"
+                        ? "Ссылка на YouTube или видео"
+                        : b.kind === "audio"
+                          ? "Ссылка на аудио"
+                          : b.kind === "image"
+                            ? "Ссылка на изображение"
+                            : "Содержимое"}
+                      {b.kind === "text" ||
+                      b.kind === "quiz" ||
+                      b.kind === "html" ? (
+                        <textarea
+                          rows={8}
+                          value={b.content}
+                          onChange={(event) =>
+                            updateBlock(b.id, { content: event.target.value })
+                          }
+                        />
+                      ) : (
+                        <input
+                          type="url"
+                          placeholder={
+                            b.kind === "audio"
+                              ? "https://.../audio.mp3"
+                              : b.kind === "image"
+                                ? "https://.../photo.jpg"
+                                : "https://youtube.com/watch?v=..."
+                          }
+                          value={b.content}
+                          onChange={(event) =>
+                            updateBlock(b.id, { content: event.target.value })
+                          }
+                        />
+                      )}
+                    </label>
+                    {(b.kind === "video" ||
+                      b.kind === "media" ||
+                      b.kind === "audio" ||
+                      b.kind === "image") && (
+                      <div className="mediaUploader">
+                        <span>
+                          {b.kind === "image"
+                            ? "ЗАГРУЗИТЕ ФАЙЛ ИЛИ ВСТАВЬТЕ ЧЕРЕЗ CTRL + V"
+                            : "ИЛИ ЗАГРУЗИТЕ ФАЙЛ"}
+                        </span>
+                        <label className={uploading ? "uploading" : ""}>
+                          ↥{" "}
+                          <b>
+                            {uploading
+                              ? "Загрузка…"
+                              : b.kind === "audio"
+                                ? "Выбрать аудиофайл"
+                                : b.kind === "image"
+                                  ? "Выбрать фото"
+                                  : "Выбрать видеофайл"}
+                          </b>
+                          <small>
+                            {b.kind === "audio"
+                              ? "MP3, WAV или OGG"
+                              : b.kind === "image"
+                                ? "PNG, JPG, WebP, GIF или AVIF"
+                                : "MP4, WebM или MOV"}
+                          </small>
+                          <input
+                            type="file"
+                            disabled={uploading}
+                            accept={
+                              b.kind === "audio"
+                                ? "audio/mpeg,audio/wav,audio/ogg,audio/mp4"
+                                : b.kind === "image"
+                                  ? "image/jpeg,image/png,image/webp,image/gif,image/avif"
+                                  : "video/mp4,video/webm,video/quicktime"
+                            }
+                            onChange={(event) => {
+                              const file = event.target.files?.[0];
+                              if (file) void uploadAsset(b, file);
+                              event.currentTarget.value = "";
+                            }}
+                          />
+                        </label>
+                        {uploadError && (
+                          <p className="uploadError">{uploadError}</p>
+                        )}
+                        {b.content && (
+                          <>
+                            <p className="mediaReady">✓ Материал добавлен</p>
+                            {b.kind === "image" && (
+                              <img
+                                className="imageEditorPreview"
+                                src={b.content}
+                                alt={b.title}
+                              />
+                            )}
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             ))}
             {!lesson?.blocks.length && (
               <div className="emptyCanvas">
@@ -1087,16 +1277,24 @@ export function CourseEditorPage() {
               </div>
             </div>
           </section>
+          {lessonSettingsEditor}
           <div className="paletteHeader">
-            <span>{block ? "Настройка блока" : "Блоки"}</span>
-            <p>
-              {block
-                ? "Изменения применяются сразу"
-                : "Перетащите блок в урок или нажмите на него"}
-            </p>
+            <span>Блоки</span>
+            <p>Перетащите блок в урок или нажмите на него</p>
           </div>
-          {block ? (
-            <div className="blockInspector">
+          {block && selected === "__legacy-sidebar-editor__" ? (
+            <div
+              className="blockInspector"
+              onPaste={(event) => {
+                if (block.kind !== "image") return;
+                const file = [...event.clipboardData.files].find((item) =>
+                  item.type.startsWith("image/"),
+                );
+                if (!file) return;
+                event.preventDefault();
+                void uploadAsset(block, file);
+              }}
+            >
               <label>
                 Название
                 <input
@@ -1115,7 +1313,9 @@ export function CourseEditorPage() {
                   ? "Ссылка на YouTube или видео"
                   : block.kind === "audio"
                     ? "Ссылка на аудио"
-                    : "Содержимое"}
+                    : block.kind === "image"
+                      ? "Ссылка на изображение"
+                      : "Содержимое"}
                 {block.kind === "text" ||
                 block.kind === "quiz" ||
                 block.kind === "html" ? (
@@ -1138,7 +1338,9 @@ export function CourseEditorPage() {
                     placeholder={
                       block.kind === "audio"
                         ? "https://.../audio.mp3"
-                        : "https://youtube.com/watch?v=..."
+                        : block.kind === "image"
+                          ? "https://.../photo.jpg"
+                          : "https://youtube.com/watch?v=..."
                     }
                     value={block.content}
                     onChange={(e) =>
@@ -1155,7 +1357,8 @@ export function CourseEditorPage() {
               </label>
               {(block.kind === "video" ||
                 block.kind === "media" ||
-                block.kind === "audio") && (
+                block.kind === "audio" ||
+                block.kind === "image") && (
                 <div className="mediaUploader">
                   <span>ИЛИ ЗАГРУЗИТЕ ФАЙЛ</span>
                   <label className={uploading ? "uploading" : ""}>
@@ -1165,12 +1368,16 @@ export function CourseEditorPage() {
                         ? "Загрузка…"
                         : block.kind === "audio"
                           ? "Выбрать аудиофайл"
-                          : "Выбрать видеофайл"}
+                          : block.kind === "image"
+                            ? "Выбрать фото"
+                            : "Выбрать видеофайл"}
                     </b>
                     <small>
                       {block.kind === "audio"
                         ? "MP3, WAV или OGG"
-                        : "MP4, WebM или MOV"}
+                        : block.kind === "image"
+                          ? "PNG, JPG, WebP или Ctrl + V"
+                          : "MP4, WebM или MOV"}
                     </small>
                     <input
                       type="file"
@@ -1178,17 +1385,28 @@ export function CourseEditorPage() {
                       accept={
                         block.kind === "audio"
                           ? "audio/mpeg,audio/wav,audio/ogg,audio/mp4"
-                          : "video/mp4,video/webm,video/quicktime"
+                          : block.kind === "image"
+                            ? "image/jpeg,image/png,image/webp,image/gif,image/avif"
+                            : "video/mp4,video/webm,video/quicktime"
                       }
                       onChange={(e) => {
                         const file = e.target.files?.[0];
-                        if (file) void uploadMedia(file);
+                        if (file) void uploadAsset(block, file);
                       }}
                     />
                   </label>
                   {uploadError && <p className="uploadError">{uploadError}</p>}
                   {block.content && (
-                    <p className="mediaReady">✓ Материал добавлен</p>
+                    <>
+                      <p className="mediaReady">✓ Материал добавлен</p>
+                      {block.kind === "image" && (
+                        <img
+                          className="imageEditorPreview"
+                          src={block.content}
+                          alt={block.title}
+                        />
+                      )}
+                    </>
                   )}
                 </div>
               )}
@@ -1287,6 +1505,8 @@ export function CourseEditorPage() {
                   </div>
                 ) : b.kind === "audio" ? (
                   <audio controls src={b.content} />
+                ) : b.kind === "image" ? (
+                  <img className="lessonImage" src={b.content} alt={b.title} />
                 ) : b.kind === "video" || b.kind === "media" ? (
                   <video className="lessonVideo" controls src={b.content} />
                 ) : b.kind === "file" ? (
