@@ -300,23 +300,47 @@
   justify-content: center;
   gap: 8px;
   width: 100%;
-  min-height: 42px;
-  margin-top: 11px;
-  border: 1px dashed #bbb2f7;
-  border-radius: 10px;
-  background: #f7f5ff;
+  min-height: 46px;
+  margin-top: 12px;
+  border: 1px solid #d8d2ff;
+  border-radius: 12px;
+  background: #f4f1ff;
   color: var(--purple);
-  font-size:var(--font-size-ui);
-  font-weight: 750;
+  font-size: var(--font-size-ui);
+  font-weight: 850;
+  box-shadow: 0 10px 26px rgba(35, 42, 62, 0.14);
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .taskBuilderAdd:hover {
-  border-style: solid;
-  background: #f0edff;
+  background: var(--purple);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 13px 28px rgba(101, 75, 246, 0.25);
+}
+
+.taskBuilderAdd:active {
+  transform: translateY(0) scale(0.985);
+  box-shadow: 0 6px 16px rgba(101, 75, 246, 0.2);
+}
+
+.taskBuilderAdd:focus-visible {
+  outline: 3px solid rgba(101, 75, 246, 0.2);
+  outline-offset: 2px;
 }
 
 .taskBuilderAdd span {
-  font-size: 17px;
+  font-size: 18px;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+
+.taskBuilderAdd:hover span {
+  transform: scale(1.08);
 }
 
 .taskOptionsEditor {
@@ -855,8 +879,14 @@ html[data-theme="dark"] .taskOptionsEditor > div > button {
 
 html[data-theme="dark"] .taskBuilderAdd {
   border-color: #514680;
-  background: #211d37;
+  background: #292442;
   color: #c8bdff;
+}
+
+html[data-theme="dark"] .taskBuilderAdd:hover {
+  border-color: #806df8;
+  background: #806df8;
+  color: #fff;
 }
 
 html[data-theme="dark"] .taskOptionsEditor .taskOptionAdd {
