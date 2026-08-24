@@ -25,12 +25,30 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
   const [taskAnswers, setTaskAnswers] = useState<Record<string, string>>({});
   const [activeWord, setActiveWord] = useState("");
   const [activeMatch, setActiveMatch] = useState("");
+  const [openedImage, setOpenedImage] = useState<number | null>(null);
   const lines = block.content.split("\n").filter(Boolean);
   const blockImages = block.images?.length
     ? block.images
     : block.content
       ? [block.content]
       : [];
+  useEffect(() => {
+    if (openedImage === null) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpenedImage(null);
+      if (event.key === "ArrowLeft")
+        setOpenedImage((current) => current === null ? null : (current - 1 + blockImages.length) % blockImages.length);
+      if (event.key === "ArrowRight")
+        setOpenedImage((current) => current === null ? null : (current + 1) % blockImages.length);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [blockImages.length, openedImage]);
   if (block.kind === "drag-words") {
     const items = lines.map((line, index) => {
       const match = line.match(/\[([^\]]+)\]/);
@@ -348,16 +366,40 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
             className={`lessonImageCollage layout-${block.imageLayout || "grid"} ${blockImages.length === 1 ? "single" : ""}`}
           >
             {blockImages.map((src, index) => (
-              <img
+              <button
                 key={`${src}-${index}`}
-                src={src}
-                alt={`${block.title}${blockImages.length > 1 ? ` — фото ${index + 1}` : ""}`}
-                loading="lazy"
-              />
+                type="button"
+                className="lessonImageButton"
+                onClick={() => setOpenedImage(index)}
+                aria-label={`Открыть фото ${index + 1} в полном размере`}
+              >
+                <img
+                  src={src}
+                  alt={`${block.title}${blockImages.length > 1 ? ` — фото ${index + 1}` : ""}`}
+                  loading="lazy"
+                />
+                <span className="lessonImageZoom"><i>⌕</i>Открыть полностью</span>
+              </button>
             ))}
           </div>
         ) : (
           <p className="emptyMaterial">Фото пока не добавлено.</p>
+        )}
+        {openedImage !== null && blockImages[openedImage] && (
+          <div className="imageLightbox" role="dialog" aria-modal="true" aria-label={`Просмотр фото: ${block.title}`}>
+            <button className="imageLightboxScrim" onClick={() => setOpenedImage(null)} aria-label="Закрыть просмотр" />
+            <div className="imageLightboxContent">
+              <div className="imageLightboxHead">
+                <div><small>ФОТО {openedImage + 1} ИЗ {blockImages.length}</small><b>{block.title}</b></div>
+                <button onClick={() => setOpenedImage(null)} aria-label="Закрыть">×</button>
+              </div>
+              <img src={blockImages[openedImage]} alt={`${block.title} — фото ${openedImage + 1}`} />
+              {blockImages.length > 1 && <>
+                <button className="imageLightboxNav previous" onClick={() => setOpenedImage((openedImage - 1 + blockImages.length) % blockImages.length)} aria-label="Предыдущее фото">‹</button>
+                <button className="imageLightboxNav next" onClick={() => setOpenedImage((openedImage + 1) % blockImages.length)} aria-label="Следующее фото">›</button>
+              </>}
+            </div>
+          </div>
         )}
       </section>
     );
