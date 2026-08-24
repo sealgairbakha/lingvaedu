@@ -120,6 +120,12 @@ const makeBlock = (kind: BlockKind): LessonBlock => ({
       ? "Какой вариант правильный?\nПравильный ответ\nДругой ответ"
       : "",
 });
+const getBlockImages = (block: LessonBlock) =>
+  block.images?.length
+    ? block.images
+    : block.content
+      ? [block.content]
+      : [];
 const courseColors = [
   { value: "purple", label: "Фиолетовый" },
   { value: "blue", label: "Синий" },
@@ -349,6 +355,24 @@ export function CourseEditorPage() {
       ),
     );
   };
+  const updateImageCollection = (block: LessonBlock, images: string[]) =>
+    updateBlock(block.id, {
+      images,
+      content: images[0] || "",
+      imageLayout: block.imageLayout || "grid",
+    });
+  const moveImage = (
+    block: LessonBlock,
+    fromIndex: number,
+    direction: -1 | 1,
+  ) => {
+    const images = getBlockImages(block);
+    const toIndex = fromIndex + direction;
+    if (toIndex < 0 || toIndex >= images.length) return;
+    const next = [...images];
+    [next[fromIndex], next[toIndex]] = [next[toIndex], next[fromIndex]];
+    updateImageCollection(block, next);
+  };
   const updateTimerDigits = (rawValue: string) => {
     const digits = rawValue.replace(/\D/g, "").slice(-6) || "0";
     const normalized = digits.replace(/^0+(?=\d)/, "");
@@ -497,28 +521,50 @@ export function CourseEditorPage() {
     next.splice(insert, 0, item);
     updateBlocks(next);
   };
-  const uploadAsset = async (targetBlock: LessonBlock, file: File) => {
+  const uploadAsset = async (
+    targetBlock: LessonBlock,
+    selectedFiles: File | File[],
+  ) => {
     if (!lesson || !course || !supabase || !user) return;
+    const files = Array.isArray(selectedFiles)
+      ? selectedFiles
+      : [selectedFiles];
+    if (!files.length) return;
     setUploading(true);
     setUploadError("");
     try {
-      const validType =
-        (targetBlock.kind === "image" && file.type.startsWith("image/")) ||
-        (targetBlock.kind === "audio" && file.type.startsWith("audio/")) ||
-        ((targetBlock.kind === "video" || targetBlock.kind === "media") &&
-          file.type.startsWith("video/"));
-      if (!validType)
-        throw new Error("Формат файла не соответствует выбранному блоку");
-      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
-      const path = `${user.id}/${course.id}/${uid()}-${safeName}`;
-      const { error } = await supabase.storage
-        .from("course-media")
-        .upload(path, file, { contentType: file.type, upsert: false });
-      if (error) throw error;
-      const { data } = supabase.storage.from("course-media").getPublicUrl(path);
+      const uploadedUrls: string[] = [];
+      for (const file of files) {
+        const validType =
+          (targetBlock.kind === "image" && file.type.startsWith("image/")) ||
+          (targetBlock.kind === "audio" && file.type.startsWith("audio/")) ||
+          ((targetBlock.kind === "video" || targetBlock.kind === "media") &&
+            file.type.startsWith("video/"));
+        if (!validType)
+          throw new Error("Формат файла не соответствует выбранному блоку");
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
+        const path = `${user.id}/${course.id}/${uid()}-${safeName}`;
+        const { error } = await supabase.storage
+          .from("course-media")
+          .upload(path, file, { contentType: file.type, upsert: false });
+        if (error) throw error;
+        const { data } = supabase.storage
+          .from("course-media")
+          .getPublicUrl(path);
+        uploadedUrls.push(data.publicUrl);
+      }
       updateBlocks(
         lesson.blocks.map((x) =>
-          x.id === targetBlock.id ? { ...x, content: data.publicUrl } : x,
+          x.id === targetBlock.id
+            ? targetBlock.kind === "image"
+              ? {
+                  ...x,
+                  content: getBlockImages(targetBlock)[0] || uploadedUrls[0],
+                  images: [...getBlockImages(targetBlock), ...uploadedUrls],
+                  imageLayout: targetBlock.imageLayout || "grid",
+                }
+              : { ...x, content: uploadedUrls[0] }
+            : x,
         ),
       );
     } catch (error) {
@@ -910,12 +956,12 @@ export function CourseEditorPage() {
                 tabIndex={-1}
                 onPaste={(event) => {
                   if (b.kind !== "image") return;
-                  const file = [...event.clipboardData.files].find((item) =>
+                  const files = [...event.clipboardData.files].filter((item) =>
                     item.type.startsWith("image/"),
                   );
-                  if (!file) return;
+                  if (!files.length) return;
                   event.preventDefault();
-                  void uploadAsset(b, file);
+                  void uploadAsset(b, files);
                 }}
               >
                 <article
@@ -1110,9 +1156,18 @@ export function CourseEditorPage() {
                         <textarea
                           rows={8}
                           value={b.content}
-                          onChange={(event) =>
-                            updateBlock(b.id, { content: event.target.value })
-                          }
+                          onChange={(event) => {
+                            const content = event.target.value;
+                            updateBlock(
+                              b.id,
+                              b.kind === "image"
+                                ? {
+                                    content,
+                                    images: content ? [content] : [],
+                                  }
+                                : { content },
+                            );
+                          }}
                         />
                       ) : (
                         <input
@@ -1149,18 +1204,19 @@ export function CourseEditorPage() {
                               : b.kind === "audio"
                                 ? "Выбрать аудиофайл"
                                 : b.kind === "image"
-                                  ? "Выбрать фото"
+                                  ? "Выбрать фото для коллажа"
                                   : "Выбрать видеофайл"}
                           </b>
                           <small>
                             {b.kind === "audio"
                               ? "MP3, WAV или OGG"
                               : b.kind === "image"
-                                ? "PNG, JPG, WebP, GIF или AVIF"
+                                ? "Можно выбрать несколько PNG, JPG или WebP"
                                 : "MP4, WebM или MOV"}
                           </small>
                           <input
                             type="file"
+                            multiple={b.kind === "image"}
                             disabled={uploading}
                             accept={
                               b.kind === "audio"
@@ -1170,8 +1226,12 @@ export function CourseEditorPage() {
                                   : "video/mp4,video/webm,video/quicktime"
                             }
                             onChange={(event) => {
-                              const file = event.target.files?.[0];
-                              if (file) void uploadAsset(b, file);
+                              const files = [...(event.target.files || [])];
+                              if (files.length)
+                                void uploadAsset(
+                                  b,
+                                  b.kind === "image" ? files : files[0],
+                                );
                               event.currentTarget.value = "";
                             }}
                           />
@@ -1190,11 +1250,84 @@ export function CourseEditorPage() {
                               <b>Материал добавлен</b>
                             </p>
                             {b.kind === "image" && (
-                              <img
-                                className="imageEditorPreview"
-                                src={b.content}
-                                alt={b.title}
-                              />
+                              <>
+                                {getBlockImages(b).length > 1 && (
+                                  <div className="collageLayoutPicker">
+                                    <span>РАСКЛАДКА КОЛЛАЖА</span>
+                                    <div>
+                                      {(
+                                        [
+                                          ["grid", "Сетка"],
+                                          ["mosaic", "Мозаика"],
+                                          ["filmstrip", "Лента"],
+                                        ] as const
+                                      ).map(([value, label]) => (
+                                        <button
+                                          type="button"
+                                          key={value}
+                                          className={
+                                            (b.imageLayout || "grid") === value
+                                              ? "active"
+                                              : ""
+                                          }
+                                          onClick={() =>
+                                            updateBlock(b.id, {
+                                              imageLayout: value,
+                                            })
+                                          }
+                                        >
+                                          {label}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                                <div
+                                  className={`imageCollageEditor layout-${b.imageLayout || "grid"}`}
+                                >
+                                  {getBlockImages(b).map((src, index) => (
+                                    <figure key={`${src}-${index}`}>
+                                      <img src={src} alt={`${b.title} ${index + 1}`} />
+                                      <div>
+                                        <button
+                                          type="button"
+                                          disabled={index === 0}
+                                          aria-label="Переместить фото влево"
+                                          onClick={() => moveImage(b, index, -1)}
+                                        >
+                                          ‹
+                                        </button>
+                                        <span>{index + 1}</span>
+                                        <button
+                                          type="button"
+                                          disabled={
+                                            index === getBlockImages(b).length - 1
+                                          }
+                                          aria-label="Переместить фото вправо"
+                                          onClick={() => moveImage(b, index, 1)}
+                                        >
+                                          ›
+                                        </button>
+                                        <button
+                                          type="button"
+                                          className="removeImage"
+                                          aria-label="Удалить фото из коллажа"
+                                          onClick={() =>
+                                            updateImageCollection(
+                                              b,
+                                              getBlockImages(b).filter(
+                                                (_, itemIndex) => itemIndex !== index,
+                                              ),
+                                            )
+                                          }
+                                        >
+                                          ×
+                                        </button>
+                                      </div>
+                                    </figure>
+                                  ))}
+                                </div>
+                              </>
                             )}
                           </>
                         )}
@@ -1569,7 +1702,17 @@ export function CourseEditorPage() {
                 ) : b.kind === "audio" ? (
                   <audio controls src={b.content} />
                 ) : b.kind === "image" ? (
-                  <img className="lessonImage" src={b.content} alt={b.title} />
+                  <div
+                    className={`lessonImageCollage layout-${b.imageLayout || "grid"} ${getBlockImages(b).length === 1 ? "single" : ""}`}
+                  >
+                    {getBlockImages(b).map((src, index) => (
+                      <img
+                        key={`${src}-${index}`}
+                        src={src}
+                        alt={`${b.title} ${index + 1}`}
+                      />
+                    ))}
+                  </div>
                 ) : b.kind === "video" || b.kind === "media" ? (
                   <video className="lessonVideo" controls src={b.content} />
                 ) : b.kind === "file" ? (

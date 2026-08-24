@@ -6,6 +6,8 @@ export type LessonBlock = {
   kind: BlockKind;
   title: string;
   content: string;
+  images?: string[];
+  imageLayout?: "grid" | "mosaic" | "filmstrip";
 };
 
 export type CourseLesson = {

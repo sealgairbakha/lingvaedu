@@ -17,6 +17,11 @@ const formatTimer = (seconds: number) =>
 function BlockView({ block }: { block: LessonBlock }) {
   const [answer, setAnswer] = useState("");
   const lines = block.content.split("\n").filter(Boolean);
+  const blockImages = block.images?.length
+    ? block.images
+    : block.content
+      ? [block.content]
+      : [];
   if (block.kind === "quiz")
     return (
       <section className="learningBlock quizLearning">
@@ -81,8 +86,19 @@ function BlockView({ block }: { block: LessonBlock }) {
             <h3>{block.title}</h3>
           </div>
         </div>
-        {block.content ? (
-          <img src={block.content} alt={block.title} loading="lazy" />
+        {blockImages.length ? (
+          <div
+            className={`lessonImageCollage layout-${block.imageLayout || "grid"} ${blockImages.length === 1 ? "single" : ""}`}
+          >
+            {blockImages.map((src, index) => (
+              <img
+                key={`${src}-${index}`}
+                src={src}
+                alt={`${block.title}${blockImages.length > 1 ? ` — фото ${index + 1}` : ""}`}
+                loading="lazy"
+              />
+            ))}
+          </div>
         ) : (
           <p className="emptyMaterial">Фото пока не добавлено.</p>
         )}

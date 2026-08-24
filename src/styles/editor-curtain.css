@@ -92,6 +92,183 @@
   font-weight: 700;
 }
 
+.collageLayoutPicker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 18px 0 10px;
+}
+
+.collageLayoutPicker > span {
+  color: #8791a3;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.75px;
+}
+
+.collageLayoutPicker > div {
+  display: flex;
+  gap: 5px;
+  padding: 4px;
+  border-radius: 10px;
+  background: #f0f2f6;
+}
+
+.collageLayoutPicker button {
+  height: 30px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #737d90;
+  font-size: 11px;
+  font-weight: 700;
+  transition: 0.22s ease;
+}
+
+.collageLayoutPicker button.active {
+  background: #fff;
+  color: var(--purple);
+  box-shadow: 0 3px 10px rgba(31, 40, 66, 0.1);
+}
+
+.imageCollageEditor,
+.lessonImageCollage {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+  width: 100%;
+}
+
+.imageCollageEditor {
+  margin-top: 12px;
+}
+
+.imageCollageEditor figure {
+  position: relative;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #eef1f5;
+  aspect-ratio: 4 / 3;
+}
+
+.imageCollageEditor img,
+.lessonImageCollage img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  max-height: none;
+  border: 0;
+  border-radius: inherit;
+  object-fit: cover;
+}
+
+.imageCollageEditor figure > div {
+  position: absolute;
+  right: 7px;
+  bottom: 7px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px;
+  border-radius: 9px;
+  background: rgba(18, 24, 39, 0.76);
+  color: #fff;
+  backdrop-filter: blur(8px);
+}
+
+.imageCollageEditor figure button,
+.imageCollageEditor figure span {
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+}
+
+.imageCollageEditor figure button {
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.imageCollageEditor figure button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.imageCollageEditor figure button:disabled {
+  opacity: 0.28;
+  cursor: default;
+}
+
+.imageCollageEditor figure span {
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.imageCollageEditor figure .removeImage {
+  margin-left: 2px;
+  color: #ffb5bb;
+}
+
+.imageCollageEditor.layout-mosaic,
+.lessonImageCollage.layout-mosaic {
+  grid-auto-rows: minmax(110px, 1fr);
+}
+
+.imageCollageEditor.layout-mosaic figure:first-child,
+.lessonImageCollage.layout-mosaic img:first-child {
+  grid-row: span 2;
+}
+
+.imageCollageEditor.layout-filmstrip,
+.lessonImageCollage.layout-filmstrip {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 5px;
+}
+
+.imageCollageEditor.layout-filmstrip figure {
+  flex: 0 0 min(76%, 420px);
+  scroll-snap-align: start;
+}
+
+.lessonImageCollage.layout-filmstrip img {
+  flex: 0 0 min(82%, 620px);
+  aspect-ratio: 4 / 3;
+  scroll-snap-align: start;
+}
+
+.lessonImageCollage {
+  overflow: hidden;
+  border-radius: 15px;
+}
+
+.lessonImageCollage:not(.layout-filmstrip) img {
+  min-height: 180px;
+  aspect-ratio: 4 / 3;
+}
+
+.lessonImageCollage.single {
+  display: block;
+}
+
+.lessonImageCollage.single img {
+  width: 100%;
+  height: auto;
+  max-height: 640px;
+  aspect-ratio: auto;
+  object-fit: contain;
+}
+
 .blockEditorGroup .inlineBlockInspector.closing {
   pointer-events: none;
   animation: blockCurtainClose 0.38s cubic-bezier(0.55, 0, 0.78, 0) both;
@@ -140,9 +317,36 @@ html[data-theme="dark"] .blockEditorGroup .inlineBlockInspector textarea::placeh
   color: #7f8ba1;
 }
 
+html[data-theme="dark"] .collageLayoutPicker > div {
+  background: #111825;
+}
+
+html[data-theme="dark"] .collageLayoutPicker button.active {
+  background: #292442;
+  color: #c8bdff;
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .imageCollageEditor figure {
+  background: #111825;
+}
+
 @media (max-width: 760px) {
   .blockEditorGroup .inlineBlockInspector {
     padding: 17px;
+  }
+
+  .collageLayoutPicker {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .collageLayoutPicker > div {
+    width: 100%;
+  }
+
+  .collageLayoutPicker button {
+    flex: 1;
   }
 }
 
