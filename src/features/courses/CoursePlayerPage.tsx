@@ -14,6 +14,12 @@ type LessonRun = {
 const formatTimer = (seconds: number) =>
   `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
 
+const formatAttachmentSize = (bytes?: number) => {
+  if (!bytes) return "Учебный материал";
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} КБ`;
+  return `${(bytes / (1024 * 1024)).toFixed(bytes < 10 * 1024 * 1024 ? 1 : 0)} МБ`;
+};
+
 export function LessonBlockView({ block }: { block: LessonBlock }) {
   const [answer, setAnswer] = useState("");
   const [taskAnswers, setTaskAnswers] = useState<Record<string, string>>({});
@@ -400,18 +406,34 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
   if (block.kind === "file")
     return (
       <section className="learningBlock fileLearning">
-        <h3>{block.title}</h3>
         {block.content ? (
-          <a
-            className="btn primary"
-            href={block.content}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Открыть материал ↗
-          </a>
+          <div className="learningFileCard">
+            <span className="learningFileIcon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M6 3.5h8l4 4V20H6Z" />
+                <path d="M14 3.5V8h4" />
+                <path d="M12 11v6m0 0-2.5-2.5M12 17l2.5-2.5" />
+              </svg>
+            </span>
+            <span className="learningFileInfo">
+              <small>ФАЙЛ К УРОКУ</small>
+              <b>{block.fileName || block.title || "Учебный материал"}</b>
+              <em>{formatAttachmentSize(block.fileSize)}</em>
+            </span>
+            <span className="learningFileActions">
+              <a className="btn ghost" href={block.content} target="_blank" rel="noreferrer">
+                Открыть
+              </a>
+              <a className="btn primary" href={block.content} download={block.fileName || true}>
+                Скачать
+              </a>
+            </span>
+          </div>
         ) : (
-          <p className="emptyMaterial">Файл пока не прикреплён.</p>
+          <>
+            <h3>{block.title}</h3>
+            <p className="emptyMaterial">Файл пока не прикреплён.</p>
+          </>
         )}
       </section>
     );

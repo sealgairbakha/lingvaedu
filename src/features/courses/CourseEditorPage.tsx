@@ -182,6 +182,77 @@ function AddBlockIcon() {
   );
 }
 
+const courseFileAccept = [
+  ".pdf",
+  ".doc",
+  ".docx",
+  ".ppt",
+  ".pptx",
+  ".xls",
+  ".xlsx",
+  ".txt",
+  ".csv",
+  ".zip",
+].join(",");
+
+const supportedCourseFileExtensions = new Set(
+  courseFileAccept.split(","),
+);
+
+function isSupportedCourseFile(file: File) {
+  const extension = file.name.match(/\.[^.]+$/)?.[0]?.toLowerCase() || "";
+  return supportedCourseFileExtensions.has(extension);
+}
+
+function formatFileSize(bytes?: number) {
+  if (!bytes) return "Размер не указан";
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} КБ`;
+  return `${(bytes / (1024 * 1024)).toFixed(bytes < 10 * 1024 * 1024 ? 1 : 0)} МБ`;
+}
+
+function fileNameFromUrl(url: string) {
+  if (!url) return undefined;
+  try {
+    return decodeURIComponent(new URL(url).pathname.split("/").pop() || "Файл");
+  } catch {
+    return "Прикреплённый файл";
+  }
+}
+
+function FileAttachmentPreview({
+  block,
+  onRemove,
+}: {
+  block: LessonBlock;
+  onRemove: () => void;
+}) {
+  const extension =
+    block.fileName?.match(/\.([^.]+)$/)?.[1]?.toUpperCase() || "ФАЙЛ";
+  return (
+    <div className="fileAttachmentPreview">
+      <span className="fileAttachmentIcon" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <path d="M6 3.5h8l4 4V20H6Z" />
+          <path d="M14 3.5V8h4" />
+        </svg>
+        <small>{extension.slice(0, 4)}</small>
+      </span>
+      <span className="fileAttachmentInfo">
+        <b>{block.fileName || "Прикреплённый файл"}</b>
+        <small>{formatFileSize(block.fileSize)}</small>
+      </span>
+      <a href={block.content} target="_blank" rel="noreferrer">
+        Открыть
+      </a>
+      <button type="button" aria-label="Удалить прикреплённый файл" onClick={onRemove}>
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <path d="m6 6 8 8M14 6l-8 8" />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
 function hideNativeDragImage(dataTransfer: DataTransfer) {
   const canvas = document.createElement("canvas");
   canvas.width = 1;
@@ -634,15 +705,20 @@ export function CourseEditorPage() {
     setUploading(true);
     setUploadError("");
     try {
-      const uploadedUrls: string[] = [];
+      const uploadedAssets: { url: string; file: File }[] = [];
       for (const file of files) {
         const validType =
           (targetBlock.kind === "image" && file.type.startsWith("image/")) ||
           (targetBlock.kind === "audio" && file.type.startsWith("audio/")) ||
+          (targetBlock.kind === "file" && isSupportedCourseFile(file)) ||
           ((targetBlock.kind === "video" || targetBlock.kind === "media") &&
             file.type.startsWith("video/"));
         if (!validType)
-          throw new Error("Формат файла не соответствует выбранному блоку");
+          throw new Error(
+            targetBlock.kind === "file"
+              ? "Поддерживаются PDF, Word, PowerPoint, Excel, TXT, CSV и ZIP"
+              : "Формат файла не соответствует выбранному блоку",
+          );
         const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
         const path = `${user.id}/${course.id}/${uid()}-${safeName}`;
         const { error } = await supabase.storage
@@ -652,8 +728,10 @@ export function CourseEditorPage() {
         const { data } = supabase.storage
           .from("course-media")
           .getPublicUrl(path);
-        uploadedUrls.push(data.publicUrl);
+        uploadedAssets.push({ url: data.publicUrl, file });
       }
+      const uploadedUrls = uploadedAssets.map((asset) => asset.url);
+      const uploadedFile = uploadedAssets[0];
       updateBlocks(
         lesson.blocks.map((x) =>
           x.id === targetBlock.id
@@ -664,7 +742,15 @@ export function CourseEditorPage() {
                   images: [...getBlockImages(targetBlock), ...uploadedUrls],
                   imageLayout: targetBlock.imageLayout || "grid",
                 }
-              : { ...x, content: uploadedUrls[0] }
+              : targetBlock.kind === "file"
+                ? {
+                    ...x,
+                    content: uploadedFile.url,
+                    fileName: uploadedFile.file.name,
+                    fileSize: uploadedFile.file.size,
+                    fileType: uploadedFile.file.type,
+                  }
+                : { ...x, content: uploadedUrls[0] }
             : x,
         ),
       );
@@ -1256,6 +1342,8 @@ export function CourseEditorPage() {
                             ? "Ссылка на аудио"
                             : b.kind === "image"
                               ? "Ссылка на изображение"
+                              : b.kind === "file"
+                                ? "Ссылка на файл"
                               : "Содержимое"}
                         {b.kind === "text" || b.kind === "html" ? (
                         <textarea
@@ -1273,7 +1361,9 @@ export function CourseEditorPage() {
                               ? "https://.../audio.mp3"
                               : b.kind === "image"
                                 ? "https://.../photo.jpg"
-                                : "https://youtube.com/watch?v=..."
+                                : b.kind === "file"
+                                  ? "https://.../document.pdf"
+                                  : "https://youtube.com/watch?v=..."
                           }
                           value={b.content}
                           onChange={(event) => {
@@ -1285,7 +1375,14 @@ export function CourseEditorPage() {
                                     content,
                                     images: content ? [content] : [],
                                   }
-                                : { content },
+                                : b.kind === "file"
+                                  ? {
+                                      content,
+                                      fileName: fileNameFromUrl(content),
+                                      fileSize: undefined,
+                                      fileType: undefined,
+                                    }
+                                  : { content },
                             );
                           }}
                         />
@@ -1295,7 +1392,8 @@ export function CourseEditorPage() {
                     {(b.kind === "video" ||
                       b.kind === "media" ||
                       b.kind === "audio" ||
-                      b.kind === "image") && (
+                      b.kind === "image" ||
+                      b.kind === "file") && (
                       <div className="mediaUploader">
                         <span>
                           {b.kind === "image"
@@ -1309,16 +1407,20 @@ export function CourseEditorPage() {
                               ? "Загрузка…"
                               : b.kind === "audio"
                                 ? "Выбрать аудиофайл"
-                                : b.kind === "image"
+                              : b.kind === "image"
                                   ? "Выбрать фото для коллажа"
-                                  : "Выбрать видеофайл"}
+                                  : b.kind === "file"
+                                    ? "Выбрать файл"
+                                    : "Выбрать видеофайл"}
                           </b>
                           <small>
                             {b.kind === "audio"
                               ? "MP3, WAV или OGG"
                               : b.kind === "image"
                                 ? "Можно выбрать несколько PNG, JPG или WebP"
-                                : "MP4, WebM или MOV"}
+                                : b.kind === "file"
+                                  ? "PDF, Word, PowerPoint, Excel, TXT или ZIP"
+                                  : "MP4, WebM или MOV"}
                           </small>
                           <input
                             type="file"
@@ -1329,7 +1431,9 @@ export function CourseEditorPage() {
                                 ? "audio/mpeg,audio/wav,audio/ogg,audio/mp4"
                                 : b.kind === "image"
                                   ? "image/jpeg,image/png,image/webp,image/gif,image/avif"
-                                  : "video/mp4,video/webm,video/quicktime"
+                                  : b.kind === "file"
+                                    ? courseFileAccept
+                                    : "video/mp4,video/webm,video/quicktime"
                             }
                             onChange={(event) => {
                               const files = [...(event.target.files || [])];
@@ -1355,6 +1459,19 @@ export function CourseEditorPage() {
                               </span>
                               <b>Материал добавлен</b>
                             </p>
+                            {b.kind === "file" && (
+                              <FileAttachmentPreview
+                                block={b}
+                                onRemove={() =>
+                                  updateBlock(b.id, {
+                                    content: "",
+                                    fileName: undefined,
+                                    fileSize: undefined,
+                                    fileType: undefined,
+                                  })
+                                }
+                              />
+                            )}
                             {b.kind === "image" && (
                               <>
                                 {getBlockImages(b).length > 1 && (
@@ -1613,6 +1730,8 @@ export function CourseEditorPage() {
                     ? "Ссылка на аудио"
                     : block.kind === "image"
                       ? "Ссылка на изображение"
+                      : block.kind === "file"
+                        ? "Ссылка на файл"
                       : "Содержимое"}
                 {block.kind === "text" ||
                 isTaskKind(block.kind) ||
@@ -1643,14 +1762,24 @@ export function CourseEditorPage() {
                         ? "https://.../audio.mp3"
                         : block.kind === "image"
                           ? "https://.../photo.jpg"
-                          : "https://youtube.com/watch?v=..."
+                          : block.kind === "file"
+                            ? "https://.../document.pdf"
+                            : "https://youtube.com/watch?v=..."
                     }
                     value={block.content}
                     onChange={(e) =>
                       updateBlocks(
                         lesson!.blocks.map((x) =>
                           x.id === block.id
-                            ? { ...x, content: e.target.value }
+                            ? block.kind === "file"
+                              ? {
+                                  ...x,
+                                  content: e.target.value,
+                                  fileName: fileNameFromUrl(e.target.value),
+                                  fileSize: undefined,
+                                  fileType: undefined,
+                                }
+                              : { ...x, content: e.target.value }
                             : x,
                         ),
                       )
@@ -1661,7 +1790,8 @@ export function CourseEditorPage() {
               {(block.kind === "video" ||
                 block.kind === "media" ||
                 block.kind === "audio" ||
-                block.kind === "image") && (
+                block.kind === "image" ||
+                block.kind === "file") && (
                 <div className="mediaUploader">
                   <span>ИЛИ ЗАГРУЗИТЕ ФАЙЛ</span>
                   <label className={uploading ? "uploading" : ""}>
@@ -1673,14 +1803,18 @@ export function CourseEditorPage() {
                           ? "Выбрать аудиофайл"
                           : block.kind === "image"
                             ? "Выбрать фото"
-                            : "Выбрать видеофайл"}
+                            : block.kind === "file"
+                              ? "Выбрать файл"
+                              : "Выбрать видеофайл"}
                     </b>
                     <small>
                       {block.kind === "audio"
                         ? "MP3, WAV или OGG"
                         : block.kind === "image"
                           ? "PNG, JPG, WebP или Ctrl + V"
-                          : "MP4, WebM или MOV"}
+                          : block.kind === "file"
+                            ? "PDF, Word, PowerPoint, Excel, TXT или ZIP"
+                            : "MP4, WebM или MOV"}
                     </small>
                     <input
                       type="file"
@@ -1690,11 +1824,14 @@ export function CourseEditorPage() {
                           ? "audio/mpeg,audio/wav,audio/ogg,audio/mp4"
                           : block.kind === "image"
                             ? "image/jpeg,image/png,image/webp,image/gif,image/avif"
-                            : "video/mp4,video/webm,video/quicktime"
+                            : block.kind === "file"
+                              ? courseFileAccept
+                              : "video/mp4,video/webm,video/quicktime"
                       }
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) void uploadAsset(block, file);
+                        e.currentTarget.value = "";
                       }}
                     />
                   </label>
@@ -1709,6 +1846,19 @@ export function CourseEditorPage() {
                         </span>
                         <b>Материал добавлен</b>
                       </p>
+                      {block.kind === "file" && (
+                        <FileAttachmentPreview
+                          block={block}
+                          onRemove={() =>
+                            updateBlock(block.id, {
+                              content: "",
+                              fileName: undefined,
+                              fileSize: undefined,
+                              fileType: undefined,
+                            })
+                          }
+                        />
+                      )}
                       {block.kind === "image" && (
                         <img
                           className="imageEditorPreview"

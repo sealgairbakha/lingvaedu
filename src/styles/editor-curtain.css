@@ -220,6 +220,269 @@ html[data-theme="dark"] .mediaUploadIcon {
   font-weight: 700;
 }
 
+.fileAttachmentPreview {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto 36px;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid #dfe3eb;
+  border-radius: 13px;
+  background: #fff;
+  box-shadow: 0 7px 20px rgba(35, 42, 62, 0.07);
+}
+
+.fileAttachmentIcon {
+  display: grid;
+  position: relative;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: #fff0e1;
+  color: #df7d20;
+}
+
+.fileAttachmentIcon svg {
+  width: 25px;
+  height: 25px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.65;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.fileAttachmentIcon small {
+  position: absolute;
+  right: -5px;
+  bottom: -4px;
+  padding: 3px 4px;
+  border: 2px solid #fff;
+  border-radius: 5px;
+  background: #df7d20;
+  color: #fff;
+  font-size: 7px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.fileAttachmentInfo {
+  min-width: 0;
+}
+
+.fileAttachmentInfo b,
+.fileAttachmentInfo small {
+  display: block;
+}
+
+.fileAttachmentInfo b {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: var(--font-size-ui);
+  font-weight: 800;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileAttachmentInfo small {
+  margin-top: 4px;
+  color: #8a94a6;
+  font-size: 11px;
+}
+
+.fileAttachmentPreview > a {
+  padding: 9px 11px;
+  border-radius: 9px;
+  background: #f0edff;
+  color: var(--purple);
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.fileAttachmentPreview > a:hover {
+  background: var(--purple);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.fileAttachmentPreview > button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: #f4f5f8;
+  color: #8b95a6;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.fileAttachmentPreview > button:hover {
+  background: #fff0f1;
+  color: #d84b58;
+  transform: scale(1.04);
+}
+
+.fileAttachmentPreview > button svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+
+html[data-theme="dark"] .fileAttachmentPreview {
+  border-color: #354056;
+  background: #111825;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+html[data-theme="dark"] .fileAttachmentIcon small {
+  border-color: #111825;
+}
+
+html[data-theme="dark"] .fileAttachmentPreview > a {
+  background: #292442;
+  color: #c8bdff;
+}
+
+html[data-theme="dark"] .fileAttachmentPreview > button {
+  background: #222b3b;
+  color: #aab4c5;
+}
+
+.fileLearning {
+  padding: 18px;
+}
+
+.learningFileCard {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+}
+
+.learningFileIcon {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 16px;
+  background: #fff0e1;
+  color: #df7d20;
+}
+
+.learningFileIcon svg {
+  width: 30px;
+  height: 30px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.65;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.learningFileInfo {
+  min-width: 0;
+}
+
+.learningFileInfo small,
+.learningFileInfo b,
+.learningFileInfo em {
+  display: block;
+}
+
+.learningFileInfo small {
+  color: var(--purple);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.85px;
+}
+
+.learningFileInfo b {
+  margin-top: 4px;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 15px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.learningFileInfo em {
+  margin-top: 4px;
+  color: #8a94a6;
+  font-size: 12px;
+  font-style: normal;
+}
+
+.learningFileActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.learningFileActions .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 94px;
+  text-decoration: none;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+.learningFileActions .btn:hover {
+  transform: translateY(-1px);
+}
+
+html[data-theme="dark"] .learningFileIcon {
+  background: #3b2b1b;
+  color: #f1a65f;
+}
+
+@media (max-width: 640px) {
+  .fileAttachmentPreview {
+    grid-template-columns: 44px minmax(0, 1fr) 36px;
+  }
+
+  .fileAttachmentPreview > a {
+    display: none;
+  }
+
+  .learningFileCard {
+    grid-template-columns: 50px minmax(0, 1fr);
+  }
+
+  .learningFileIcon {
+    width: 50px;
+    height: 50px;
+    border-radius: 14px;
+  }
+
+  .learningFileActions {
+    grid-column: 1 / -1;
+  }
+
+  .learningFileActions .btn {
+    flex: 1;
+  }
+}
+
 .paletteSectionTitle {
   display: flex;
   align-items: center;

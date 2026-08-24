@@ -95,6 +95,8 @@ npm run admin:create
 
 Для загрузки видео, аудио и фотографий выполните файл `supabase/migrations/005_course_media_images.sql` в `Supabase → SQL Editor`. Он создаёт или обновляет публичный Storage bucket `course-media`; загружать и удалять материалы смогут только пользователи с ролью `admin` или `staff`. Если появляется ошибка `Bucket not found`, эта миграция ещё не была выполнена.
 
+Для загрузки PDF, Word, PowerPoint, Excel, TXT, CSV и ZIP в блоке «Файл» дополнительно выполните `supabase/migrations/006_course_documents.sql`. Миграция расширяет список разрешённых форматов существующего bucket `course-media`, не удаляя ранее загруженные материалы.
+
 Для загрузки аватаров выполните файл `supabase/migrations/003_profile_avatars.sql` в `Supabase → SQL Editor`. Пользователь сможет изменять файлы только внутри собственной папки Storage.
 
 Для реального подсчёта учеников выполните файл `supabase/migrations/004_course_enrollments.sql`. Ученик учитывается один раз при первом открытии опубликованного курса; администраторы и сотрудники в число учеников не входят.

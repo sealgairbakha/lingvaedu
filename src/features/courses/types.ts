@@ -19,6 +19,9 @@ export type LessonBlock = {
   kind: BlockKind;
   title: string;
   content: string;
+  fileName?: string;
+  fileSize?: number;
+  fileType?: string;
   images?: string[];
   imageLayout?: "grid" | "mosaic" | "filmstrip";
 };
