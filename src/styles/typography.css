@@ -1,5 +1,6 @@
 :root {
   --font-sans: "Onest Variable", Onest, system-ui, sans-serif;
+  --font-size-ui: 14px;
 }
 
 button,
@@ -8,4 +9,3 @@ select,
 textarea {
   font-family: var(--font-sans);
 }
-

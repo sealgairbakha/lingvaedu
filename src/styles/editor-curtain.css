@@ -306,7 +306,7 @@
   border-radius: 10px;
   background: #f7f5ff;
   color: var(--purple);
-  font-size: 12px;
+  font-size:var(--font-size-ui);
   font-weight: 750;
 }
 
@@ -491,7 +491,7 @@
 
 .gapSentenceList button {
   color: #8a94a6;
-  font-size: 12px;
+  font-size:var(--font-size-ui);
 }
 
 .gapSentenceList .correct,
