@@ -245,6 +245,251 @@ html[data-theme="dark"] .mediaUploadIcon {
   background: var(--line);
 }
 
+.paletteHeaderTitle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.blockPalette > .paletteHeader .paletteHeaderTitle > span {
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1.3;
+}
+
+.paletteHeaderTitle > small {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #f0edff;
+  color: var(--purple);
+  font-size: 10px;
+  font-weight: 850;
+  line-height: 1;
+}
+
+.paletteSectionTitle > div {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.paletteSectionTitle > div > small {
+  display: grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #f0f1f5;
+  color: #7d879a;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.blockPalette > button {
+  display: grid !important;
+  position: relative;
+  grid-template-columns: 52px minmax(0, 1fr) 36px 40px;
+  align-items: center;
+  gap: 11px;
+  min-height: 88px;
+  padding: 14px 12px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+  text-align: left;
+  isolation: isolate;
+}
+
+.blockPalette > button::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 18%, rgba(101, 75, 246, 0.09) 50%, transparent 82%);
+  opacity: 0;
+  transform: translateX(-75%);
+  transition:
+    opacity 0.25s ease,
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.blockPalette > button:hover {
+  border-color: #c8c0fb;
+  background: color-mix(in srgb, var(--card) 96%, #eeeaff);
+  box-shadow: 0 11px 26px rgba(47, 39, 96, 0.11);
+  transform: translateY(-2px);
+}
+
+.blockPalette > button:hover::before {
+  opacity: 1;
+  transform: translateX(75%);
+}
+
+.blockPalette > button:focus-visible {
+  border-color: var(--purple);
+  outline: 3px solid rgba(101, 75, 246, 0.16);
+  outline-offset: 2px;
+}
+
+.blockPalette > button:active:not(.paletteDragging) {
+  transform: translateY(0) scale(0.99);
+}
+
+.blockPalette > button > i:first-child {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  margin: 0;
+  border-radius: 14px;
+  transition:
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.25s ease;
+}
+
+.blockPalette > button:hover > i:first-child {
+  box-shadow: 0 8px 18px rgba(35, 42, 62, 0.1);
+  transform: translateY(-1px) scale(1.04);
+}
+
+.blockPalette > button > span:nth-of-type(1) {
+  min-width: 0;
+}
+
+.blockPalette > button > span:nth-of-type(1) b,
+.blockPalette > button > span:nth-of-type(1) small {
+  display: block;
+}
+
+.blockPalette > button > span:nth-of-type(1) b {
+  color: var(--ink);
+  font-size: var(--font-size-ui);
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.blockPalette > button > span:nth-of-type(1) small {
+  margin-top: 5px;
+  overflow: hidden;
+  color: #8a94a6;
+  font-size: 11px !important;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+}
+
+.blockPalette > button .paletteDragHint {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 38px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: #9aa3b3;
+  writing-mode: initial;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.blockPalette > button .paletteDragHint svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+.blockPalette > button:hover .paletteDragHint {
+  border-color: #ded9fb;
+  background: #f4f1ff;
+  color: var(--purple);
+  transform: scale(1.03);
+}
+
+.blockPalette > button .paletteAddIcon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  margin: 0;
+  border-radius: 12px;
+  background: #f0edff;
+  color: var(--purple);
+  font-style: normal;
+  transition:
+    color 0.22s ease,
+    background 0.22s ease,
+    transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.22s ease;
+}
+
+.blockPalette > button .paletteAddIcon svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+
+.blockPalette > button:hover .paletteAddIcon {
+  background: var(--purple);
+  color: #fff;
+  box-shadow: 0 7px 16px rgba(101, 75, 246, 0.24);
+  transform: rotate(90deg) scale(1.04);
+}
+
+html[data-theme="dark"] .paletteHeaderTitle > small,
+html[data-theme="dark"] .blockPalette > button .paletteAddIcon {
+  background: #292442;
+  color: #c8bdff;
+}
+
+html[data-theme="dark"] .paletteSectionTitle > div > small {
+  background: #222b3b;
+  color: #aab4c5;
+}
+
+html[data-theme="dark"] .blockPalette > button:hover {
+  border-color: #554887;
+  background: #1a2130;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.26);
+}
+
+html[data-theme="dark"] .blockPalette > button:hover .paletteDragHint {
+  border-color: #4b416f;
+  background: #292442;
+  color: #c8bdff;
+}
+
+html[data-theme="dark"] .blockPalette > button:hover .paletteAddIcon {
+  background: #806df8;
+  color: #fff;
+}
+
+@media (max-width: 460px) {
+  .blockPalette > button {
+    grid-template-columns: 48px minmax(0, 1fr) 34px;
+  }
+
+  .blockPalette > button .paletteDragHint {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blockPalette > button::before,
+  .blockPalette > button > i:first-child,
+  .blockPalette > button .paletteDragHint,
+  .blockPalette > button .paletteAddIcon {
+    transition-duration: 0.01ms !important;
+  }
+}
+
 .blockGlyph.drag-words,
 .blockGlyph.select-words,
 .blockGlyph.fill-blank,

@@ -161,6 +161,27 @@ function UploadIcon() {
   );
 }
 
+function DragHandleIcon() {
+  return (
+    <svg viewBox="0 0 20 20">
+      <circle cx="7" cy="5" r="1" />
+      <circle cx="13" cy="5" r="1" />
+      <circle cx="7" cy="10" r="1" />
+      <circle cx="13" cy="10" r="1" />
+      <circle cx="7" cy="15" r="1" />
+      <circle cx="13" cy="15" r="1" />
+    </svg>
+  );
+}
+
+function AddBlockIcon() {
+  return (
+    <svg viewBox="0 0 20 20">
+      <path d="M10 5v10M5 10h10" />
+    </svg>
+  );
+}
+
 function hideNativeDragImage(dataTransfer: DataTransfer) {
   const canvas = document.createElement("canvas");
   canvas.width = 1;
@@ -1553,7 +1574,10 @@ export function CourseEditorPage() {
           </section>
           {lessonSettingsEditor}
           <div className="paletteHeader">
-            <span>Блоки</span>
+            <div className="paletteHeaderTitle">
+              <span>Блоки</span>
+              <small>{palette.length} типов</small>
+            </div>
             <p>Перетащите блок в урок или нажмите на него</p>
           </div>
           {block && selected === "__legacy-sidebar-editor__" ? (
@@ -1705,7 +1729,12 @@ export function CourseEditorPage() {
               <Fragment key={p.kind}>
                 {(index === 0 || palette[index - 1].group !== p.group) && (
                   <div className="paletteSectionTitle">
-                    <span>{p.group}</span>
+                    <div>
+                      <span>{p.group}</span>
+                      <small>
+                        {palette.filter((item) => item.group === p.group).length}
+                      </small>
+                    </div>
                     <i />
                   </div>
                 )}
@@ -1747,9 +1776,11 @@ export function CourseEditorPage() {
                   <small>{p.hint}</small>
                 </span>
                 <span className="paletteDragHint" aria-hidden="true">
-                  ⋮⋮
+                  <DragHandleIcon />
                 </span>
-                <em>＋</em>
+                <em className="paletteAddIcon" aria-hidden="true">
+                  <AddBlockIcon />
+                </em>
                 </button>
               </Fragment>
             ))
