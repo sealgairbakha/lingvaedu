@@ -40,6 +40,20 @@
   display: none;
 }
 
+.blockEditorGroup .inlineBlockInspector input,
+.blockEditorGroup .inlineBlockInspector textarea {
+  color: var(--ink);
+  font-weight: 520;
+  caret-color: var(--purple);
+}
+
+.blockEditorGroup .inlineBlockInspector input::placeholder,
+.blockEditorGroup .inlineBlockInspector textarea::placeholder {
+  color: #99a2b3;
+  font-weight: 430;
+  opacity: 1;
+}
+
 .blockEditorGroup .inlineBlockInspector.closing {
   pointer-events: none;
   animation: blockCurtainClose 0.38s cubic-bezier(0.55, 0, 0.78, 0) both;
@@ -83,6 +97,11 @@ html[data-theme="dark"] .blockEditorGroup .inlineBlockInspector {
   box-shadow: 0 20px 42px rgba(0, 0, 0, 0.34);
 }
 
+html[data-theme="dark"] .blockEditorGroup .inlineBlockInspector input::placeholder,
+html[data-theme="dark"] .blockEditorGroup .inlineBlockInspector textarea::placeholder {
+  color: #7f8ba1;
+}
+
 @media (max-width: 760px) {
   .blockEditorGroup .inlineBlockInspector {
     padding: 17px;
@@ -96,4 +115,3 @@ html[data-theme="dark"] .blockEditorGroup .inlineBlockInspector {
     transition-duration: 0.01ms;
   }
 }
-

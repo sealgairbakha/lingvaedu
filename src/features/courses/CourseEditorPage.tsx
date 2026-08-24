@@ -1083,6 +1083,13 @@ export function CourseEditorPage() {
                     <label>
                       Название
                       <input
+                        placeholder={
+                          palette.find(
+                            (item) =>
+                              item.kind ===
+                              (b.kind === "media" ? "video" : b.kind),
+                          )?.title || "Название блока"
+                        }
                         value={b.title}
                         onChange={(event) =>
                           updateBlock(b.id, { title: event.target.value })
