@@ -54,6 +54,134 @@
   opacity: 1;
 }
 
+.blockEditorGroup .mediaUploader {
+  margin: 8px 0 20px;
+}
+
+.blockEditorGroup .mediaUploader > span {
+  margin-bottom: 11px;
+  color: #8993a6;
+  font-size: 11px;
+  letter-spacing: 0.55px;
+}
+
+.blockEditorGroup .mediaUploader > label {
+  position: relative;
+  min-height: 134px;
+  padding: 20px;
+  overflow: hidden;
+  border: 1px solid #d8d2ff;
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 50% 0, rgba(101, 75, 246, 0.1), transparent 58%),
+    #f8f7ff;
+  box-shadow: 0 8px 24px rgba(47, 39, 96, 0.07);
+  transition:
+    transform 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.22s ease,
+    background 0.22s ease,
+    box-shadow 0.24s ease;
+}
+
+.blockEditorGroup .mediaUploader > label::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 25%, rgba(255, 255, 255, 0.72) 48%, transparent 70%);
+  pointer-events: none;
+  transform: translateX(-120%);
+  transition: transform 0.62s ease;
+}
+
+.blockEditorGroup .mediaUploader > label:hover {
+  border-color: #9b8cf8;
+  background:
+    radial-gradient(circle at 50% 0, rgba(101, 75, 246, 0.16), transparent 60%),
+    #f5f2ff;
+  box-shadow: 0 13px 30px rgba(101, 75, 246, 0.15);
+  transform: translateY(-2px);
+}
+
+.blockEditorGroup .mediaUploader > label:hover::after {
+  transform: translateX(120%);
+}
+
+.blockEditorGroup .mediaUploader > label:active {
+  transform: translateY(0) scale(0.992);
+}
+
+.mediaUploadIcon {
+  display: grid;
+  position: relative;
+  z-index: 1;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: #ebe7ff;
+  color: var(--purple);
+  box-shadow: 0 7px 16px rgba(101, 75, 246, 0.13);
+  transition:
+    color 0.22s ease,
+    background 0.22s ease,
+    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.mediaUploadIcon svg {
+  width: 25px;
+  height: 25px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.65;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.blockEditorGroup .mediaUploader > label:hover .mediaUploadIcon {
+  background: var(--purple);
+  color: #fff;
+  transform: translateY(-2px) scale(1.04);
+}
+
+.blockEditorGroup .mediaUploader label b,
+.blockEditorGroup .mediaUploader label small {
+  position: relative;
+  z-index: 1;
+}
+
+.blockEditorGroup .mediaUploader label b {
+  margin-top: 10px;
+  font-size: var(--font-size-ui);
+  font-weight: 800;
+}
+
+.blockEditorGroup .mediaUploader label small {
+  margin-top: 5px;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+html[data-theme="dark"] .blockEditorGroup .mediaUploader > label {
+  border-color: #3d4760;
+  background:
+    radial-gradient(circle at 50% 0, rgba(128, 109, 248, 0.16), transparent 58%),
+    #111825;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.16);
+}
+
+html[data-theme="dark"] .blockEditorGroup .mediaUploader > label:hover {
+  border-color: #806df8;
+  background:
+    radial-gradient(circle at 50% 0, rgba(128, 109, 248, 0.24), transparent 60%),
+    #18172a;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.28);
+}
+
+html[data-theme="dark"] .mediaUploadIcon {
+  background: #292442;
+  color: #c8bdff;
+}
+
 .mediaReady {
   display: flex;
   align-items: center;

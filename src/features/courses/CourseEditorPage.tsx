@@ -150,6 +150,17 @@ function BlockIcon({ kind }: { kind: BlockKind }) {
   );
 }
 
+function UploadIcon() {
+  return (
+    <span className="mediaUploadIcon" aria-hidden="true">
+      <svg viewBox="0 0 24 24">
+        <path d="M7 18.5H6a4 4 0 0 1-.25-8A6.25 6.25 0 0 1 17.8 9a4.75 4.75 0 0 1 .2 9.5h-1" />
+        <path d="M12 17V9m0 0-3 3m3-3 3 3" />
+      </svg>
+    </span>
+  );
+}
+
 function hideNativeDragImage(dataTransfer: DataTransfer) {
   const canvas = document.createElement("canvas");
   canvas.width = 1;
@@ -1271,7 +1282,7 @@ export function CourseEditorPage() {
                             : "ИЛИ ЗАГРУЗИТЕ ФАЙЛ"}
                         </span>
                         <label className={uploading ? "uploading" : ""}>
-                          ↥{" "}
+                          <UploadIcon />
                           <b>
                             {uploading
                               ? "Загрузка…"
@@ -1630,7 +1641,7 @@ export function CourseEditorPage() {
                 <div className="mediaUploader">
                   <span>ИЛИ ЗАГРУЗИТЕ ФАЙЛ</span>
                   <label className={uploading ? "uploading" : ""}>
-                    ↥{" "}
+                    <UploadIcon />
                     <b>
                       {uploading
                         ? "Загрузка…"
