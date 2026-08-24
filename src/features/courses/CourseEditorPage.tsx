@@ -11,6 +11,7 @@ import { useAuth } from "../../auth/AuthProvider";
 import { supabase } from "../../lib/supabase";
 import { useCourses } from "./CourseProvider";
 import { LessonBlockView } from "./CoursePlayerPage";
+import { TaskBlockEditor } from "./TaskBlockEditor";
 import { uid, type BlockKind, type Course, type LessonBlock } from "./types";
 
 const palette: {
@@ -180,14 +181,6 @@ const taskTemplates: Partial<Record<BlockKind, string>> = {
   match: "makes a lot of profit = lucrative\na baby plant = a shoot\nnot affected by something = resistant",
   "true-false":
     "The lesson has already started | true\nEnglish is written from right to left | false",
-};
-const taskFormatNotes: Partial<Record<BlockKind, string>> = {
-  "drag-words": "Каждое предложение — с новой строки. Правильное слово укажите в [квадратных скобках].",
-  "select-words": "В скобках первым укажите правильный вариант: [правильный|неверный|неверный].",
-  "fill-blank": "Каждое правильное слово поместите в [квадратные скобки].",
-  quiz: "Первая строка — вопрос. Каждый ответ — с новой строки. Перед правильным ответом поставьте *.",
-  match: "Каждая пара — с новой строки в формате: слово = перевод или определение.",
-  "true-false": "Каждое утверждение — с новой строки. После | укажите true или false.",
 };
 
 const makeBlock = (kind: BlockKind): LessonBlock => ({
@@ -1218,24 +1211,23 @@ export function CourseEditorPage() {
                         }
                       />
                     </label>
-                    <label>
-                      {b.kind === "video" || b.kind === "media"
-                        ? "Ссылка на YouTube или видео"
-                        : b.kind === "audio"
-                          ? "Ссылка на аудио"
-                          : b.kind === "image"
-                            ? "Ссылка на изображение"
-                            : "Содержимое"}
-                      {b.kind === "text" ||
-                      isTaskKind(b.kind) ||
-                      b.kind === "html" ? (
+                    {isTaskKind(b.kind) ? (
+                      <TaskBlockEditor
+                        block={b}
+                        onChange={(content) => updateBlock(b.id, { content })}
+                      />
+                    ) : (
+                      <label>
+                        {b.kind === "video" || b.kind === "media"
+                          ? "Ссылка на YouTube или видео"
+                          : b.kind === "audio"
+                            ? "Ссылка на аудио"
+                            : b.kind === "image"
+                              ? "Ссылка на изображение"
+                              : "Содержимое"}
+                        {b.kind === "text" || b.kind === "html" ? (
                         <textarea
                           rows={8}
-                          placeholder={
-                            isTaskKind(b.kind)
-                              ? taskTemplates[b.kind]
-                              : undefined
-                          }
                           value={b.content}
                           onChange={(event) =>
                             updateBlock(b.id, { content: event.target.value })
@@ -1265,13 +1257,8 @@ export function CourseEditorPage() {
                             );
                           }}
                         />
-                      )}
-                    </label>
-                    {isTaskKind(b.kind) && (
-                      <div className="taskFormatNote">
-                        <b>Как заполнить</b>
-                        <p>{taskFormatNotes[b.kind]}</p>
-                      </div>
+                        )}
+                      </label>
                     )}
                     {(b.kind === "video" ||
                       b.kind === "media" ||

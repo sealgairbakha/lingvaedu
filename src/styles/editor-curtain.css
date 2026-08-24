@@ -153,6 +153,279 @@
   line-height: 1.5;
 }
 
+.taskBuilder {
+  margin: 4px 0 20px;
+  padding: 17px;
+  border: 1px solid #ded9ff;
+  border-radius: 14px;
+  background: #fbfaff;
+}
+
+.taskBuilderHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.taskBuilderHeader b {
+  display: block;
+  font-size: 15px;
+}
+
+.taskBuilderHeader p {
+  margin: 4px 0 0;
+  color: #7f899b;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.taskBuilderHeader > span {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #eae6ff;
+  color: var(--purple);
+}
+
+.taskBuilderRows {
+  display: grid;
+  gap: 10px;
+}
+
+.taskBuilderRow {
+  position: relative;
+  display: grid;
+  align-items: end;
+  gap: 10px;
+  padding: 14px 46px 14px 48px;
+  border: 1px solid #e3e5eb;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.gapBuilderRow {
+  grid-template-columns: minmax(190px, 1fr) minmax(125px, 0.35fr);
+}
+
+.selectBuilderRow {
+  grid-template-columns: 1fr;
+}
+
+.matchBuilderRow {
+  grid-template-columns: minmax(120px, 1fr) 30px minmax(120px, 1fr);
+}
+
+.trueFalseBuilderRow {
+  grid-template-columns: minmax(190px, 1fr) auto;
+}
+
+.taskBuilderRow label,
+.taskStandaloneField {
+  min-width: 0;
+  margin: 0 !important;
+}
+
+.taskBuilderRow label > span,
+.taskStandaloneField > span,
+.taskOptionsEditor > span {
+  display: block;
+  margin-bottom: 6px;
+  color: #7b8597;
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.taskBuilderRow label input,
+.taskStandaloneField input {
+  height: 42px;
+  margin: 0;
+  padding: 0 11px;
+  background: #fff;
+}
+
+.taskBuilderRow label small {
+  display: block;
+  margin-top: 5px;
+  color: #9aa3b2;
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.taskRowNumber {
+  position: absolute;
+  top: 16px;
+  left: 14px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: #eeeaff;
+  color: var(--purple);
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.taskBuilderRemove {
+  position: absolute;
+  top: 13px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 8px;
+  background: #f3f4f7;
+  color: #8d96a5;
+  font-size: 18px;
+}
+
+.taskBuilderRemove:hover:not(:disabled) {
+  background: #fff0f1;
+  color: #d84b58;
+}
+
+.taskBuilderRemove:disabled {
+  opacity: 0.28;
+  cursor: default;
+}
+
+.taskBuilderAdd {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 42px;
+  margin-top: 11px;
+  border: 1px dashed #bbb2f7;
+  border-radius: 10px;
+  background: #f7f5ff;
+  color: var(--purple);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.taskBuilderAdd:hover {
+  border-style: solid;
+  background: #f0edff;
+}
+
+.taskBuilderAdd span {
+  font-size: 17px;
+}
+
+.taskOptionsEditor {
+  display: grid;
+  gap: 7px;
+}
+
+.taskOptionsEditor > div {
+  display: grid;
+  grid-template-columns: 24px 1fr 30px;
+  align-items: center;
+  gap: 7px;
+}
+
+.blockInspector .taskOptionsEditor input[type="radio"] {
+  display: block;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--purple);
+}
+
+.taskOptionsEditor input:not([type="radio"]) {
+  height: 39px;
+  margin: 0;
+  padding: 0 10px;
+}
+
+.taskOptionsEditor > div > button {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 8px;
+  background: #f3f4f7;
+  color: #8d96a5;
+  font-size: 17px;
+}
+
+.taskOptionsEditor > div > button:disabled {
+  opacity: 0.3;
+}
+
+.taskOptionsEditor .taskOptionAdd {
+  width: max-content;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: #eeeaff;
+  color: var(--purple);
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.taskStandaloneField {
+  display: block;
+  margin-bottom: 15px !important;
+}
+
+.taskStandaloneField input {
+  width: 100%;
+}
+
+.quizOptionsEditor {
+  padding: 14px;
+  border: 1px solid #e3e5eb;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.matchEquals {
+  display: grid;
+  place-items: center;
+  height: 42px;
+  color: var(--purple);
+  font-size: 20px;
+}
+
+.trueFalseToggle {
+  display: flex;
+  gap: 5px;
+  padding: 4px;
+  border-radius: 10px;
+  background: #f0f2f6;
+}
+
+.trueFalseToggle button {
+  min-width: 78px;
+  height: 34px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #788295;
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.trueFalseToggle button.active.true {
+  background: #e5f8f0;
+  color: #248761;
+  box-shadow: 0 2px 8px rgba(35, 136, 96, 0.12);
+}
+
+.trueFalseToggle button.active.false {
+  background: #fff0f1;
+  color: #c54450;
+  box-shadow: 0 2px 8px rgba(197, 68, 80, 0.1);
+}
+
 .taskLearning > h3 {
   margin-bottom: 20px;
 }
@@ -549,6 +822,52 @@ html[data-theme="dark"] .taskFormatNote {
   background: #211d37;
 }
 
+html[data-theme="dark"] .taskBuilder {
+  border-color: #514680;
+  background: #141b29;
+}
+
+html[data-theme="dark"] .taskBuilderHeader > span,
+html[data-theme="dark"] .taskRowNumber {
+  background: #292442;
+  color: #c8bdff;
+}
+
+html[data-theme="dark"] .taskBuilderRow,
+html[data-theme="dark"] .quizOptionsEditor {
+  border-color: #30394a;
+  background: #171e2c;
+}
+
+html[data-theme="dark"] .taskBuilderRow label input,
+html[data-theme="dark"] .taskStandaloneField input,
+html[data-theme="dark"] .taskOptionsEditor input:not([type="radio"]) {
+  border-color: #3b465a;
+  background: #111825;
+  color: var(--ink);
+}
+
+html[data-theme="dark"] .taskBuilderRemove,
+html[data-theme="dark"] .taskOptionsEditor > div > button {
+  background: #222b3b;
+  color: #a9b3c4;
+}
+
+html[data-theme="dark"] .taskBuilderAdd {
+  border-color: #514680;
+  background: #211d37;
+  color: #c8bdff;
+}
+
+html[data-theme="dark"] .taskOptionsEditor .taskOptionAdd {
+  background: #292442;
+  color: #c8bdff;
+}
+
+html[data-theme="dark"] .trueFalseToggle {
+  background: #111825;
+}
+
 html[data-theme="dark"] .taskFormatNote b {
   color: #c8bdff;
 }
@@ -619,6 +938,25 @@ html[data-theme="dark"] .matchGrid button.wrong {
 
   .trueFalseCard button {
     width: 100%;
+  }
+
+  .gapBuilderRow,
+  .matchBuilderRow,
+  .trueFalseBuilderRow {
+    grid-template-columns: 1fr;
+  }
+
+  .matchEquals {
+    height: 24px;
+    transform: rotate(90deg);
+  }
+
+  .trueFalseToggle {
+    width: 100%;
+  }
+
+  .trueFalseToggle button {
+    flex: 1;
   }
 }
 
