@@ -673,6 +673,57 @@ html[data-theme="dark"] .learningFileIcon {
   transform: scale(1.03);
 }
 
+.lessonBlock {
+  grid-template-columns: 40px 48px minmax(0, 1fr) 30px;
+}
+
+.lessonBlock .blockDragHandle,
+.editorFloatingDrag .blockDragHandle {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: #9aa3b3;
+  letter-spacing: 0;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.lessonBlock .blockDragHandle svg,
+.editorFloatingDrag .blockDragHandle svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+.lessonBlock .blockDragHandle:hover {
+  border-color: #ded9fb;
+  background: #f4f1ff;
+  color: var(--purple);
+  transform: scale(1.04);
+}
+
+.lessonBlock .blockDragHandle:active {
+  cursor: grabbing;
+  transform: scale(0.97);
+}
+
+.editorFloatingDrag .blockDragHandle {
+  border-color: #ded9fb;
+  background: #f4f1ff;
+  color: var(--purple);
+}
+
+.editorFloatingDrag {
+  grid-template-columns: 40px 48px minmax(0, 1fr);
+}
+
 .blockPalette > button .paletteAddIcon {
   display: grid;
   place-items: center;
@@ -729,6 +780,13 @@ html[data-theme="dark"] .blockPalette > button:hover .paletteDragHint {
   color: #c8bdff;
 }
 
+html[data-theme="dark"] .lessonBlock .blockDragHandle:hover,
+html[data-theme="dark"] .editorFloatingDrag .blockDragHandle {
+  border-color: #4b416f;
+  background: #292442;
+  color: #c8bdff;
+}
+
 html[data-theme="dark"] .blockPalette > button:hover .paletteAddIcon {
   background: #806df8;
   color: #fff;
@@ -741,6 +799,11 @@ html[data-theme="dark"] .blockPalette > button:hover .paletteAddIcon {
 
   .blockPalette > button .paletteDragHint {
     display: none;
+  }
+
+  .lessonBlock {
+    grid-template-columns: 38px 44px minmax(0, 1fr) 28px;
+    gap: 9px;
   }
 }
 

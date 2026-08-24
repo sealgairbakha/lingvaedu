@@ -1111,14 +1111,18 @@ export function CourseEditorPage() {
           <div
             className={`blockCanvas ${paletteDropActive ? "paletteDropActive" : ""}`}
             onDragOver={(e) => {
+              const draggedBlockId =
+                dragging ||
+                e.dataTransfer.getData("application/x-lingva-block-id") ||
+                e.dataTransfer.getData("text/plain");
               if (
-                !paletteDragging ||
+                (!paletteDragging && !draggedBlockId) ||
                 (e.target as HTMLElement).closest(".lessonBlock")
               )
                 return;
               e.preventDefault();
-              e.dataTransfer.dropEffect = "copy";
-              setPaletteDropActive(true);
+              e.dataTransfer.dropEffect = paletteDragging ? "copy" : "move";
+              if (paletteDragging) setPaletteDropActive(true);
               setDropTarget(null);
             }}
             onDragLeave={(e) => {
@@ -1126,10 +1130,25 @@ export function CourseEditorPage() {
                 setPaletteDropActive(false);
             }}
             onDrop={(e) => {
-              if (!paletteDragging) return;
+              const paletteKind =
+                paletteDragging ||
+                (e.dataTransfer.getData(
+                  "application/x-lingva-block-kind",
+                ) as BlockKind);
+              const draggedBlockId =
+                dragging ||
+                e.dataTransfer.getData("application/x-lingva-block-id") ||
+                e.dataTransfer.getData("text/plain");
+              if (!paletteKind && !draggedBlockId) return;
               e.preventDefault();
-              dropPaletteBlock(paletteDragging);
+              if (paletteKind) dropPaletteBlock(paletteKind);
+              if (draggedBlockId && lesson?.blocks.length) {
+                const lastBlock = lesson.blocks[lesson.blocks.length - 1];
+                if (lastBlock.id !== draggedBlockId)
+                  reorder(draggedBlockId, lastBlock.id, "after");
+              }
               completeDragDrop();
+              setDragging(null);
               setPaletteDragging(null);
               setPaletteDropActive(false);
               setDropTarget(null);
@@ -1198,16 +1217,27 @@ export function CourseEditorPage() {
                   onDrop={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    if (dragging && dropTarget)
-                      reorder(dragging, dropTarget.id, dropTarget.edge);
-                    if (paletteDragging && dropTarget)
-                      dropPaletteBlock(
-                        paletteDragging,
-                        dropTarget.id,
-                        dropTarget.edge,
-                      );
-                    if ((dragging || paletteDragging) && dropTarget)
-                      completeDragDrop();
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const edge =
+                      e.clientY < rect.top + rect.height / 2
+                        ? "before"
+                        : "after";
+                    const draggedBlockId =
+                      dragging ||
+                      e.dataTransfer.getData(
+                        "application/x-lingva-block-id",
+                      ) ||
+                      e.dataTransfer.getData("text/plain");
+                    const paletteKind =
+                      paletteDragging ||
+                      (e.dataTransfer.getData(
+                        "application/x-lingva-block-kind",
+                      ) as BlockKind);
+                    if (draggedBlockId && draggedBlockId !== b.id)
+                      reorder(draggedBlockId, b.id, edge);
+                    if (paletteKind)
+                      dropPaletteBlock(paletteKind, b.id, edge);
+                    if (draggedBlockId || paletteKind) completeDragDrop();
                     setDragging(null);
                     setPaletteDragging(null);
                     setPaletteDropActive(false);
@@ -1215,7 +1245,7 @@ export function CourseEditorPage() {
                   }}
                 >
                   <span
-                    className="drag"
+                    className="drag blockDragHandle"
                     draggable
                     title="Перетащить блок"
                     aria-label="Перетащить блок"
@@ -1223,6 +1253,10 @@ export function CourseEditorPage() {
                       e.stopPropagation();
                       e.dataTransfer.effectAllowed = "move";
                       e.dataTransfer.setData("text/plain", b.id);
+                      e.dataTransfer.setData(
+                        "application/x-lingva-block-id",
+                        b.id,
+                      );
                       hideNativeDragImage(e.dataTransfer);
                       const card = e.currentTarget.closest(".lessonBlock");
                       const descriptor = palette.find(
@@ -1247,7 +1281,7 @@ export function CourseEditorPage() {
                       setDropTarget(null);
                     }}
                   >
-                    ⋮⋮
+                    <DragHandleIcon />
                   </span>
                   <div
                     className={`blockGlyph ${b.kind === "media" ? "video" : b.kind}`}
@@ -1949,7 +1983,9 @@ export function CourseEditorPage() {
           }
           aria-hidden="true"
         >
-          <span className="drag">⋮⋮</span>
+          <span className="drag blockDragHandle">
+            <DragHandleIcon />
+          </span>
           <i
             className={`blockGlyph ${dragVisual.kind === "media" ? "video" : dragVisual.kind}`}
           >
