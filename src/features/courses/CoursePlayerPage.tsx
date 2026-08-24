@@ -14,37 +14,288 @@ type LessonRun = {
 const formatTimer = (seconds: number) =>
   `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
 
-function BlockView({ block }: { block: LessonBlock }) {
+export function LessonBlockView({ block }: { block: LessonBlock }) {
   const [answer, setAnswer] = useState("");
+  const [taskAnswers, setTaskAnswers] = useState<Record<string, string>>({});
+  const [activeWord, setActiveWord] = useState("");
+  const [activeMatch, setActiveMatch] = useState("");
   const lines = block.content.split("\n").filter(Boolean);
   const blockImages = block.images?.length
     ? block.images
     : block.content
       ? [block.content]
       : [];
-  if (block.kind === "quiz")
+  if (block.kind === "drag-words") {
+    const items = lines.map((line, index) => {
+      const match = line.match(/\[([^\]]+)\]/);
+      return {
+        id: String(index),
+        before: match ? line.slice(0, match.index) : line,
+        answer: match?.[1] || "",
+        after: match ? line.slice((match.index || 0) + match[0].length) : "",
+      };
+    });
+    const words = items.map((item) => item.answer).filter(Boolean);
+    const placeWord = (id: string, word: string) => {
+      if (!word) return;
+      setTaskAnswers((current) => {
+        const next = { ...current };
+        Object.keys(next).forEach((key) => {
+          if (next[key] === word) delete next[key];
+        });
+        next[id] = word;
+        return next;
+      });
+      setActiveWord("");
+    };
     return (
-      <section className="learningBlock quizLearning">
+      <section className="learningBlock taskLearning dragWordsLearning">
         <h3>{block.title}</h3>
-        <b>{lines[0] || "Выберите ответ"}</b>
-        {lines.slice(1).map((option) => (
-          <label key={option} className={answer === option ? "chosen" : ""}>
-            <input
-              type="radio"
-              name={block.id}
-              checked={answer === option}
-              onChange={() => setAnswer(option)}
-            />
-            {option}
-          </label>
-        ))}
-        {answer && (
-          <p className={answer === lines[1] ? "answerGood" : "answerBad"}>
-            {answer === lines[1] ? "Верно!" : "Попробуйте ещё раз"}
-          </p>
-        )}
+        <div className="wordBank">
+          {words.map((word) => (
+            <button
+              key={word}
+              type="button"
+              draggable
+              disabled={Object.values(taskAnswers).includes(word)}
+              className={activeWord === word ? "active" : ""}
+              onClick={() => setActiveWord(word)}
+              onDragStart={(event) => event.dataTransfer.setData("text/plain", word)}
+            >
+              {word}
+            </button>
+          ))}
+        </div>
+        <ol className="gapSentenceList">
+          {items.map((item) => (
+            <li key={item.id}>
+              {item.before}
+              <button
+                type="button"
+                className={
+                  taskAnswers[item.id]
+                    ? taskAnswers[item.id] === item.answer
+                      ? "correct"
+                      : "wrong"
+                    : ""
+                }
+                onClick={() => placeWord(item.id, activeWord)}
+                onDragOver={(event) => event.preventDefault()}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  placeWord(item.id, event.dataTransfer.getData("text/plain"));
+                }}
+              >
+                {taskAnswers[item.id] || "Перетащите слово"}
+              </button>
+              {item.after}
+            </li>
+          ))}
+        </ol>
       </section>
     );
+  }
+  if (block.kind === "select-words")
+    return (
+      <section className="learningBlock taskLearning selectWordsLearning">
+        <h3>{block.title}</h3>
+        <ol className="gapSentenceList">
+          {lines.map((line, index) => {
+            const match = line.match(/\[([^\]]+)\]/);
+            const options = match?.[1].split("|") || [];
+            const id = String(index);
+            return (
+              <li key={id}>
+                {match ? line.slice(0, match.index) : line}
+                {match && (
+                  <select
+                    value={taskAnswers[id] || ""}
+                    className={
+                      taskAnswers[id]
+                        ? taskAnswers[id] === options[0]
+                          ? "correct"
+                          : "wrong"
+                        : ""
+                    }
+                    onChange={(event) =>
+                      setTaskAnswers((current) => ({
+                        ...current,
+                        [id]: event.target.value,
+                      }))
+                    }
+                  >
+                    <option value="">Выберите</option>
+                    {options.map((option) => (
+                      <option key={option}>{option}</option>
+                    ))}
+                  </select>
+                )}
+                {match && line.slice((match.index || 0) + match[0].length)}
+              </li>
+            );
+          })}
+        </ol>
+      </section>
+    );
+  if (block.kind === "fill-blank")
+    return (
+      <section className="learningBlock taskLearning fillBlankLearning">
+        <h3>{block.title}</h3>
+        <ol className="gapSentenceList">
+          {lines.map((line, index) => {
+            const match = line.match(/\[([^\]]+)\]/);
+            const id = String(index);
+            const value = taskAnswers[id] || "";
+            return (
+              <li key={id}>
+                {match ? line.slice(0, match.index) : line}
+                {match && (
+                  <input
+                    value={value}
+                    aria-label={`Ответ ${index + 1}`}
+                    className={
+                      value
+                        ? value.trim().toLowerCase() === match[1].trim().toLowerCase()
+                          ? "correct"
+                          : "wrong"
+                        : ""
+                    }
+                    onChange={(event) =>
+                      setTaskAnswers((current) => ({
+                        ...current,
+                        [id]: event.target.value,
+                      }))
+                    }
+                  />
+                )}
+                {match && line.slice((match.index || 0) + match[0].length)}
+              </li>
+            );
+          })}
+        </ol>
+      </section>
+    );
+  if (block.kind === "match") {
+    const pairs = lines.map((line, index) => {
+      const [left, ...right] = line.split("=");
+      return { id: String(index), left: left?.trim(), right: right.join("=").trim() };
+    });
+    const rightItems = [...pairs].reverse();
+    return (
+      <section className="learningBlock taskLearning matchLearning">
+        <h3>{block.title}</h3>
+        <div className="matchGrid">
+          <div>
+            {pairs.map((pair) => (
+              <button
+                type="button"
+                key={pair.id}
+                className={activeMatch === pair.id ? "active" : taskAnswers[pair.id] ? "paired" : ""}
+                onClick={() => setActiveMatch(pair.id)}
+              >
+                {pair.left}
+              </button>
+            ))}
+          </div>
+          <div>
+            {rightItems.map((item) => {
+              const pairedId = Object.keys(taskAnswers).find(
+                (key) => taskAnswers[key] === item.right,
+              );
+              return (
+                <button
+                  type="button"
+                  key={item.id}
+                  disabled={!activeMatch || Boolean(pairedId)}
+                  className={
+                    pairedId
+                      ? pairs.find((pair) => pair.id === pairedId)?.right === item.right
+                        ? "correct"
+                        : "wrong"
+                      : ""
+                  }
+                  onClick={() => {
+                    if (!activeMatch) return;
+                    setTaskAnswers((current) => ({
+                      ...current,
+                      [activeMatch]: item.right,
+                    }));
+                    setActiveMatch("");
+                  }}
+                >
+                  {item.right}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+    );
+  }
+  if (block.kind === "true-false")
+    return (
+      <section className="learningBlock taskLearning trueFalseLearning">
+        <h3>{block.title}</h3>
+        {lines.map((line, index) => {
+          const [statement, expectedRaw] = line.split("|");
+          const expected = expectedRaw?.trim().toLowerCase() === "true" ? "true" : "false";
+          const id = String(index);
+          return (
+            <div className="trueFalseCard" key={id}>
+              <b>{index + 1}. {statement.trim()}</b>
+              <div>
+                {(["true", "false"] as const).map((value) => (
+                  <button
+                    type="button"
+                    key={value}
+                    className={
+                      taskAnswers[id] === value
+                        ? value === expected
+                          ? "correct"
+                          : "wrong"
+                        : ""
+                    }
+                    onClick={() =>
+                      setTaskAnswers((current) => ({ ...current, [id]: value }))
+                    }
+                  >
+                    {value === "true" ? "Верно" : "Неверно"}
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </section>
+    );
+  if (block.kind === "quiz")
+    {
+      const correct = lines.slice(1).find((option) => option.startsWith("*")) || lines[1];
+      const options = lines.slice(1).map((option) => option.replace(/^\*/, ""));
+      const correctValue = correct?.replace(/^\*/, "");
+      return (
+        <section className="learningBlock quizLearning taskLearning">
+          <h3>{block.title}</h3>
+          <b>{lines[0] || "Выберите ответ"}</b>
+          {options.map((option) => (
+            <label key={option} className={answer === option ? "chosen" : ""}>
+              <input
+                type="radio"
+                name={block.id}
+                checked={answer === option}
+                onChange={() => setAnswer(option)}
+              />
+              {option}
+            </label>
+          ))}
+          {answer && (
+            <p className={answer === correctValue ? "answerGood" : "answerBad"}>
+              {answer === correctValue ? "Верно!" : "Попробуйте ещё раз"}
+            </p>
+          )}
+        </section>
+      );
+    }
   if (block.kind === "html")
     return (
       <section className="learningBlock">
@@ -546,7 +797,7 @@ export function CoursePlayerPage() {
                 <>
                   {current.blocks.length ? (
                     current.blocks.map((block) => (
-                      <BlockView key={block.id} block={block} />
+                      <LessonBlockView key={block.id} block={block} />
                     ))
                   ) : (
                     <div className="learningBlock emptyMaterial">

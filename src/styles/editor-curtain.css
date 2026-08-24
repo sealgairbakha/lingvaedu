@@ -92,6 +92,219 @@
   font-weight: 700;
 }
 
+.paletteSectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 5px 8px;
+}
+
+.paletteSectionTitle:first-of-type {
+  margin-top: 8px;
+}
+
+.paletteSectionTitle span {
+  color: #7d879a;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 1.05px;
+  text-transform: uppercase;
+}
+
+.paletteSectionTitle i {
+  height: 1px;
+  flex: 1;
+  background: var(--line);
+}
+
+.blockGlyph.drag-words,
+.blockGlyph.select-words,
+.blockGlyph.fill-blank,
+.blockGlyph.quiz,
+.blockGlyph.match,
+.blockGlyph.true-false,
+.blockPalette i.drag-words,
+.blockPalette i.select-words,
+.blockPalette i.fill-blank,
+.blockPalette i.quiz,
+.blockPalette i.match,
+.blockPalette i.true-false {
+  background: #e7f7ef;
+  color: #27936a;
+}
+
+.taskFormatNote {
+  margin: -5px 0 18px;
+  padding: 11px 13px;
+  border: 1px solid #ddd8ff;
+  border-radius: 10px;
+  background: #f7f5ff;
+}
+
+.taskFormatNote b {
+  color: #5e49cf;
+  font-size: 11px;
+}
+
+.taskFormatNote p {
+  margin: 4px 0 0;
+  color: #747e91;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.taskLearning > h3 {
+  margin-bottom: 20px;
+}
+
+.wordBank {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding: 14px;
+  border-radius: 12px;
+  background: #f3f5f8;
+}
+
+.wordBank button {
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid #d7dce6;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font-weight: 650;
+  transition: 0.2s ease;
+}
+
+.wordBank button.active {
+  border-color: var(--purple);
+  box-shadow: 0 0 0 3px rgba(101, 75, 246, 0.12);
+}
+
+.wordBank button:disabled {
+  opacity: 0.34;
+}
+
+.gapSentenceList {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding-left: 25px;
+}
+
+.gapSentenceList li {
+  padding-left: 4px;
+  font-size: 16px;
+  line-height: 2.65;
+}
+
+.gapSentenceList button,
+.gapSentenceList select,
+.gapSentenceList input {
+  min-width: 128px;
+  height: 40px;
+  margin: 0 7px;
+  padding: 0 11px;
+  border: 1.5px solid #cfd5e0;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  vertical-align: middle;
+  transition: 0.2s ease;
+}
+
+.gapSentenceList button {
+  color: #8a94a6;
+  font-size: 12px;
+}
+
+.gapSentenceList .correct,
+.trueFalseCard button.correct,
+.matchGrid button.correct {
+  border-color: #20b979;
+  background: #edfaf5;
+  color: #187d56;
+}
+
+.gapSentenceList .wrong,
+.trueFalseCard button.wrong,
+.matchGrid button.wrong {
+  border-color: #ed6c78;
+  background: #fff1f2;
+  color: #bd3e4a;
+}
+
+.matchGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.matchGrid > div {
+  display: grid;
+  align-content: start;
+  gap: 9px;
+}
+
+.matchGrid button {
+  min-height: 54px;
+  padding: 10px 14px;
+  border: 1.5px solid #d5dae4;
+  border-radius: 9px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.4;
+  transition: 0.22s ease;
+}
+
+.matchGrid button.active {
+  border-color: #26aef1;
+  box-shadow: 0 0 0 3px rgba(38, 174, 241, 0.12);
+}
+
+.matchGrid button.paired {
+  color: #8c96a8;
+  opacity: 0.62;
+}
+
+.trueFalseLearning {
+  display: grid;
+  gap: 14px;
+}
+
+.trueFalseCard {
+  padding: 18px;
+  border-radius: 12px;
+  background: #f3f5f8;
+  text-align: center;
+}
+
+.trueFalseCard b {
+  display: block;
+  line-height: 1.55;
+}
+
+.trueFalseCard > div {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.trueFalseCard button {
+  min-width: 118px;
+  height: 40px;
+  border: 1.5px solid #d5dae4;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font-weight: 700;
+}
+
 .collageLayoutPicker {
   display: flex;
   align-items: center;
@@ -331,6 +544,47 @@ html[data-theme="dark"] .imageCollageEditor figure {
   background: #111825;
 }
 
+html[data-theme="dark"] .taskFormatNote {
+  border-color: #514680;
+  background: #211d37;
+}
+
+html[data-theme="dark"] .taskFormatNote b {
+  color: #c8bdff;
+}
+
+html[data-theme="dark"] .wordBank,
+html[data-theme="dark"] .trueFalseCard {
+  background: #111825;
+}
+
+html[data-theme="dark"] .wordBank button,
+html[data-theme="dark"] .gapSentenceList button,
+html[data-theme="dark"] .gapSentenceList select,
+html[data-theme="dark"] .gapSentenceList input,
+html[data-theme="dark"] .matchGrid button,
+html[data-theme="dark"] .trueFalseCard button {
+  border-color: #3b465a;
+  background: #171e2c;
+  color: var(--ink);
+}
+
+html[data-theme="dark"] .gapSentenceList .correct,
+html[data-theme="dark"] .trueFalseCard button.correct,
+html[data-theme="dark"] .matchGrid button.correct {
+  border-color: #2fb17e;
+  background: #17382f;
+  color: #76dab3;
+}
+
+html[data-theme="dark"] .gapSentenceList .wrong,
+html[data-theme="dark"] .trueFalseCard button.wrong,
+html[data-theme="dark"] .matchGrid button.wrong {
+  border-color: #d65a66;
+  background: #321f24;
+  color: #ff9ca6;
+}
+
 @media (max-width: 760px) {
   .blockEditorGroup .inlineBlockInspector {
     padding: 17px;
@@ -347,6 +601,24 @@ html[data-theme="dark"] .imageCollageEditor figure {
 
   .collageLayoutPicker button {
     flex: 1;
+  }
+
+  .matchGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .gapSentenceList li {
+    font-size: 14px;
+    line-height: 2.35;
+  }
+
+  .trueFalseCard > div {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .trueFalseCard button {
+    width: 100%;
   }
 }
 

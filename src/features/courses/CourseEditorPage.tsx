@@ -1,4 +1,5 @@
 import {
+  Fragment,
   useEffect,
   useMemo,
   useRef,
@@ -9,41 +10,98 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
 import { supabase } from "../../lib/supabase";
 import { useCourses } from "./CourseProvider";
+import { LessonBlockView } from "./CoursePlayerPage";
 import { uid, type BlockKind, type Course, type LessonBlock } from "./types";
 
 const palette: {
   kind: BlockKind;
   title: string;
   hint: string;
+  group: "Контент" | "Медиа" | "Задания";
 }[] = [
-  { kind: "text", title: "Текст", hint: "Текст и инструкции" },
+  {
+    kind: "text",
+    title: "Текст",
+    hint: "Текст и инструкции",
+    group: "Контент",
+  },
+  {
+    kind: "html",
+    title: "HTML-код",
+    hint: "Встраиваемый HTML",
+    group: "Контент",
+  },
+  {
+    kind: "file",
+    title: "Файл",
+    hint: "Ссылка на PDF, PPT или документ",
+    group: "Контент",
+  },
   {
     kind: "video",
     title: "Видео",
     hint: "YouTube, MP4, WebM и другие форматы",
+    group: "Медиа",
   },
   {
     kind: "audio",
     title: "Аудио",
     hint: "MP3, WAV, OGG и другие форматы",
+    group: "Медиа",
   },
   {
     kind: "image",
     title: "Фото",
     hint: "PNG, JPG, WebP или вставка через Ctrl + V",
+    group: "Медиа",
+  },
+  {
+    kind: "drag-words",
+    title: "Перетащить слова",
+    hint: "Вставить слова в пропуски",
+    group: "Задания",
+  },
+  {
+    kind: "select-words",
+    title: "Выбрать слово",
+    hint: "Выбор правильного слова из списка",
+    group: "Задания",
+  },
+  {
+    kind: "fill-blank",
+    title: "Вписать слово",
+    hint: "Самостоятельный ввод ответа",
+    group: "Задания",
   },
   {
     kind: "quiz",
-    title: "Задание",
-    hint: "Вопрос и варианты ответов",
+    title: "Выбрать ответ",
+    hint: "Один правильный вариант ответа",
+    group: "Задания",
   },
-  { kind: "html", title: "HTML-код", hint: "Встраиваемый HTML" },
   {
-    kind: "file",
-    title: "Файл",
-    hint: "Ссылка на PDF, PPT или документ",
+    kind: "match",
+    title: "Соединить слова",
+    hint: "Сопоставить пары слов или определений",
+    group: "Задания",
+  },
+  {
+    kind: "true-false",
+    title: "Верно или неверно",
+    hint: "Определить истинность утверждений",
+    group: "Задания",
   },
 ];
+
+const taskKinds: BlockKind[] = [
+  "drag-words",
+  "select-words",
+  "fill-blank",
+  "quiz",
+  "match",
+  "true-false",
+];
+const isTaskKind = (kind: BlockKind) => taskKinds.includes(kind);
 
 function BlockIcon({ kind }: { kind: BlockKind }) {
   const normalized = kind === "media" ? "video" : kind;
@@ -70,7 +128,7 @@ function BlockIcon({ kind }: { kind: BlockKind }) {
           <path d="m5.5 17 4.2-4.2 2.7 2.7 2.3-2.3 3.8 3.8" />
         </>
       )}
-      {normalized === "quiz" && (
+      {isTaskKind(normalized) && (
         <>
           <path d="m5 12 4 4L19 6" />
           <path d="M5 5h5M14 19h5" />
@@ -111,14 +169,32 @@ type DragVisual = {
   width: number;
   returning?: boolean;
 };
+const taskTemplates: Partial<Record<BlockKind, string>> = {
+  "drag-words":
+    "He went to work [despite] being ill.\nJake couldn't sleep [because] he was tired.",
+  "select-words":
+    "I've been off work [because of|therefore] this cough.\nSales have increased. [Therefore|Because] we need new employees.",
+  "fill-blank":
+    "I'm not energetic and [so] is my brother.\nShe has never been to London and [neither] has her sister.",
+  quiz: "Choose the best answer\n*Correct answer\nWrong answer\nAnother answer",
+  match: "makes a lot of profit = lucrative\na baby plant = a shoot\nnot affected by something = resistant",
+  "true-false":
+    "The lesson has already started | true\nEnglish is written from right to left | false",
+};
+const taskFormatNotes: Partial<Record<BlockKind, string>> = {
+  "drag-words": "Каждое предложение — с новой строки. Правильное слово укажите в [квадратных скобках].",
+  "select-words": "В скобках первым укажите правильный вариант: [правильный|неверный|неверный].",
+  "fill-blank": "Каждое правильное слово поместите в [квадратные скобки].",
+  quiz: "Первая строка — вопрос. Каждый ответ — с новой строки. Перед правильным ответом поставьте *.",
+  match: "Каждая пара — с новой строки в формате: слово = перевод или определение.",
+  "true-false": "Каждое утверждение — с новой строки. После | укажите true или false.",
+};
+
 const makeBlock = (kind: BlockKind): LessonBlock => ({
   id: uid(),
   kind,
   title: palette.find((x) => x.kind === kind)!.title,
-  content:
-    kind === "quiz"
-      ? "Какой вариант правильный?\nПравильный ответ\nДругой ответ"
-      : "",
+  content: taskTemplates[kind] || "",
 });
 const getBlockImages = (block: LessonBlock) =>
   block.images?.length
@@ -1151,10 +1227,30 @@ export function CourseEditorPage() {
                             ? "Ссылка на изображение"
                             : "Содержимое"}
                       {b.kind === "text" ||
-                      b.kind === "quiz" ||
+                      isTaskKind(b.kind) ||
                       b.kind === "html" ? (
                         <textarea
                           rows={8}
+                          placeholder={
+                            isTaskKind(b.kind)
+                              ? taskTemplates[b.kind]
+                              : undefined
+                          }
+                          value={b.content}
+                          onChange={(event) =>
+                            updateBlock(b.id, { content: event.target.value })
+                          }
+                        />
+                      ) : (
+                        <input
+                          type="url"
+                          placeholder={
+                            b.kind === "audio"
+                              ? "https://.../audio.mp3"
+                              : b.kind === "image"
+                                ? "https://.../photo.jpg"
+                                : "https://youtube.com/watch?v=..."
+                          }
                           value={b.content}
                           onChange={(event) => {
                             const content = event.target.value;
@@ -1169,23 +1265,14 @@ export function CourseEditorPage() {
                             );
                           }}
                         />
-                      ) : (
-                        <input
-                          type="url"
-                          placeholder={
-                            b.kind === "audio"
-                              ? "https://.../audio.mp3"
-                              : b.kind === "image"
-                                ? "https://.../photo.jpg"
-                                : "https://youtube.com/watch?v=..."
-                          }
-                          value={b.content}
-                          onChange={(event) =>
-                            updateBlock(b.id, { content: event.target.value })
-                          }
-                        />
                       )}
                     </label>
+                    {isTaskKind(b.kind) && (
+                      <div className="taskFormatNote">
+                        <b>Как заполнить</b>
+                        <p>{taskFormatNotes[b.kind]}</p>
+                      </div>
+                    )}
                     {(b.kind === "video" ||
                       b.kind === "media" ||
                       b.kind === "audio" ||
@@ -1506,10 +1593,15 @@ export function CourseEditorPage() {
                       ? "Ссылка на изображение"
                       : "Содержимое"}
                 {block.kind === "text" ||
-                block.kind === "quiz" ||
+                isTaskKind(block.kind) ||
                 block.kind === "html" ? (
                   <textarea
                     rows={12}
+                    placeholder={
+                      isTaskKind(block.kind)
+                        ? taskTemplates[block.kind]
+                        : undefined
+                    }
                     value={block.content}
                     onChange={(e) =>
                       updateBlocks(
@@ -1611,9 +1703,15 @@ export function CourseEditorPage() {
               </button>
             </div>
           ) : (
-            palette.map((p) => (
-              <button
-                key={p.kind}
+            palette.map((p, index) => (
+              <Fragment key={p.kind}>
+                {(index === 0 || palette[index - 1].group !== p.group) && (
+                  <div className="paletteSectionTitle">
+                    <span>{p.group}</span>
+                    <i />
+                  </div>
+                )}
+                <button
                 className={paletteDragging === p.kind ? "paletteDragging" : ""}
                 draggable
                 onClick={() => addBlock(p.kind)}
@@ -1654,7 +1752,8 @@ export function CourseEditorPage() {
                   ⋮⋮
                 </span>
                 <em>＋</em>
-              </button>
+                </button>
+              </Fragment>
             ))
           )}
         </aside>
@@ -1693,49 +1792,7 @@ export function CourseEditorPage() {
             <h1>{lesson?.title}</h1>
             <p>{lesson?.description}</p>
             {rendered.map((b) => (
-              <section className="previewBlock" key={b.id}>
-                <h3>{b.title}</h3>
-                {b.kind === "html" ? (
-                  <div className="htmlPreview">
-                    HTML-код скрыт в безопасном предпросмотре
-                  </div>
-                ) : b.kind === "audio" ? (
-                  <audio controls src={b.content} />
-                ) : b.kind === "image" ? (
-                  <div
-                    className={`lessonImageCollage layout-${b.imageLayout || "grid"} ${getBlockImages(b).length === 1 ? "single" : ""}`}
-                  >
-                    {getBlockImages(b).map((src, index) => (
-                      <img
-                        key={`${src}-${index}`}
-                        src={src}
-                        alt={`${b.title} ${index + 1}`}
-                      />
-                    ))}
-                  </div>
-                ) : b.kind === "video" || b.kind === "media" ? (
-                  <video className="lessonVideo" controls src={b.content} />
-                ) : b.kind === "file" ? (
-                  <a href={b.content} target="_blank" rel="noreferrer">
-                    Открыть материал →
-                  </a>
-                ) : b.kind === "quiz" ? (
-                  <div>
-                    {b.content.split("\n").map((x, i) =>
-                      i === 0 ? (
-                        <b key={i}>{x}</b>
-                      ) : (
-                        <label key={i}>
-                          <input type="radio" name={b.id} />
-                          {x}
-                        </label>
-                      ),
-                    )}
-                  </div>
-                ) : (
-                  <p>{b.content}</p>
-                )}
-              </section>
+              <LessonBlockView key={b.id} block={b} />
             ))}
           </div>
         </div>
