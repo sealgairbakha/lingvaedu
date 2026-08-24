@@ -1,0 +1,11 @@
+:root {
+  --font-sans: "Onest Variable", Onest, system-ui, sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: var(--font-sans);
+}
+

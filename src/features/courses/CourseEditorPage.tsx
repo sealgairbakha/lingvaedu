@@ -147,6 +147,8 @@ export function CourseEditorPage() {
     source?.modules[0]?.lessons[0]?.id || "",
   );
   const [selected, setSelected] = useState("");
+  const [closingEditor, setClosingEditor] = useState("");
+  const closeEditorTimerRef = useRef<number | null>(null);
   const [dragging, setDragging] = useState<string | null>(null);
   const [paletteDragging, setPaletteDragging] = useState<BlockKind | null>(
     null,
@@ -193,6 +195,12 @@ export function CourseEditorPage() {
     startX: number;
     startWidth: number;
   } | null>(null);
+  useEffect(() => {
+    return () => {
+      if (closeEditorTimerRef.current !== null)
+        window.clearTimeout(closeEditorTimerRef.current);
+    };
+  }, []);
   useEffect(() => {
     if (!paletteResize) return;
     const clamp = (value: number) => Math.min(520, Math.max(340, value));
@@ -897,7 +905,7 @@ export function CourseEditorPage() {
             {lesson?.blocks.map((b) => (
               <div
                 key={b.id}
-                className="blockEditorGroup"
+                className={`blockEditorGroup ${selected === b.id ? "editorOpen" : ""}`}
                 data-block-id={b.id}
                 tabIndex={-1}
                 onPaste={(event) => {
@@ -914,7 +922,26 @@ export function CourseEditorPage() {
                   className={`lessonBlock ${selected === b.id ? "selected" : ""} ${dragging === b.id ? "dragging" : ""} ${dropTarget?.id === b.id && dragging !== b.id ? (dropTarget.edge === "before" ? "dropBefore" : "dropAfter") : ""}`}
                   onClick={(event) => {
                     event.currentTarget.parentElement?.focus();
-                    setSelected((current) => (current === b.id ? "" : b.id));
+                    if (selected === b.id) {
+                      setClosingEditor(b.id);
+                      if (closeEditorTimerRef.current !== null)
+                        window.clearTimeout(closeEditorTimerRef.current);
+                      closeEditorTimerRef.current = window.setTimeout(() => {
+                        setSelected((current) =>
+                          current === b.id ? "" : current,
+                        );
+                        setClosingEditor((current) =>
+                          current === b.id ? "" : current,
+                        );
+                        closeEditorTimerRef.current = null;
+                      }, 380);
+                    } else {
+                      if (closeEditorTimerRef.current !== null)
+                        window.clearTimeout(closeEditorTimerRef.current);
+                      closeEditorTimerRef.current = null;
+                      setClosingEditor("");
+                      setSelected(b.id);
+                    }
                   }}
                   onDragOver={(e) => {
                     e.preventDefault();
@@ -1009,9 +1036,13 @@ export function CourseEditorPage() {
                     <button
                       aria-label="Удалить блок"
                       title="Удалить блок"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        updateBlocks(
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (selected === b.id) {
+                        setSelected("");
+                        setClosingEditor("");
+                      }
+                      updateBlocks(
                           lesson.blocks.filter((x) => x.id !== b.id),
                         );
                       }}
@@ -1022,7 +1053,7 @@ export function CourseEditorPage() {
                 </article>
                 {selected === b.id && (
                   <div
-                    className="blockInspector inlineBlockInspector"
+                    className={`blockInspector inlineBlockInspector ${closingEditor === b.id ? "closing" : ""}`}
                     onClick={(event) => event.stopPropagation()}
                   >
                     <div className="inlineBlockInspectorHead">
@@ -1033,7 +1064,18 @@ export function CourseEditorPage() {
                       <button
                         type="button"
                         aria-label="Закрыть редактор блока"
-                        onClick={() => setSelected("")}
+                        onClick={() => {
+                          setClosingEditor(b.id);
+                          if (closeEditorTimerRef.current !== null)
+                            window.clearTimeout(closeEditorTimerRef.current);
+                          closeEditorTimerRef.current = window.setTimeout(() => {
+                            setSelected((current) =>
+                              current === b.id ? "" : current,
+                            );
+                            setClosingEditor("");
+                            closeEditorTimerRef.current = null;
+                          }, 380);
+                        }}
                       >
                         ×
                       </button>

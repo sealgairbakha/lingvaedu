@@ -1,12 +1,14 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
-import "@fontsource-variable/manrope";
+import "@fontsource-variable/onest";
 import App from "./App";
 import { AuthGate } from "./auth/AuthGate";
 import { AuthProvider } from "./auth/AuthProvider";
 import { CourseProvider } from "./features/courses/CourseProvider";
 import "./styles/index.css";
+import "./styles/typography.css";
+import "./styles/editor-curtain.css";
 
 const savedTheme = localStorage.getItem("lingvaedu-theme");
 const initialTheme = savedTheme === "dark" || (!savedTheme && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";

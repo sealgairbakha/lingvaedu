@@ -1,0 +1,99 @@
+.blockEditorGroup {
+  position: relative;
+  isolation: isolate;
+}
+
+.blockEditorGroup > .lessonBlock {
+  position: relative;
+  z-index: 2;
+  transition:
+    border-radius 0.36s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.3s ease,
+    background 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.blockEditorGroup.editorOpen > .lessonBlock {
+  border-color: #bdb3ff;
+  border-bottom-color: #d9d3ff;
+  border-radius: 16px 16px 0 0;
+  background: color-mix(in srgb, var(--card) 94%, #eeeaff);
+  box-shadow: 0 8px 22px rgba(35, 41, 66, 0.07);
+}
+
+.blockEditorGroup .inlineBlockInspector {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  padding: 22px;
+  overflow: hidden;
+  border: 1px solid #bdb3ff;
+  border-top: 0;
+  border-radius: 0 0 16px 16px;
+  background: color-mix(in srgb, var(--card) 96%, #eeeaff);
+  box-shadow: 0 18px 36px rgba(35, 41, 66, 0.11);
+  transform-origin: top center;
+  animation: blockCurtainOpen 0.52s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.blockEditorGroup .inlineBlockInspector::before {
+  display: none;
+}
+
+.blockEditorGroup .inlineBlockInspector.closing {
+  pointer-events: none;
+  animation: blockCurtainClose 0.38s cubic-bezier(0.55, 0, 0.78, 0) both;
+}
+
+@keyframes blockCurtainOpen {
+  from {
+    opacity: 0;
+    clip-path: inset(0 0 100% 0 round 0 0 16px 16px);
+    transform: translateY(-14px) scaleY(0.92);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0 round 0 0 16px 16px);
+    transform: translateY(0) scaleY(1);
+  }
+}
+
+@keyframes blockCurtainClose {
+  from {
+    opacity: 1;
+    clip-path: inset(0 round 0 0 16px 16px);
+    transform: translateY(0) scaleY(1);
+  }
+  to {
+    opacity: 0;
+    clip-path: inset(0 0 100% 0 round 0 0 16px 16px);
+    transform: translateY(-12px) scaleY(0.94);
+  }
+}
+
+html[data-theme="dark"] .blockEditorGroup.editorOpen > .lessonBlock {
+  border-color: #6255a0;
+  border-bottom-color: #514680;
+  background: #192131;
+}
+
+html[data-theme="dark"] .blockEditorGroup .inlineBlockInspector {
+  border-color: #6255a0;
+  background: #171e2c;
+  box-shadow: 0 20px 42px rgba(0, 0, 0, 0.34);
+}
+
+@media (max-width: 760px) {
+  .blockEditorGroup .inlineBlockInspector {
+    padding: 17px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blockEditorGroup > .lessonBlock,
+  .blockEditorGroup .inlineBlockInspector {
+    animation-duration: 0.01ms;
+    transition-duration: 0.01ms;
+  }
+}
+
