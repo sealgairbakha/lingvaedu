@@ -9,6 +9,7 @@ import { CourseEditorPage } from "./features/courses/CourseEditorPage";
 import { CoursePlayerPage } from "./features/courses/CoursePlayerPage";
 import { ProfilePage } from "./features/profile/ProfilePage";
 import { UsersPage } from "./features/users/UsersPage";
+import { GroupsPage } from "./features/groups/GroupsPage";
 
 type Page =
   | "overview"
@@ -187,10 +188,9 @@ function Sidebar({
   close: () => void;
   hide: () => void;
 }) {
-  const { displayName, initials, avatarUrl, isAdmin, signOut } = useAuth();
+  const { displayName, initials, avatarUrl, isAdmin, canEditCourses, signOut } = useAuth();
   const adminOnlyPages: Page[] = [
     "people",
-    "groups",
     "roles",
     "reports",
   ];
@@ -206,7 +206,7 @@ function Sidebar({
         <nav>
           {nav.map((group, gi) => {
             const items = group.items.filter(
-              (item) => isAdmin || !adminOnlyPages.includes(item.id),
+              (item) => isAdmin || (item.id === "groups" && canEditCourses) || !adminOnlyPages.includes(item.id),
             );
             if (!items.length) return null;
             return (
@@ -1041,77 +1041,6 @@ function People() {
   );
 }
 
-function Groups() {
-  return (
-    <main className="content fade">
-      <PageTitle
-        title="Группы"
-        text="Объединяйте учеников, назначайте курсы и наставников."
-        action={<button className="btn primary">＋ Создать группу</button>}
-      />
-      <div className="groupGrid">
-        {[
-          { n: "Sales Team", m: 42, c: 3, mentor: "Анна Ким", color: "violet" },
-          {
-            n: "Newcomers · August",
-            m: 18,
-            c: 2,
-            mentor: "Олег Миронов",
-            color: "orange",
-          },
-          {
-            n: "HR Department",
-            m: 26,
-            c: 4,
-            mentor: "Айгүл Сәрсен",
-            color: "blue",
-          },
-          { n: "Marketing", m: 31, c: 2, mentor: "Анна Ким", color: "green" },
-          {
-            n: "English mentors",
-            m: 8,
-            c: 6,
-            mentor: "Баха Админ",
-            color: "pink",
-          },
-        ].map((g, i) => (
-          <article className="groupCard" key={g.n}>
-            <div className={`groupMark ${g.color}`}>
-              {g.n
-                .split(" ")
-                .map((x) => x[0])
-                .slice(0, 2)
-                .join("")}
-            </div>
-            <button>•••</button>
-            <h3>{g.n}</h3>
-            <p>Рабочая учебная группа Lingva Academy</p>
-            <div className="groupNums">
-              <span>
-                <b>{g.m}</b>участников
-              </span>
-              <span>
-                <b>{g.c}</b>курса
-              </span>
-            </div>
-            <div className="groupMentor">
-              <span>{g.mentor.slice(0, 2)}</span>
-              <div>
-                <small>НАСТАВНИК</small>
-                <b>{g.mentor}</b>
-              </div>
-            </div>
-          </article>
-        ))}
-        <button className="newGroup">
-          ＋<b>Новая группа</b>
-          <span>Создать и настроить доступы</span>
-        </button>
-      </div>
-    </main>
-  );
-}
-
 function Reports() {
   return (
     <main className="content fade">
@@ -1544,8 +1473,8 @@ export default function App() {
   const { isAdmin, canEditCourses } = useAuth();
   const page = pageByPath[location.pathname] ?? "overview";
   const setPage = (next: Page) => navigate(paths[next]);
-  const adminOnlyPages: Page[] = ["people", "groups", "reports", "roles"];
-  const denied = (!isAdmin && adminOnlyPages.includes(page)) || (page === "editor" && !canEditCourses);
+  const adminOnlyPages: Page[] = ["people", "reports", "roles"];
+  const denied = (!isAdmin && adminOnlyPages.includes(page)) || ((page === "editor" || page === "groups") && !canEditCourses);
   const content =
     denied ? (
       <main className="content fade">
@@ -1569,7 +1498,7 @@ export default function App() {
     ) : page === "people" ? (
       <UsersPage />
     ) : page === "groups" ? (
-      <Groups />
+      <GroupsPage />
     ) : page === "reports" ? (
       <Reports />
     ) : page === "calls" ? (

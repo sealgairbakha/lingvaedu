@@ -4,7 +4,7 @@ import { isSupabaseConfigured, supabase } from "../../lib/supabase";
 import { blankCourse, type Course } from "./types";
 
 type Store = {
-  courses: Course[]; loading: boolean; storage: "cloud" | "local";
+  courses: Course[]; loading: boolean; storage: "cloud" | "local"; enrolledCourseIds: string[];
   createCourse: () => Course; saveCourse: (course: Course) => Promise<void>;
   removeCourse: (id: string) => Promise<void>; duplicateCourse: (id: string) => Promise<void>;
 };
@@ -18,6 +18,7 @@ const readLocal = (): Course[] => {
 export function CourseProvider({ children }: { children: React.ReactNode }) {
   const { displayName, avatarUrl, user } = useAuth();
   const [courses, setCourses] = useState<Course[]>([]);
+  const [enrolledCourseIds, setEnrolledCourseIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [storage, setStorage] = useState<"cloud" | "local">("local");
 
@@ -26,7 +27,7 @@ export function CourseProvider({ children }: { children: React.ReactNode }) {
     (async () => {
       if (supabase) {
         const { data, error } = await supabase.from("courses").select("content,author_id").order("updated_at", { ascending: false });
-        if (!error && active) { const {data:enrollments}=await supabase.from("course_enrollments").select("course_id");const counts=new Map<string,number>();for(const row of enrollments||[])counts.set(row.course_id,(counts.get(row.course_id)||0)+1);setCourses((data || []).map((x) => {const course=x.content as Course;return {...course,authorId:course.authorId||x.author_id||undefined,students:enrollments?counts.get(course.id)||0:course.students};})); setStorage("cloud"); setLoading(false); return; }
+        if (!error && active) { const {data:enrollments}=await supabase.from("course_enrollments").select("course_id");const counts=new Map<string,number>();for(const row of enrollments||[])counts.set(row.course_id,(counts.get(row.course_id)||0)+1);setEnrolledCourseIds([...(new Set((enrollments||[]).map((row)=>row.course_id)))]);setCourses((data || []).map((x) => {const course=x.content as Course;return {...course,authorId:course.authorId||x.author_id||undefined,students:enrollments?counts.get(course.id)||0:course.students};})); setStorage("cloud"); setLoading(false); return; }
       }
       if (active) { setCourses(readLocal()); setStorage("local"); setLoading(false); }
     })();
@@ -56,7 +57,7 @@ export function CourseProvider({ children }: { children: React.ReactNode }) {
     const copy = { ...structuredClone(source), id: crypto.randomUUID(), title: `${source.title} — копия`, status: "draft" as const, students: 0 };
     await saveCourse(copy);
   }, [courses, saveCourse]);
-  const value = useMemo(() => ({ courses, loading, storage, createCourse, saveCourse, removeCourse, duplicateCourse }), [courses, loading, storage, createCourse, saveCourse, removeCourse, duplicateCourse]);
+  const value = useMemo(() => ({ courses, loading, storage, enrolledCourseIds, createCourse, saveCourse, removeCourse, duplicateCourse }), [courses, loading, storage, enrolledCourseIds, createCourse, saveCourse, removeCourse, duplicateCourse]);
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }
 

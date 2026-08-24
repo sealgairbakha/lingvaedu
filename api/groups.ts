@@ -1,0 +1,175 @@
+import { createClient, type User } from "@supabase/supabase-js";
+
+type UserRole = "admin" | "staff" | "student";
+
+const json = (body: Record<string, unknown>, status = 200) =>
+  Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
+
+function configuration() {
+  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  return url && key ? { url, key } : null;
+}
+
+function bearer(request: Request) {
+  const value = request.headers.get("authorization") || "";
+  return value.startsWith("Bearer ") ? value.slice(7) : "";
+}
+
+function roleOf(user: User): UserRole {
+  const role = user.app_metadata?.role;
+  return role === "admin" || role === "staff" ? role : "student";
+}
+
+function publicUser(user: User) {
+  const fullName = String(
+    user.user_metadata?.full_name || user.email?.split("@")[0] || "Пользователь",
+  );
+  return {
+    id: user.id,
+    email: user.email || "",
+    fullName,
+    avatarUrl: String(user.user_metadata?.avatar_url || ""),
+    role: roleOf(user),
+    active: Boolean(user.email_confirmed_at) &&
+      (!user.banned_until || new Date(user.banned_until).getTime() <= Date.now()),
+  };
+}
+
+async function bodyOf(request: Request) {
+  try {
+    return (await request.json()) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+function ids(value: unknown) {
+  return Array.isArray(value)
+    ? [...new Set(value.map(String).filter(Boolean))]
+    : [];
+}
+
+export default {
+  async fetch(request: Request) {
+    const config = configuration();
+    if (!config)
+      return json({ error: "Серверное управление группами ещё не настроено" }, 503);
+
+    const service = createClient(config.url, config.key, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const token = bearer(request);
+    if (!token) return json({ error: "Требуется авторизация" }, 401);
+    const callerResult = await service.auth.getUser(token);
+    const caller = callerResult.data.user;
+    if (callerResult.error || !caller)
+      return json({ error: "Сессия истекла" }, 401);
+    if (!(["admin", "staff"] as UserRole[]).includes(roleOf(caller)))
+      return json({ error: "Недостаточно прав" }, 403);
+
+    if (request.method === "GET") {
+      const [groupsResult, membersResult, coursesResult, usersResult, catalogResult] =
+        await Promise.all([
+          service.from("learning_groups").select("*").order("updated_at", { ascending: false }),
+          service.from("learning_group_members").select("group_id,user_id"),
+          service.from("learning_group_courses").select("group_id,course_id"),
+          service.auth.admin.listUsers({ page: 1, perPage: 1000 }),
+          service.from("courses").select("id,title,status,content").order("updated_at", { ascending: false }),
+        ]);
+      const firstError = groupsResult.error || membersResult.error || coursesResult.error ||
+        usersResult.error || catalogResult.error;
+      if (firstError) return json({ error: firstError.message }, 502);
+
+      const users = usersResult.data.users.map(publicUser);
+      const userMap = new Map(users.map((user) => [user.id, user]));
+      const memberMap = new Map<string, string[]>();
+      const courseMap = new Map<string, string[]>();
+      for (const row of membersResult.data || []) {
+        memberMap.set(row.group_id, [...(memberMap.get(row.group_id) || []), row.user_id]);
+      }
+      for (const row of coursesResult.data || []) {
+        courseMap.set(row.group_id, [...(courseMap.get(row.group_id) || []), row.course_id]);
+      }
+      const groups = (groupsResult.data || []).map((group) => ({
+        id: group.id,
+        name: group.name,
+        description: group.description || "",
+        mentorId: group.mentor_id || "",
+        mentor: group.mentor_id ? userMap.get(group.mentor_id) || null : null,
+        memberIds: memberMap.get(group.id) || [],
+        courseIds: courseMap.get(group.id) || [],
+        updatedAt: group.updated_at,
+      }));
+      const courses = (catalogResult.data || []).map((row) => ({
+        id: row.id,
+        title: row.title,
+        status: row.status,
+        language: String((row.content as { language?: string } | null)?.language || ""),
+      }));
+      return json({ groups, users, courses });
+    }
+
+    const body = await bodyOf(request);
+    if (!body) return json({ error: "Некорректные данные" }, 400);
+
+    if (request.method === "POST") {
+      const name = String(body.name || "").trim();
+      if (name.length < 2) return json({ error: "Введите название группы" }, 400);
+      const result = await service.from("learning_groups").insert({
+        name,
+        description: String(body.description || "").trim(),
+        mentor_id: body.mentorId ? String(body.mentorId) : null,
+        created_by: caller.id,
+      }).select("id").single();
+      if (result.error) return json({ error: result.error.message }, 400);
+      return json({ id: result.data.id }, 201);
+    }
+
+    const groupId = String(body.id || "");
+    if (!groupId) return json({ error: "Группа не выбрана" }, 400);
+
+    if (request.method === "PATCH") {
+      const memberIds = ids(body.memberIds);
+      const courseIds = ids(body.courseIds);
+      const update = await service.from("learning_groups").update({
+        name: String(body.name || "").trim(),
+        description: String(body.description || "").trim(),
+        mentor_id: body.mentorId ? String(body.mentorId) : null,
+        updated_at: new Date().toISOString(),
+      }).eq("id", groupId);
+      if (update.error) return json({ error: update.error.message }, 400);
+
+      const [clearMembers, clearCourses] = await Promise.all([
+        service.from("learning_group_members").delete().eq("group_id", groupId),
+        service.from("learning_group_courses").delete().eq("group_id", groupId),
+      ]);
+      if (clearMembers.error || clearCourses.error)
+        return json({ error: (clearMembers.error || clearCourses.error)!.message }, 400);
+
+      const writes = [];
+      if (memberIds.length) writes.push(service.from("learning_group_members").insert(
+        memberIds.map((userId) => ({ group_id: groupId, user_id: userId })),
+      ));
+      if (courseIds.length) writes.push(service.from("learning_group_courses").insert(
+        courseIds.map((courseId) => ({ group_id: groupId, course_id: courseId })),
+      ));
+      if (memberIds.length && courseIds.length) writes.push(service.from("course_enrollments").upsert(
+        memberIds.flatMap((userId) => courseIds.map((courseId) => ({ user_id: userId, course_id: courseId }))),
+        { onConflict: "course_id,user_id", ignoreDuplicates: true },
+      ));
+      const results = await Promise.all(writes);
+      const writeError = results.find((result) => result.error)?.error;
+      if (writeError) return json({ error: writeError.message }, 400);
+      return json({ ok: true });
+    }
+
+    if (request.method === "DELETE") {
+      const result = await service.from("learning_groups").delete().eq("id", groupId);
+      if (result.error) return json({ error: result.error.message }, 400);
+      return json({ ok: true });
+    }
+
+    return json({ error: "Method not allowed" }, 405);
+  },
+};
