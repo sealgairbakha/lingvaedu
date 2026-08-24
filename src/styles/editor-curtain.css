@@ -54,6 +54,44 @@
   opacity: 1;
 }
 
+.mediaReady {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin: 14px 0 2px;
+  color: #258c65 !important;
+  font-size: 13px !important;
+  line-height: 1.35;
+}
+
+.mediaReady > span {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #2fb17e;
+  color: #fff;
+  box-shadow: 0 5px 12px rgba(47, 177, 126, 0.22);
+}
+
+.mediaReady svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.mediaReady b {
+  font-size: inherit;
+  font-weight: 700;
+}
+
 .blockEditorGroup .inlineBlockInspector.closing {
   pointer-events: none;
   animation: blockCurtainClose 0.38s cubic-bezier(0.55, 0, 0.78, 0) both;

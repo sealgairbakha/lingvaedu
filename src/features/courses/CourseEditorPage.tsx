@@ -1181,7 +1181,14 @@ export function CourseEditorPage() {
                         )}
                         {b.content && (
                           <>
-                            <p className="mediaReady">✓ Материал добавлен</p>
+                            <p className="mediaReady">
+                              <span aria-hidden="true">
+                                <svg viewBox="0 0 20 20">
+                                  <path d="m5.2 10.2 3 3.1 6.7-7" />
+                                </svg>
+                              </span>
+                              <b>Материал добавлен</b>
+                            </p>
                             {b.kind === "image" && (
                               <img
                                 className="imageEditorPreview"
@@ -1447,7 +1454,14 @@ export function CourseEditorPage() {
                   {uploadError && <p className="uploadError">{uploadError}</p>}
                   {block.content && (
                     <>
-                      <p className="mediaReady">✓ Материал добавлен</p>
+                      <p className="mediaReady">
+                        <span aria-hidden="true">
+                          <svg viewBox="0 0 20 20">
+                            <path d="m5.2 10.2 3 3.1 6.7-7" />
+                          </svg>
+                        </span>
+                        <b>Материал добавлен</b>
+                      </p>
                       {block.kind === "image" && (
                         <img
                           className="imageEditorPreview"
