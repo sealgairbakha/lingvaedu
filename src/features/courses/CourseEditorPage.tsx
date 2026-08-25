@@ -590,7 +590,6 @@ export function CourseEditorPage() {
       rect.width,
       Math.max(240, Math.min(440, window.innerWidth - 32)),
     );
-    const horizontalRatio = rect.width ? (clientX - rect.left) / rect.width : 0.5;
     dragDroppedRef.current = false;
     setDragVisual({
       kind,
@@ -598,8 +597,8 @@ export function CourseEditorPage() {
       hint,
       x: clientX,
       y: clientY,
-      offsetX: Math.max(18, Math.min(previewWidth - 18, previewWidth * horizontalRatio)),
-      offsetY: Math.max(18, Math.min(54, clientY - rect.top)),
+      offsetX: previewWidth / 2,
+      offsetY: 36,
       sourceX: rect.left,
       sourceY: rect.top,
       width: previewWidth,
@@ -2185,8 +2184,17 @@ export function CourseEditorPage() {
           className={`editorFloatingDrag ${dragVisual.returning ? "returning" : ""}`}
           style={
             {
-              left: dragVisual.x - dragVisual.offsetX,
-              top: dragVisual.y - dragVisual.offsetY,
+              left: Math.max(
+                12,
+                Math.min(
+                  window.innerWidth - dragVisual.width - 12,
+                  dragVisual.x - dragVisual.offsetX,
+                ),
+              ),
+              top: Math.max(
+                12,
+                Math.min(window.innerHeight - 92, dragVisual.y - dragVisual.offsetY),
+              ),
               width: dragVisual.width,
             } as CSSProperties
           }
