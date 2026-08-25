@@ -12,6 +12,7 @@ import { useAuth } from "../../auth/AuthProvider";
 import { supabase } from "../../lib/supabase";
 import { useCourses } from "./CourseProvider";
 import { LessonBlockView } from "./CoursePlayerPage";
+import { RichTextEditor } from "./RichTextEditor";
 import { TaskBlockEditor } from "./TaskBlockEditor";
 import { uid, type BlockKind, type Course, type LessonBlock } from "./types";
 
@@ -1557,95 +1558,18 @@ export function CourseEditorPage() {
                         block={b}
                         onChange={(content) => updateBlock(b.id, { content })}
                       />
-                    ) : b.kind === "text" || b.kind === "html" ? (
+                    ) : b.kind === "text" ? (
+                      <RichTextEditor
+                        block={b}
+                        onChange={(patch) => updateBlock(b.id, patch)}
+                      />
+                    ) : b.kind === "html" ? (
                       <div className="blockTextEditor">
-                        {b.kind === "text" && (
-                          <div className="fontToolbarCurtain">
-                          <div className="textFormatToolbar" aria-label="Оформление текста">
-                            <label>
-                              <span className="formatControlLabel">Шрифт</span>
-                              <select
-                                aria-label="Шрифт"
-                                value={b.textStyle?.fontFamily || "onest"}
-                                onChange={(event) => updateBlock(b.id, {
-                                  textStyle: {
-                                    ...b.textStyle,
-                                    fontFamily: event.target.value as NonNullable<LessonBlock["textStyle"]>["fontFamily"],
-                                  },
-                                })}
-                              >
-                                {textFontOptions.map((option) => (
-                                  <option key={option.value} value={option.value}>{option.label}</option>
-                                ))}
-                              </select>
-                            </label>
-                            <label>
-                              <span className="formatControlLabel">Размер</span>
-                              <select
-                                aria-label="Размер шрифта"
-                                value={b.textStyle?.fontSize || 16}
-                                onChange={(event) => updateBlock(b.id, {
-                                  textStyle: {
-                                    ...b.textStyle,
-                                    fontSize: Number(event.target.value) as NonNullable<LessonBlock["textStyle"]>["fontSize"],
-                                  },
-                                })}
-                              >
-                                {[14, 16, 18, 20, 24].map((size) => (
-                                  <option key={size} value={size}>{size} px</option>
-                                ))}
-                              </select>
-                            </label>
-                            <label>
-                              <span className="formatControlLabel">Начертание</span>
-                              <select
-                                aria-label="Начертание шрифта"
-                                value={b.textStyle?.fontWeight || 400}
-                                onChange={(event) => updateBlock(b.id, {
-                                  textStyle: {
-                                    ...b.textStyle,
-                                    fontWeight: Number(event.target.value) as NonNullable<LessonBlock["textStyle"]>["fontWeight"],
-                                  },
-                                })}
-                              >
-                                <option value={400}>Обычный</option>
-                                <option value={500}>Средний</option>
-                                <option value={700}>Жирный</option>
-                              </select>
-                            </label>
-                            <div className="textAlignControl">
-                              <span>Выравнивание</span>
-                              <div className="textAlignPicker" aria-label="Выравнивание текста">
-                                {(["left", "center", "right"] as const).map((alignment) => (
-                                <button
-                                  key={alignment}
-                                  type="button"
-                                  className={(b.textStyle?.textAlign || "left") === alignment ? "active" : ""}
-                                  title={alignment === "left" ? "По левому краю" : alignment === "center" ? "По центру" : "По правому краю"}
-                                  aria-label={alignment === "left" ? "По левому краю" : alignment === "center" ? "По центру" : "По правому краю"}
-                                  onClick={() => updateBlock(b.id, {
-                                    textStyle: { ...b.textStyle, textAlign: alignment },
-                                  })}
-                                >
-                                  <TextAlignIcon alignment={alignment} />
-                                </button>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                          </div>
-                        )}
                         <label>
                           Содержимое
                           <textarea
                             rows={8}
                             value={b.content}
-                            style={b.kind === "text" ? {
-                              fontFamily: textFontFamily(b.textStyle?.fontFamily),
-                              fontSize: `${b.textStyle?.fontSize || 16}px`,
-                              fontWeight: b.textStyle?.fontWeight || 400,
-                              textAlign: b.textStyle?.textAlign || "left",
-                            } : undefined}
                             onChange={(event) => updateBlock(b.id, { content: event.target.value })}
                           />
                         </label>

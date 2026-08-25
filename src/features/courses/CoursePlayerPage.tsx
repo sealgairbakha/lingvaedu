@@ -5,6 +5,7 @@ import { useAuth } from "../../auth/AuthProvider";
 import { supabase } from "../../lib/supabase";
 import { useCourses } from "./CourseProvider";
 import type { LessonBlock } from "./types";
+import { sanitizeRichText } from "./richText";
 
 const lessonFontFamilies = {
   onest: '"Onest Variable", Onest, sans-serif',
@@ -727,7 +728,16 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
   return (
     <section className="learningBlock">
       <h3>{block.title}</h3>
-      <p
+      {block.richContent ? <div
+        className="lessonText richLessonText"
+        style={{
+          fontFamily: lessonFontFamilies[block.textStyle?.fontFamily || "onest"],
+          fontSize: `${block.textStyle?.fontSize || 16}px`,
+          fontWeight: block.textStyle?.fontWeight || 400,
+          textAlign: block.textStyle?.textAlign || "left",
+        }}
+        dangerouslySetInnerHTML={{ __html: sanitizeRichText(block.richContent) }}
+      /> : <p
         className="lessonText"
         style={{
           fontFamily: lessonFontFamilies[block.textStyle?.fontFamily || "onest"],
@@ -737,7 +747,7 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
         }}
       >
         {block.content || "Содержание пока не добавлено."}
-      </p>
+      </p>}
     </section>
   );
 }

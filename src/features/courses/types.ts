@@ -19,6 +19,7 @@ export type LessonBlock = {
   kind: BlockKind;
   title: string;
   content: string;
+  richContent?: string;
   fileName?: string;
   fileSize?: number;
   fileType?: string;
