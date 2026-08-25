@@ -1,0 +1,143 @@
+/* A shared, app-wide treatment for native select controls. Modern Chromium
+   exposes the picker, while the fallback below still improves older engines. */
+:where(select:not([multiple])) {
+  color: var(--ink);
+  background-color: var(--card);
+  border-color: var(--line);
+  cursor: pointer;
+  transition: border-color .2s ease, box-shadow .2s ease, background-color .2s ease;
+}
+
+:where(select:not([multiple])):hover {
+  border-color: color-mix(in srgb, var(--purple) 42%, var(--line));
+}
+
+:where(select:not([multiple])):focus-visible {
+  border-color: var(--purple);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--purple) 14%, transparent);
+  outline: none;
+}
+
+:where(select:not([multiple])) option {
+  color: var(--ink);
+  background: var(--card);
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+@supports (appearance: base-select) {
+  :where(select:not([multiple])),
+  :where(select:not([multiple]))::picker(select) {
+    appearance: base-select !important;
+  }
+
+  :where(select:not([multiple])) {
+    align-items: center;
+    gap: 10px;
+    background-image: none !important;
+  }
+
+  :where(select:not([multiple]))::picker-icon {
+    width: 8px;
+    height: 8px;
+    margin-left: auto;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    color: var(--muted);
+    content: "";
+    transform: rotate(45deg) translateY(-2px);
+    transition: transform .24s ease, color .2s ease;
+  }
+
+  :where(select:not([multiple])):open::picker-icon {
+    color: var(--purple);
+    transform: rotate(225deg) translate(-2px, -2px);
+  }
+
+  :where(select:not([multiple]))::picker(select) {
+    min-width: anchor-size(width);
+    max-height: min(340px, 55vh);
+    margin-top: 7px;
+    padding: 7px;
+    overflow: auto;
+    border: 1px solid color-mix(in srgb, var(--purple) 18%, var(--line));
+    border-radius: 13px;
+    background: var(--card);
+    box-shadow: 0 18px 45px rgba(25, 31, 48, .16), 0 3px 10px rgba(25, 31, 48, .08);
+    opacity: 0;
+    transform: translateY(-6px) scale(.985);
+    transform-origin: top center;
+    transition: opacity .2s ease, transform .2s cubic-bezier(.2, .8, .2, 1), display .2s allow-discrete, overlay .2s allow-discrete;
+  }
+
+  :where(select:not([multiple])):open::picker(select) {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  @starting-style {
+    :where(select:not([multiple])):open::picker(select) {
+      opacity: 0;
+      transform: translateY(-6px) scale(.985);
+    }
+  }
+
+  :where(select:not([multiple])) option {
+    display: flex;
+    align-items: center;
+    min-height: 42px;
+    margin: 2px 0;
+    padding: 9px 11px;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: color .16s ease, background-color .16s ease, transform .16s ease;
+  }
+
+  :where(select:not([multiple])) option:hover,
+  :where(select:not([multiple])) option:focus-visible {
+    background: color-mix(in srgb, var(--purple) 9%, var(--card));
+    color: var(--purple);
+    outline: none;
+    transform: translateX(2px);
+  }
+
+  :where(select:not([multiple])) option:checked {
+    background: color-mix(in srgb, var(--purple) 13%, var(--card));
+    color: var(--purple);
+    font-weight: 800;
+  }
+
+  :where(select:not([multiple])) option::checkmark {
+    order: 2;
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    margin-left: auto;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--purple) 14%, transparent);
+    color: var(--purple);
+    font-size: 12px;
+    font-weight: 900;
+  }
+}
+
+html[data-theme="dark"] :where(select:not([multiple]))::picker(select) {
+  border-color: #3a465b;
+  background: var(--card);
+  box-shadow: 0 20px 55px rgba(0, 0, 0, .48);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(select:not([multiple])),
+  :where(select:not([multiple]))::picker-icon,
+  :where(select:not([multiple]))::picker(select),
+  :where(select:not([multiple])) option {
+    transition: none !important;
+  }
+}
