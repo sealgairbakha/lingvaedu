@@ -1637,6 +1637,101 @@ html[data-theme="dark"] .blockPalette > button:hover .paletteAddIcon {
   .imageLightboxNav.next { right: 6px; }
 }
 
+/* Course structure removal controls */
+.moduleEdit {
+  position: relative;
+  padding-right: 58px !important;
+}
+
+.moduleEdit .moduleDelete,
+.treeLessonDelete {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: #a2aaba;
+  transition: opacity .2s ease, color .2s ease, background .2s ease, border-color .2s ease, transform .2s ease;
+}
+
+.moduleEdit .moduleDelete {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  float: none;
+  margin: 0;
+  transform: translateY(-50%);
+  box-shadow: none;
+}
+
+.moduleEdit .moduleDelete:hover {
+  border-color: #ffd0d4;
+  background: #fff0f1;
+  color: #db4651;
+  transform: translateY(-50%) scale(1.04);
+  box-shadow: none;
+}
+
+.moduleEdit .moduleDelete svg,
+.treeLessonDelete svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.treeLessonRow {
+  position: relative;
+}
+
+.treeLessonRow .treeLesson {
+  padding-right: 58px;
+}
+
+.treeLessonDelete {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  right: 13px;
+  opacity: 0;
+  transform: translateY(-50%) scale(.92);
+}
+
+.treeLessonRow:hover .treeLessonDelete,
+.treeLessonRow:focus-within .treeLessonDelete,
+.treeLesson.active + .treeLessonDelete {
+  opacity: 1;
+  transform: translateY(-50%) scale(1);
+}
+
+.treeLessonDelete:hover {
+  border-color: #ffd0d4;
+  background: #fff0f1;
+  color: #db4651;
+}
+
+html[data-theme="dark"] .moduleEdit .moduleDelete,
+html[data-theme="dark"] .treeLessonDelete {
+  color: #8490a5;
+}
+
+html[data-theme="dark"] .moduleEdit .moduleDelete:hover,
+html[data-theme="dark"] .treeLessonDelete:hover {
+  border-color: #63313a;
+  background: #352029;
+  color: #ff8e97;
+}
+
+@media(max-width:1100px) {
+  .treeLessonDelete { opacity: 1; transform: translateY(-50%) scale(1); }
+}
+
 .blockEditorGroup .inlineBlockInspector.closing {
   pointer-events: none;
   animation: blockCurtainClose 0.38s cubic-bezier(0.55, 0, 0.78, 0) both;

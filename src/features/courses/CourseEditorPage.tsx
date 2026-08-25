@@ -182,6 +182,14 @@ function AddBlockIcon() {
   );
 }
 
+function TrashIcon() {
+  return (
+    <svg viewBox="0 0 20 20" aria-hidden="true">
+      <path d="M4.5 6h11M8 3.8h4M6.2 6l.6 10h6.4l.6-10M8.3 8.5v5M11.7 8.5v5" />
+    </svg>
+  );
+}
+
 const courseFileAccept = [
   ".pdf",
   ".doc",
@@ -629,14 +637,15 @@ export function CourseEditorPage() {
         ],
       };
     });
-  const addLesson = () => {
-    if (!module) return;
+  const addLesson = (targetModuleId = module?.id) => {
+    if (!targetModuleId) return;
     const id = uid();
+    setModuleId(targetModuleId);
     setLessonId(id);
     mutate((c) => ({
       ...c,
       modules: c.modules.map((m) =>
-        m.id === module.id
+        m.id === targetModuleId
           ? {
               ...m,
               lessons: [
@@ -654,6 +663,63 @@ export function CourseEditorPage() {
           : m,
       ),
     }));
+  };
+  const removeLesson = (
+    targetModuleId: string,
+    targetLessonId: string,
+    title: string,
+  ) => {
+    if (!course || !window.confirm(`Удалить урок «${title}»? Все блоки этого урока будут удалены.`))
+      return;
+    const orderedLessons = course.modules.flatMap((item) =>
+      item.lessons.map((entry) => ({ moduleId: item.id, lesson: entry })),
+    );
+    const removedIndex = orderedLessons.findIndex(
+      (entry) => entry.lesson.id === targetLessonId,
+    );
+    const nextCourse = {
+      ...course,
+      modules: course.modules.map((item) =>
+        item.id === targetModuleId
+          ? {
+              ...item,
+              lessons: item.lessons.filter((entry) => entry.id !== targetLessonId),
+            }
+          : item,
+      ),
+    };
+    const remaining = nextCourse.modules.flatMap((item) =>
+      item.lessons.map((entry) => ({ moduleId: item.id, lesson: entry })),
+    );
+    const next = remaining[Math.min(Math.max(removedIndex, 0), remaining.length - 1)];
+    setModuleId(next?.moduleId || nextCourse.modules[0]?.id || "");
+    setLessonId(next?.lesson.id || "");
+    setSelected("");
+    mutate(() => nextCourse);
+  };
+  const removeModule = (targetModuleId: string, title: string) => {
+    if (!course) return;
+    const target = course.modules.find((item) => item.id === targetModuleId);
+    const lessonCount = target?.lessons.length || 0;
+    if (
+      !window.confirm(
+        `Удалить модуль «${title}»${lessonCount ? ` и ${lessonCount} ${lessonCount === 1 ? "урок" : "урока"} внутри` : ""}?`,
+      )
+    )
+      return;
+    const removedIndex = course.modules.findIndex((item) => item.id === targetModuleId);
+    const nextModules = course.modules.filter((item) => item.id !== targetModuleId);
+    const nextModule =
+      nextModules[Math.min(Math.max(removedIndex, 0), nextModules.length - 1)] ||
+      nextModules[0];
+    const nextModuleWithLesson =
+      (nextModule?.lessons.length ? nextModule : null) ||
+      nextModules.find((item) => item.lessons.length) ||
+      nextModule;
+    setModuleId(nextModuleWithLesson?.id || "");
+    setLessonId(nextModuleWithLesson?.lessons[0]?.id || "");
+    setSelected("");
+    mutate((current) => ({ ...current, modules: nextModules }));
   };
   const addBlock = (kind: BlockKind) => {
     const b = makeBlock(kind);
@@ -1017,33 +1083,49 @@ export function CourseEditorPage() {
                     }))
                   }
                 />
+                <button
+                  type="button"
+                  className="moduleDelete"
+                  onClick={() => removeModule(m.id, m.title)}
+                  aria-label={`Удалить модуль «${m.title}»`}
+                  title="Удалить модуль"
+                >
+                  <TrashIcon />
+                </button>
               </div>
               {m.lessons.map((l, li) => (
-                <button
-                  key={l.id}
-                  className={`treeLesson ${lesson?.id === l.id ? "active" : ""}`}
-                  onClick={() => {
-                    setModuleId(m.id);
-                    setLessonId(l.id);
-                    setSelected("");
-                    setMobilePanel(null);
-                  }}
-                >
-                  <i>{li + 1}</i>
-                  <span>
-                    {l.title}
-                    <small>{l.blocks.length} блоков</small>
-                  </span>
-                </button>
+                <div className="treeLessonRow" key={l.id}>
+                  <button
+                    className={`treeLesson ${lesson?.id === l.id ? "active" : ""}`}
+                    onClick={() => {
+                      setModuleId(m.id);
+                      setLessonId(l.id);
+                      setSelected("");
+                      setMobilePanel(null);
+                    }}
+                  >
+                    <i>{li + 1}</i>
+                    <span>
+                      {l.title}
+                      <small>{l.blocks.length} блоков</small>
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className="treeLessonDelete"
+                    onClick={() => removeLesson(m.id, l.id, l.title)}
+                    aria-label={`Удалить урок «${l.title}»`}
+                    title="Удалить урок"
+                  >
+                    <TrashIcon />
+                  </button>
+                </div>
               ))}
               <button
                 className="moduleAddLesson"
                 aria-label={`Добавить урок в модуль «${m.title}»`}
                 title="Добавить урок"
-                onClick={() => {
-                  setModuleId(m.id);
-                  addLesson();
-                }}
+                onClick={() => addLesson(m.id)}
               >
                 ＋
               </button>
