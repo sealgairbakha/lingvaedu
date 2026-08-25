@@ -2906,13 +2906,55 @@ html[data-theme="dark"] .calendarError{background:#321d25;border-color:#71313b;c
   padding-inline: 0;
 }
 
+.fontToolbarCurtain {
+  width: 100%;
+  min-width: 0;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(-8px);
+  transform-origin: top center;
+  pointer-events: none;
+  transition: max-height .38s cubic-bezier(.2, .8, .2, 1), opacity .24s ease, transform .38s cubic-bezier(.2, .8, .2, 1), margin .38s ease;
+}
+
+.fontToolbarCurtain > .textFormatToolbar {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.blockTextEditor > .fontToolbarCurtain {
+  margin-bottom: -16px;
+}
+
+.lessonOverview:has(> textarea:focus, > .fontToolbarCurtain:focus-within) > .fontToolbarCurtain,
+.blockTextEditor:has(> label > textarea:focus, > .fontToolbarCurtain:focus-within) > .fontToolbarCurtain {
+  max-height: 260px;
+  margin-bottom: 0;
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fontToolbarCurtain { transition: none; }
+}
+
 @container (max-width: 700px) {
+  .lessonOverview:has(> textarea:focus, > .fontToolbarCurtain:focus-within) > .fontToolbarCurtain {
+    max-height: 300px;
+  }
+
   .lessonDescriptionToolbar {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 }
 
 @container (max-width: 430px) {
+  .lessonOverview:has(> textarea:focus, > .fontToolbarCurtain:focus-within) > .fontToolbarCurtain {
+    max-height: 520px;
+  }
+
   .lessonDescriptionToolbar {
     grid-template-columns: 1fr;
   }

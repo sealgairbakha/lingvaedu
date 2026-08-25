@@ -1296,6 +1296,7 @@ export function CourseEditorPage() {
                   {Math.min(lesson?.description.length || 0, 250)} / 250
                 </span>
               </div>
+              <div className="fontToolbarCurtain">
               <div className="textFormatToolbar lessonDescriptionToolbar" aria-label="Оформление описания урока">
                 <label>
                   Шрифт
@@ -1321,6 +1322,7 @@ export function CourseEditorPage() {
                     {(["left", "center", "right"] as const).map((alignment) => { const label = alignment === "left" ? "По левому краю" : alignment === "center" ? "По центру" : "По правому краю"; return <button key={alignment} type="button" className={(lesson?.descriptionStyle?.textAlign || "left") === alignment ? "active" : ""} title={label} aria-label={label} onClick={() => updateLesson({ descriptionStyle: { ...lesson?.descriptionStyle, textAlign: alignment } })}><TextAlignIcon alignment={alignment} /></button>; })}
                   </div>
                 </div>
+              </div>
               </div>
             </div>
           </div>
@@ -1558,6 +1560,7 @@ export function CourseEditorPage() {
                     ) : b.kind === "text" || b.kind === "html" ? (
                       <div className="blockTextEditor">
                         {b.kind === "text" && (
+                          <div className="fontToolbarCurtain">
                           <div className="textFormatToolbar" aria-label="Оформление текста">
                             <label>
                               Шрифт
@@ -1626,6 +1629,7 @@ export function CourseEditorPage() {
                                 ))}
                               </div>
                             </div>
+                          </div>
                           </div>
                         )}
                         <label>
