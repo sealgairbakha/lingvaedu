@@ -1294,8 +1294,11 @@ export function CourseEditorPage() {
                     <option value={400}>Обычный</option><option value={500}>Средний</option><option value={700}>Жирный</option>
                   </select>
                 </label>
-                <div className="textAlignPicker" aria-label="Выравнивание описания">
-                  {(["left", "center", "right"] as const).map((alignment) => <button key={alignment} type="button" className={(lesson?.descriptionStyle?.textAlign || "left") === alignment ? "active" : ""} title={alignment === "left" ? "По левому краю" : alignment === "center" ? "По центру" : "По правому краю"} onClick={() => updateLesson({ descriptionStyle: { ...lesson?.descriptionStyle, textAlign: alignment } })}><span className={`alignGlyph ${alignment}`} /></button>)}
+                <div className="textAlignControl">
+                  <span>Выравнивание</span>
+                  <div className="textAlignPicker" aria-label="Выравнивание описания">
+                    {(["left", "center", "right"] as const).map((alignment) => <button key={alignment} type="button" className={(lesson?.descriptionStyle?.textAlign || "left") === alignment ? "active" : ""} title={alignment === "left" ? "По левому краю" : alignment === "center" ? "По центру" : "По правому краю"} onClick={() => updateLesson({ descriptionStyle: { ...lesson?.descriptionStyle, textAlign: alignment } })}><span className={`alignGlyph ${alignment}`} /></button>)}
+                  </div>
                 </div>
               </div>
             </div>
@@ -1583,8 +1586,10 @@ export function CourseEditorPage() {
                                 <option value={700}>Жирный</option>
                               </select>
                             </label>
-                            <div className="textAlignPicker" aria-label="Выравнивание текста">
-                              {(["left", "center", "right"] as const).map((alignment) => (
+                            <div className="textAlignControl">
+                              <span>Выравнивание</span>
+                              <div className="textAlignPicker" aria-label="Выравнивание текста">
+                                {(["left", "center", "right"] as const).map((alignment) => (
                                 <button
                                   key={alignment}
                                   type="button"
@@ -1596,7 +1601,8 @@ export function CourseEditorPage() {
                                 >
                                   <span className={`alignGlyph ${alignment}`} />
                                 </button>
-                              ))}
+                                ))}
+                              </div>
                             </div>
                           </div>
                         )}
