@@ -1301,6 +1301,148 @@ html[data-theme="dark"] .blockPalette > button:hover .paletteAddIcon {
   font-weight: 700;
 }
 
+.taskActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 24px;
+  padding: 14px 16px;
+  border: 1px solid #e1e5ed;
+  border-radius: 13px;
+  background: #f7f8fb;
+  transition: border-color .25s ease, background .25s ease, box-shadow .25s ease;
+}
+
+.taskActions > div {
+  min-width: 0;
+}
+
+.taskActions b,
+.taskActions small {
+  display: block;
+}
+
+.taskActions b {
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.taskActions small {
+  margin-top: 3px;
+  color: #7f899b;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.taskActions.success {
+  border-color: #a9e5ce;
+  background: #effaf6;
+  box-shadow: 0 7px 20px rgba(31, 151, 105, .08);
+}
+
+.taskActions.needsWork {
+  border-color: #f0c7cb;
+  background: #fff7f7;
+}
+
+.taskActions button {
+  flex: 0 0 auto;
+  min-width: 142px;
+  height: 42px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 10px;
+  font-weight: 800;
+  transition: transform .22s ease, box-shadow .22s ease, background .22s ease, opacity .22s ease;
+}
+
+.taskCheckButton {
+  background: var(--purple);
+  color: #fff;
+  box-shadow: 0 7px 18px rgba(101, 75, 246, .2);
+}
+
+.taskResetButton {
+  background: #ece9ff;
+  color: #5b43e7;
+}
+
+.taskActions button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 9px 22px rgba(64, 48, 154, .18);
+}
+
+.taskActions button:disabled {
+  cursor: not-allowed;
+  opacity: .45;
+  box-shadow: none;
+}
+
+.matchGrid button.paired {
+  border-color: #b9b0f8;
+  background: #f5f3ff;
+  color: #5e50b2;
+  opacity: 1;
+}
+
+.quizLearning label.correct {
+  border-color: #20b979;
+  background: #edfaf5;
+  color: #187d56;
+}
+
+.quizLearning label.wrong {
+  border-color: #ed6c78;
+  background: #fff1f2;
+  color: #bd3e4a;
+}
+
+html[data-theme="dark"] .taskActions {
+  border-color: #354057;
+  background: #171f2e;
+}
+
+html[data-theme="dark"] .taskActions.success {
+  border-color: #28654f;
+  background: #132820;
+}
+
+html[data-theme="dark"] .taskActions.needsWork {
+  border-color: #6a3942;
+  background: #2a1b21;
+}
+
+html[data-theme="dark"] .taskActions b {
+  color: #f5f7fb;
+}
+
+html[data-theme="dark"] .taskActions small {
+  color: #aab3c4;
+}
+
+html[data-theme="dark"] .taskResetButton {
+  background: #2b254d;
+  color: #cbbfff;
+}
+
+html[data-theme="dark"] .matchGrid button.paired {
+  border-color: #6659ae;
+  background: #282440;
+  color: #d5ceff;
+}
+
+@media(max-width:600px) {
+  .taskActions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .taskActions button {
+    width: 100%;
+  }
+}
+
 .collageLayoutPicker {
   display: flex;
   align-items: center;

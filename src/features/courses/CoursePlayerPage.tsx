@@ -20,11 +20,62 @@ const formatAttachmentSize = (bytes?: number) => {
   return `${(bytes / (1024 * 1024)).toFixed(bytes < 10 * 1024 * 1024 ? 1 : 0)} МБ`;
 };
 
+const normalizeTaskAnswer = (value: string) =>
+  value.trim().toLocaleLowerCase().replace(/\s+/g, " ");
+
+function TaskActions({
+  checked,
+  answered,
+  total,
+  correct,
+  onCheck,
+  onReset,
+}: {
+  checked: boolean;
+  answered: number;
+  total: number;
+  correct: number;
+  onCheck: () => void;
+  onReset: () => void;
+}) {
+  const complete = total > 0 && answered === total;
+  return (
+    <div className={`taskActions ${checked ? (correct === total ? "success" : "needsWork") : ""}`}>
+      <div aria-live="polite">
+        {checked ? (
+          <>
+            <b>{correct === total ? "Отлично! Всё верно" : `Верно: ${correct} из ${total}`}</b>
+            <small>
+              {correct === total
+                ? "Задание выполнено."
+                : "Исправьте отмеченные ответы и проверьте ещё раз."}
+            </small>
+          </>
+        ) : (
+          <>
+            <b>{complete ? "Можно проверять" : `Выполнено: ${answered} из ${total}`}</b>
+            <small>{complete ? "Все ответы заполнены." : "Ответьте на все пункты задания."}</small>
+          </>
+        )}
+      </div>
+      <button
+        type="button"
+        className={checked ? "taskResetButton" : "taskCheckButton"}
+        disabled={!checked && !complete}
+        onClick={checked ? onReset : onCheck}
+      >
+        {checked ? "Сбросить ответы" : "Проверить"}
+      </button>
+    </div>
+  );
+}
+
 export function LessonBlockView({ block }: { block: LessonBlock }) {
   const [answer, setAnswer] = useState("");
   const [taskAnswers, setTaskAnswers] = useState<Record<string, string>>({});
   const [activeWord, setActiveWord] = useState("");
   const [activeMatch, setActiveMatch] = useState("");
+  const [taskChecked, setTaskChecked] = useState(false);
   const [openedImage, setOpenedImage] = useState<number | null>(null);
   const lines = block.content.split("\n").filter(Boolean);
   const blockImages = block.images?.length
@@ -59,34 +110,44 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
         after: match ? line.slice((match.index || 0) + match[0].length) : "",
       };
     });
-    const words = items.map((item) => item.answer).filter(Boolean);
-    const placeWord = (id: string, word: string) => {
-      if (!word) return;
+    const wordTokens = items
+      .filter((item) => item.answer)
+      .map((item) => ({ id: `word-${item.id}`, word: item.answer }));
+    const wordById = new Map(wordTokens.map((token) => [token.id, token.word]));
+    const placeWord = (id: string, tokenId: string) => {
+      if (!tokenId || !wordById.has(tokenId)) return;
       setTaskAnswers((current) => {
         const next = { ...current };
         Object.keys(next).forEach((key) => {
-          if (next[key] === word) delete next[key];
+          if (next[key] === tokenId) delete next[key];
         });
-        next[id] = word;
+        next[id] = tokenId;
         return next;
       });
       setActiveWord("");
+      setTaskChecked(false);
     };
+    const answered = items.filter((item) => taskAnswers[item.id]).length;
+    const correct = items.filter(
+      (item) =>
+        normalizeTaskAnswer(wordById.get(taskAnswers[item.id]) || "") ===
+        normalizeTaskAnswer(item.answer),
+    ).length;
     return (
       <section className="learningBlock taskLearning dragWordsLearning">
         <h3>{block.title}</h3>
         <div className="wordBank">
-          {words.map((word) => (
+          {wordTokens.map((token) => (
             <button
-              key={word}
+              key={token.id}
               type="button"
               draggable
-              disabled={Object.values(taskAnswers).includes(word)}
-              className={activeWord === word ? "active" : ""}
-              onClick={() => setActiveWord(word)}
-              onDragStart={(event) => event.dataTransfer.setData("text/plain", word)}
+              disabled={Object.values(taskAnswers).includes(token.id)}
+              className={activeWord === token.id ? "active" : ""}
+              onClick={() => setActiveWord(token.id)}
+              onDragStart={(event) => event.dataTransfer.setData("text/plain", token.id)}
             >
-              {word}
+              {token.word}
             </button>
           ))}
         </div>
@@ -97,37 +158,74 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
               <button
                 type="button"
                 className={
-                  taskAnswers[item.id]
-                    ? taskAnswers[item.id] === item.answer
+                  taskChecked && taskAnswers[item.id]
+                    ? normalizeTaskAnswer(wordById.get(taskAnswers[item.id]) || "") ===
+                      normalizeTaskAnswer(item.answer)
                       ? "correct"
                       : "wrong"
                     : ""
                 }
-                onClick={() => placeWord(item.id, activeWord)}
+                onClick={() => {
+                  if (activeWord) {
+                    placeWord(item.id, activeWord);
+                    return;
+                  }
+                  if (taskAnswers[item.id]) {
+                    setTaskAnswers((current) => {
+                      const next = { ...current };
+                      delete next[item.id];
+                      return next;
+                    });
+                    setTaskChecked(false);
+                  }
+                }}
                 onDragOver={(event) => event.preventDefault()}
                 onDrop={(event) => {
                   event.preventDefault();
                   placeWord(item.id, event.dataTransfer.getData("text/plain"));
                 }}
               >
-                {taskAnswers[item.id] || "Перетащите слово"}
+                {wordById.get(taskAnswers[item.id]) || "Перетащите слово"}
               </button>
               {item.after}
             </li>
           ))}
         </ol>
+        <TaskActions
+          checked={taskChecked}
+          answered={answered}
+          total={items.length}
+          correct={correct}
+          onCheck={() => setTaskChecked(true)}
+          onReset={() => {
+            setTaskAnswers({});
+            setActiveWord("");
+            setTaskChecked(false);
+          }}
+        />
       </section>
     );
   }
-  if (block.kind === "select-words")
+  if (block.kind === "select-words") {
+    const items = lines.map((line, index) => {
+      const match = line.match(/\[([^\]]*)\]/);
+      const options = (match?.[1].split("|") || []).filter(Boolean);
+      return { id: String(index), line, match, options };
+    });
+    const answered = items.filter((item) => taskAnswers[item.id]).length;
+    const correct = items.filter(
+      (item) =>
+        normalizeTaskAnswer(taskAnswers[item.id] || "") ===
+        normalizeTaskAnswer(item.options[0] || ""),
+    ).length;
     return (
       <section className="learningBlock taskLearning selectWordsLearning">
         <h3>{block.title}</h3>
         <ol className="gapSentenceList">
-          {lines.map((line, index) => {
-            const match = line.match(/\[([^\]]+)\]/);
-            const options = match?.[1].split("|") || [];
-            const id = String(index);
+          {items.map(({ id, line, match, options }, index) => {
+            const visibleOptions = options.length
+              ? [...options.slice(index % options.length), ...options.slice(0, index % options.length)]
+              : [];
             return (
               <li key={id}>
                 {match ? line.slice(0, match.index) : line}
@@ -135,22 +233,26 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
                   <select
                     value={taskAnswers[id] || ""}
                     className={
-                      taskAnswers[id]
-                        ? taskAnswers[id] === options[0]
+                      taskChecked && taskAnswers[id]
+                        ? normalizeTaskAnswer(taskAnswers[id]) ===
+                          normalizeTaskAnswer(options[0] || "")
                           ? "correct"
                           : "wrong"
                         : ""
                     }
                     onChange={(event) =>
-                      setTaskAnswers((current) => ({
-                        ...current,
-                        [id]: event.target.value,
-                      }))
+                      {
+                        setTaskAnswers((current) => ({
+                          ...current,
+                          [id]: event.target.value,
+                        }));
+                        setTaskChecked(false);
+                      }
                     }
                   >
                     <option value="">Выберите</option>
-                    {options.map((option) => (
-                      <option key={option}>{option}</option>
+                    {visibleOptions.map((option, optionIndex) => (
+                      <option key={`${option}-${optionIndex}`} value={option}>{option}</option>
                     ))}
                   </select>
                 )}
@@ -159,16 +261,37 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
             );
           })}
         </ol>
+        <TaskActions
+          checked={taskChecked}
+          answered={answered}
+          total={items.length}
+          correct={correct}
+          onCheck={() => setTaskChecked(true)}
+          onReset={() => {
+            setTaskAnswers({});
+            setTaskChecked(false);
+          }}
+        />
       </section>
     );
-  if (block.kind === "fill-blank")
+  }
+  if (block.kind === "fill-blank") {
+    const items = lines.map((line, index) => ({
+      id: String(index),
+      line,
+      match: line.match(/\[([^\]]*)\]/),
+    }));
+    const answered = items.filter((item) => taskAnswers[item.id]?.trim()).length;
+    const correct = items.filter(
+      (item) =>
+        normalizeTaskAnswer(taskAnswers[item.id] || "") ===
+        normalizeTaskAnswer(item.match?.[1] || ""),
+    ).length;
     return (
       <section className="learningBlock taskLearning fillBlankLearning">
         <h3>{block.title}</h3>
         <ol className="gapSentenceList">
-          {lines.map((line, index) => {
-            const match = line.match(/\[([^\]]+)\]/);
-            const id = String(index);
+          {items.map(({ id, line, match }, index) => {
             const value = taskAnswers[id] || "";
             return (
               <li key={id}>
@@ -178,17 +301,20 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
                     value={value}
                     aria-label={`Ответ ${index + 1}`}
                     className={
-                      value
-                        ? value.trim().toLowerCase() === match[1].trim().toLowerCase()
+                      taskChecked && value
+                        ? normalizeTaskAnswer(value) === normalizeTaskAnswer(match[1])
                           ? "correct"
                           : "wrong"
                         : ""
                     }
                     onChange={(event) =>
-                      setTaskAnswers((current) => ({
-                        ...current,
-                        [id]: event.target.value,
-                      }))
+                      {
+                        setTaskAnswers((current) => ({
+                          ...current,
+                          [id]: event.target.value,
+                        }));
+                        setTaskChecked(false);
+                      }
                     }
                   />
                 )}
@@ -197,14 +323,28 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
             );
           })}
         </ol>
+        <TaskActions
+          checked={taskChecked}
+          answered={answered}
+          total={items.length}
+          correct={correct}
+          onCheck={() => setTaskChecked(true)}
+          onReset={() => {
+            setTaskAnswers({});
+            setTaskChecked(false);
+          }}
+        />
       </section>
     );
+  }
   if (block.kind === "match") {
     const pairs = lines.map((line, index) => {
       const [left, ...right] = line.split("=");
       return { id: String(index), left: left?.trim(), right: right.join("=").trim() };
     });
     const rightItems = [...pairs].reverse();
+    const answered = pairs.filter((pair) => taskAnswers[pair.id]).length;
+    const correct = pairs.filter((pair) => taskAnswers[pair.id] === pair.id).length;
     return (
       <section className="learningBlock taskLearning matchLearning">
         <h3>{block.title}</h3>
@@ -214,8 +354,21 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
               <button
                 type="button"
                 key={pair.id}
-                className={activeMatch === pair.id ? "active" : taskAnswers[pair.id] ? "paired" : ""}
-                onClick={() => setActiveMatch(pair.id)}
+                className={
+                  activeMatch === pair.id
+                    ? "active"
+                    : taskChecked && taskAnswers[pair.id]
+                      ? taskAnswers[pair.id] === pair.id
+                        ? "correct"
+                        : "wrong"
+                      : taskAnswers[pair.id]
+                        ? "paired"
+                        : ""
+                }
+                onClick={() => {
+                  setActiveMatch(pair.id);
+                  setTaskChecked(false);
+                }}
               >
                 {pair.left}
               </button>
@@ -224,27 +377,42 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
           <div>
             {rightItems.map((item) => {
               const pairedId = Object.keys(taskAnswers).find(
-                (key) => taskAnswers[key] === item.right,
+                (key) => taskAnswers[key] === item.id,
               );
               return (
                 <button
                   type="button"
                   key={item.id}
-                  disabled={!activeMatch || Boolean(pairedId)}
                   className={
-                    pairedId
-                      ? pairs.find((pair) => pair.id === pairedId)?.right === item.right
+                    taskChecked && pairedId
+                      ? pairedId === item.id
                         ? "correct"
                         : "wrong"
+                      : pairedId
+                        ? "paired"
                       : ""
                   }
                   onClick={() => {
-                    if (!activeMatch) return;
+                    if (!activeMatch) {
+                      if (pairedId) {
+                        setTaskAnswers((current) => {
+                          const next = { ...current };
+                          delete next[pairedId];
+                          return next;
+                        });
+                        setActiveMatch(pairedId);
+                        setTaskChecked(false);
+                      }
+                      return;
+                    }
                     setTaskAnswers((current) => ({
-                      ...current,
-                      [activeMatch]: item.right,
+                      ...Object.fromEntries(
+                        Object.entries(current).filter(([, value]) => value !== item.id),
+                      ),
+                      [activeMatch]: item.id,
                     }));
                     setActiveMatch("");
+                    setTaskChecked(false);
                   }}
                 >
                   {item.right}
@@ -253,35 +421,55 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
             })}
           </div>
         </div>
+        <TaskActions
+          checked={taskChecked}
+          answered={answered}
+          total={pairs.length}
+          correct={correct}
+          onCheck={() => setTaskChecked(true)}
+          onReset={() => {
+            setTaskAnswers({});
+            setActiveMatch("");
+            setTaskChecked(false);
+          }}
+        />
       </section>
     );
   }
-  if (block.kind === "true-false")
+  if (block.kind === "true-false") {
+    const items = lines.map((line, index) => {
+      const [statement, expectedRaw] = line.split("|");
+      return {
+        id: String(index),
+        statement: statement?.trim() || "",
+        expected: expectedRaw?.trim().toLowerCase() === "true" ? "true" : "false",
+      };
+    });
+    const answered = items.filter((item) => taskAnswers[item.id]).length;
+    const correct = items.filter((item) => taskAnswers[item.id] === item.expected).length;
     return (
       <section className="learningBlock taskLearning trueFalseLearning">
         <h3>{block.title}</h3>
-        {lines.map((line, index) => {
-          const [statement, expectedRaw] = line.split("|");
-          const expected = expectedRaw?.trim().toLowerCase() === "true" ? "true" : "false";
-          const id = String(index);
+        {items.map(({ id, statement, expected }, index) => {
           return (
             <div className="trueFalseCard" key={id}>
-              <b>{index + 1}. {statement.trim()}</b>
+              <b>{index + 1}. {statement}</b>
               <div>
                 {(["true", "false"] as const).map((value) => (
                   <button
                     type="button"
                     key={value}
                     className={
-                      taskAnswers[id] === value
+                      taskChecked && taskAnswers[id] === value
                         ? value === expected
                           ? "correct"
                           : "wrong"
                         : ""
                     }
-                    onClick={() =>
-                      setTaskAnswers((current) => ({ ...current, [id]: value }))
-                    }
+                    onClick={() => {
+                      setTaskAnswers((current) => ({ ...current, [id]: value }));
+                      setTaskChecked(false);
+                    }}
                   >
                     {value === "true" ? "Верно" : "Неверно"}
                   </button>
@@ -290,33 +478,60 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
             </div>
           );
         })}
+        <TaskActions
+          checked={taskChecked}
+          answered={answered}
+          total={items.length}
+          correct={correct}
+          onCheck={() => setTaskChecked(true)}
+          onReset={() => {
+            setTaskAnswers({});
+            setTaskChecked(false);
+          }}
+        />
       </section>
     );
+  }
   if (block.kind === "quiz")
     {
-      const correct = lines.slice(1).find((option) => option.startsWith("*")) || lines[1];
-      const options = lines.slice(1).map((option) => option.replace(/^\*/, ""));
-      const correctValue = correct?.replace(/^\*/, "");
+      const rawOptions = lines.slice(1);
+      const markedCorrectIndex = rawOptions.findIndex((option) => option.startsWith("*"));
+      const correctIndex = markedCorrectIndex >= 0 ? markedCorrectIndex : 0;
+      const options = rawOptions.map((option) => option.replace(/^\*/, ""));
+      const answered = answer ? 1 : 0;
+      const correctCount = answer === String(correctIndex + 1) ? 1 : 0;
       return (
         <section className="learningBlock quizLearning taskLearning">
           <h3>{block.title}</h3>
           <b>{lines[0] || "Выберите ответ"}</b>
-          {options.map((option) => (
-            <label key={option} className={answer === option ? "chosen" : ""}>
+          {options.map((option, optionIndex) => (
+            <label
+              key={`${option}-${optionIndex}`}
+              className={`${answer === String(optionIndex + 1) ? "chosen" : ""} ${taskChecked && answer === String(optionIndex + 1) ? (optionIndex === correctIndex ? "correct" : "wrong") : ""}`}
+            >
               <input
                 type="radio"
                 name={block.id}
-                checked={answer === option}
-                onChange={() => setAnswer(option)}
+                checked={answer === String(optionIndex + 1)}
+                onChange={() => {
+                  setAnswer(String(optionIndex + 1));
+                  setTaskChecked(false);
+                }}
               />
               {option}
             </label>
           ))}
-          {answer && (
-            <p className={answer === correctValue ? "answerGood" : "answerBad"}>
-              {answer === correctValue ? "Верно!" : "Попробуйте ещё раз"}
-            </p>
-          )}
+          <TaskActions
+            checked={taskChecked}
+            answered={answered}
+            total={1}
+            correct={correctCount}
+            onCheck={() => setTaskChecked(true)}
+            onReset={() => {
+              setAnswer("");
+              setTaskChecked(false);
+            }}
+          />
         </section>
       );
     }

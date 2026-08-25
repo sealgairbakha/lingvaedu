@@ -6,6 +6,8 @@ type Props = {
 };
 
 const splitLines = (content: string) => content.split("\n").filter(Boolean);
+const cleanDelimiter = (value: string, delimiter: string) =>
+  value.replaceAll(delimiter, " ");
 const sentenceWithBlank = (line: string, answer: string) => {
   const clean = line.trim() || "___";
   return clean.includes("___")
@@ -14,7 +16,7 @@ const sentenceWithBlank = (line: string, answer: string) => {
 };
 const parseGapRows = (content: string) =>
   splitLines(content).map((line) => {
-    const match = line.match(/\[([^\]]+)\]/);
+    const match = line.match(/\[([^\]]*)\]/);
     return {
       sentence: match ? line.replace(match[0], "___") : line,
       answer: match?.[1] || "",
@@ -95,7 +97,10 @@ function GapTaskEditor({ block, onChange }: Props) {
                 placeholder="despite"
                 onChange={(event) => {
                   const next = [...safeRows];
-                  next[index] = { ...row, answer: event.target.value };
+                  next[index] = {
+                    ...row,
+                    answer: cleanDelimiter(event.target.value, "]"),
+                  };
                   update(next);
                 }}
               />
@@ -120,7 +125,7 @@ function GapTaskEditor({ block, onChange }: Props) {
 
 function SelectWordsEditor({ block, onChange }: Props) {
   const parsed = splitLines(block.content).map((line) => {
-    const match = line.match(/\[([^\]]+)\]/);
+    const match = line.match(/\[([^\]]*)\]/);
     return {
       sentence: match ? line.replace(match[0], "___") : line,
       options: match?.[1].split("|") || ["", ""],
@@ -180,7 +185,10 @@ function SelectWordsEditor({ block, onChange }: Props) {
                     placeholder={optionIndex === 0 ? "Правильный вариант" : "Другой вариант"}
                     onChange={(event) => {
                       const options = [...row.options];
-                      options[optionIndex] = event.target.value;
+                      options[optionIndex] = cleanDelimiter(
+                        cleanDelimiter(event.target.value, "|"),
+                        "]",
+                      );
                       const next = [...rows];
                       next[rowIndex] = { ...row, options };
                       update(next);
@@ -340,7 +348,10 @@ function MatchEditor({ block, onChange }: Props) {
                 placeholder="a baby plant"
                 onChange={(event) => {
                   const next = [...rows];
-                  next[index] = { ...row, left: event.target.value };
+                  next[index] = {
+                    ...row,
+                    left: cleanDelimiter(event.target.value, "="),
+                  };
                   update(next);
                 }}
               />
@@ -391,7 +402,10 @@ function TrueFalseEditor({ block, onChange }: Props) {
                 placeholder="Введите утверждение"
                 onChange={(event) => {
                   const next = [...rows];
-                  next[index] = { ...row, statement: event.target.value };
+                  next[index] = {
+                    ...row,
+                    statement: cleanDelimiter(event.target.value, "|"),
+                  };
                   update(next);
                 }}
               />
