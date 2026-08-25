@@ -2927,6 +2927,15 @@ html[data-theme="dark"] .calendarError{background:#321d25;border-color:#71313b;c
   margin-bottom: -16px;
 }
 
+.lessonOverview > .fontToolbarCurtain {
+  order: 1;
+}
+
+.lessonOverview > textarea,
+.lessonOverview > .lessonDescriptionMeta {
+  order: 2;
+}
+
 .lessonOverview:has(> textarea:focus, > .fontToolbarCurtain:focus-within) > .fontToolbarCurtain,
 .blockTextEditor:has(> label > textarea:focus, > .fontToolbarCurtain:focus-within) > .fontToolbarCurtain {
   max-height: 260px;
