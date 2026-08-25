@@ -26,6 +26,17 @@ const textFontFamily = (
   value?: NonNullable<LessonBlock["textStyle"]>["fontFamily"],
 ) => textFontOptions.find((option) => option.value === value)?.family || textFontOptions[0].family;
 
+function TextAlignIcon({ alignment }: { alignment: "left" | "center" | "right" }) {
+  const lines = alignment === "left"
+    ? [[3, 21], [3, 16], [3, 21], [3, 13]]
+    : alignment === "center"
+      ? [[3, 21], [6, 18], [3, 21], [8, 16]]
+      : [[3, 21], [8, 21], [3, 21], [11, 21]];
+  return <svg className="textAlignIcon" viewBox="0 0 24 24" aria-hidden="true">
+    {lines.map(([start, end], index) => <path key={index} d={`M${start} ${5 + index * 5}H${end}`} />)}
+  </svg>;
+}
+
 const palette: {
   kind: BlockKind;
   title: string;
@@ -1297,7 +1308,7 @@ export function CourseEditorPage() {
                 <div className="textAlignControl">
                   <span>Выравнивание</span>
                   <div className="textAlignPicker" aria-label="Выравнивание описания">
-                    {(["left", "center", "right"] as const).map((alignment) => <button key={alignment} type="button" className={(lesson?.descriptionStyle?.textAlign || "left") === alignment ? "active" : ""} title={alignment === "left" ? "По левому краю" : alignment === "center" ? "По центру" : "По правому краю"} onClick={() => updateLesson({ descriptionStyle: { ...lesson?.descriptionStyle, textAlign: alignment } })}><span className={`alignGlyph ${alignment}`} /></button>)}
+                    {(["left", "center", "right"] as const).map((alignment) => { const label = alignment === "left" ? "По левому краю" : alignment === "center" ? "По центру" : "По правому краю"; return <button key={alignment} type="button" className={(lesson?.descriptionStyle?.textAlign || "left") === alignment ? "active" : ""} title={label} aria-label={label} onClick={() => updateLesson({ descriptionStyle: { ...lesson?.descriptionStyle, textAlign: alignment } })}><TextAlignIcon alignment={alignment} /></button>; })}
                   </div>
                 </div>
               </div>
@@ -1595,11 +1606,12 @@ export function CourseEditorPage() {
                                   type="button"
                                   className={(b.textStyle?.textAlign || "left") === alignment ? "active" : ""}
                                   title={alignment === "left" ? "По левому краю" : alignment === "center" ? "По центру" : "По правому краю"}
+                                  aria-label={alignment === "left" ? "По левому краю" : alignment === "center" ? "По центру" : "По правому краю"}
                                   onClick={() => updateBlock(b.id, {
                                     textStyle: { ...b.textStyle, textAlign: alignment },
                                   })}
                                 >
-                                  <span className={`alignGlyph ${alignment}`} />
+                                  <TextAlignIcon alignment={alignment} />
                                 </button>
                                 ))}
                               </div>

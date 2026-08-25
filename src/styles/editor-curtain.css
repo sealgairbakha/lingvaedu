@@ -770,16 +770,14 @@ body.editorBlockPointerDragging * {
   color: var(--purple);
 }
 
-.alignGlyph {
-  display: block;
-  width: 18px;
-  height: 14px;
-  background: repeating-linear-gradient(to bottom, currentColor 0 2px, transparent 2px 4px);
+.textAlignIcon {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
 }
-
-.alignGlyph.left { clip-path: polygon(0 0, 100% 0, 100% 16%, 65% 16%, 65% 34%, 100% 34%, 100% 50%, 55% 50%, 55% 68%, 100% 68%, 100% 84%, 72% 84%, 72% 100%, 0 100%); }
-.alignGlyph.center { clip-path: polygon(0 0, 100% 0, 100% 16%, 16% 16%, 16% 34%, 88% 34%, 88% 50%, 8% 50%, 8% 68%, 92% 68%, 92% 84%, 20% 84%, 20% 100%, 0 100%); }
-.alignGlyph.right { transform: scaleX(-1); clip-path: polygon(0 0, 100% 0, 100% 16%, 65% 16%, 65% 34%, 100% 34%, 100% 50%, 55% 50%, 55% 68%, 100% 68%, 100% 84%, 72% 84%, 72% 100%, 0 100%); }
 
 html[data-theme="dark"] .textFormatToolbar {
   border-color: #303b50;
