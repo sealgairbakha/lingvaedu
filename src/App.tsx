@@ -11,6 +11,7 @@ import { ProfilePage } from "./features/profile/ProfilePage";
 import { UsersPage } from "./features/users/UsersPage";
 import { GroupsPage } from "./features/groups/GroupsPage";
 import { useCourses } from "./features/courses/CourseProvider";
+import { supabase } from "./lib/supabase";
 
 type Page =
   | "overview"
@@ -1358,86 +1359,160 @@ function Calls() {
   );
 }
 
+type CalendarEventRecord = {
+  id: string;
+  title: string;
+  description: string;
+  start_at: string;
+  end_at: string;
+  color: "violet" | "blue" | "green" | "orange" | "pink";
+  audience: "all" | "students" | "staff";
+  course_id: string | null;
+};
+
+const calendarDayKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+const calendarDateTimeValue = (date: Date) => `${calendarDayKey(date)}T${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+const calendarSameDay = (a: Date, b: Date) => calendarDayKey(a) === calendarDayKey(b);
+const calendarMonday = (date: Date) => {
+  const next = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  next.setDate(next.getDate() - ((next.getDay() + 6) % 7));
+  return next;
+};
+
 function Calendar() {
-  const days = [...Array(35)].map((_, i) => (i < 3 ? 29 + i : i - 2));
+  const { canEditCourses } = useAuth();
+  const { courses } = useCourses();
+  const today = useMemo(() => new Date(), []);
+  const [cursor, setCursor] = useState(() => new Date());
+  const [selected, setSelected] = useState(() => new Date());
+  const [view, setView] = useState<"month" | "week">("month");
+  const [events, setEvents] = useState<CalendarEventRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [editing, setEditing] = useState<CalendarEventRecord | "new" | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const loadEvents = async () => {
+    if (!supabase) {
+      setError("Подключение Supabase не настроено");
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    const from = new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1).toISOString();
+    const to = new Date(cursor.getFullYear(), cursor.getMonth() + 2, 1).toISOString();
+    const result = await supabase.from("calendar_events").select("id,title,description,start_at,end_at,color,audience,course_id").gte("start_at", from).lt("start_at", to).order("start_at");
+    if (result.error) setError(result.error.message.includes("calendar_events") ? "Выполните миграцию 009_calendar_events.sql в Supabase" : result.error.message);
+    else {
+      setEvents((result.data || []) as CalendarEventRecord[]);
+      setError("");
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { void loadEvents(); }, [cursor.getFullYear(), cursor.getMonth()]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const visibleDays = useMemo(() => {
+    if (view === "week") {
+      const start = calendarMonday(cursor);
+      return Array.from({ length: 7 }, (_, index) => new Date(start.getFullYear(), start.getMonth(), start.getDate() + index));
+    }
+    const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+    const start = calendarMonday(first);
+    return Array.from({ length: 42 }, (_, index) => new Date(start.getFullYear(), start.getMonth(), start.getDate() + index));
+  }, [cursor, view]);
+  const selectedEvents = events.filter((event) => calendarSameDay(new Date(event.start_at), selected));
+  const monthTitle = new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }).format(cursor);
+  const selectedTitle = new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long" }).format(selected);
+  const move = (amount: number) => setCursor((value) => view === "month" ? new Date(value.getFullYear(), value.getMonth() + amount, 1) : new Date(value.getFullYear(), value.getMonth(), value.getDate() + amount * 7));
+  const openNew = (date = selected) => { setSelected(date); setEditing("new"); };
+
+  const saveEvent = async (form: HTMLFormElement) => {
+    if (!supabase) return;
+    const data = new FormData(form);
+    const start = new Date(String(data.get("start")));
+    const end = new Date(String(data.get("end")));
+    if (!String(data.get("title") || "").trim() || Number.isNaN(start.getTime()) || end <= start) {
+      setError("Заполните название и укажите корректное время окончания");
+      return;
+    }
+    setSaving(true);
+    const payload = {
+      title: String(data.get("title")).trim(), description: String(data.get("description") || "").trim(),
+      start_at: start.toISOString(), end_at: end.toISOString(), color: String(data.get("color")),
+      audience: String(data.get("audience")), course_id: String(data.get("courseId") || "") || null,
+      updated_at: new Date().toISOString(),
+    };
+    const result = editing === "new"
+      ? await supabase.from("calendar_events").insert(payload)
+      : await supabase.from("calendar_events").update(payload).eq("id", editing!.id);
+    setSaving(false);
+    if (result.error) setError(result.error.message);
+    else { setEditing(null); setSelected(start); setCursor(start); await loadEvents(); }
+  };
+
+  const removeEvent = async (event: CalendarEventRecord) => {
+    if (!supabase || !window.confirm(`Удалить событие «${event.title}»?`)) return;
+    const result = await supabase.from("calendar_events").delete().eq("id", event.id);
+    if (result.error) setError(result.error.message); else { setEditing(null); await loadEvents(); }
+  };
+
+  const formEvent = editing === "new" ? null : editing;
+  const defaultStart = new Date(selected.getFullYear(), selected.getMonth(), selected.getDate(), 10, 0);
+  const defaultEnd = new Date(selected.getFullYear(), selected.getMonth(), selected.getDate(), 11, 0);
   return (
-    <main className="content fade">
-      <PageTitle
-        title="Календарь"
-        text="Планируйте занятия, встречи и сроки прохождения."
-        action={<button className="btn primary">＋ Добавить событие</button>}
-      />
+    <main className="content fade calendarPage">
+      <PageTitle title="Календарь" text="Планируйте занятия, встречи и сроки прохождения."
+        action={canEditCourses ? <button className="btn primary" onClick={() => openNew()}>＋ Добавить событие</button> : undefined} />
+      {error && <div className="calendarError"><span>{error}</span><button onClick={() => void loadEvents()}>Повторить</button></div>}
       <div className="calendarLayout">
         <section className="panel calendar">
           <div className="calendarHead">
-            <button>‹</button>
-            <h2>Август 2026</h2>
-            <button>›</button>
-            <button className="todayBtn">Сегодня</button>
-            <div>
-              <button className="active">Месяц</button>
-              <button>Неделя</button>
-            </div>
+            <button aria-label="Предыдущий период" onClick={() => move(-1)}>‹</button>
+            <h2>{view === "month" ? monthTitle : `${new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "short" }).format(visibleDays[0])} — ${new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "short" }).format(visibleDays[6])}`}</h2>
+            <button aria-label="Следующий период" onClick={() => move(1)}>›</button>
+            <button className="todayBtn" onClick={() => { setCursor(new Date()); setSelected(new Date()); }}>Сегодня</button>
+            <div><button className={view === "month" ? "active" : ""} onClick={() => setView("month")}>Месяц</button><button className={view === "week" ? "active" : ""} onClick={() => setView("week")}>Неделя</button></div>
           </div>
-          <div className="weekdays">
-            {["ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС"].map((x) => (
-              <span key={x}>{x}</span>
-            ))}
-          </div>
-          <div className="calendarGrid">
-            {days.map((d, i) => (
-              <div
-                className={`${i < 3 || i > 33 ? "other" : ""} ${d === 13 && i > 3 ? "today" : ""}`}
-                key={i}
-              >
-                <span>{d}</span>
-                {i === 9 && (
-                  <b className="calEvent violet">10:00 Speaking club</b>
-                )}
-                {i === 11 && (
-                  <b className="calEvent orange">14:30 Onboarding</b>
-                )}
-                {i === 15 && (
-                  <b className="calEvent blue">11:00 Разбор группы</b>
-                )}
-                {i === 18 && <b className="calEvent green">Срок: English B2</b>}
-                {i === 23 && (
-                  <b className="calEvent violet">16:00 Grammar lab</b>
-                )}
-              </div>
-            ))}
+          <div className="weekdays">{["ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС"].map((day) => <span key={day}>{day}</span>)}</div>
+          <div className={`calendarGrid ${view === "week" ? "weekView" : ""}`}>
+            {visibleDays.map((date) => {
+              const dayEvents = events.filter((event) => calendarSameDay(new Date(event.start_at), date));
+              return <div key={calendarDayKey(date)} className={`${date.getMonth() !== cursor.getMonth() && view === "month" ? "other" : ""} ${calendarSameDay(date, today) ? "today" : ""} ${calendarSameDay(date, selected) ? "selected" : ""}`}
+                onClick={() => setSelected(date)} onDoubleClick={() => canEditCourses && openNew(date)}>
+                <span>{date.getDate()}</span>
+                {dayEvents.slice(0, 3).map((event) => <button key={event.id} className={`calEvent ${event.color}`} onClick={(click) => { click.stopPropagation(); setSelected(date); if (canEditCourses) setEditing(event); }}><time>{new Date(event.start_at).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}</time> {event.title}</button>)}
+                {dayEvents.length > 3 && <small className="moreEvents">Ещё {dayEvents.length - 3}</small>}
+              </div>;
+            })}
           </div>
         </section>
         <aside className="panel agenda">
-          <PanelHead title="13 августа" text="3 события сегодня" />
+          <PanelHead title={selectedTitle} text={`${selectedEvents.length} ${selectedEvents.length === 1 ? "событие" : "событий"}`} />
           <div className="agendaTimeline">
-            <Event
-              time="10:00"
-              date="60 МИН"
-              title="Speaking club"
-              people="12 участников"
-              color="violet"
-            />
-            <Event
-              time="14:30"
-              date="45 МИН"
-              title="Onboarding"
-              people="Newcomers"
-              color="orange"
-            />
-            <Event
-              time="17:00"
-              date="30 МИН"
-              title="Проверка работ"
-              people="8 заданий"
-              color="blue"
-            />
+            {loading ? <p className="agendaEmpty">Загружаем события…</p> : selectedEvents.length ? selectedEvents.map((event) => {
+              const start = new Date(event.start_at); const end = new Date(event.end_at);
+              const duration = Math.max(1, Math.round((end.getTime() - start.getTime()) / 60000));
+              const course = courses.find((item) => item.id === event.course_id);
+              return <button key={event.id} className="agendaEvent" onClick={() => canEditCourses && setEditing(event)}>
+                <span className={`agendaEventTime ${event.color}`}><b>{start.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}</b><small>{duration} мин</small></span>
+                <span><b>{event.title}</b><small>{course?.title || (event.audience === "students" ? "Для учеников" : event.audience === "staff" ? "Для сотрудников" : "Для всех")}</small></span>
+              </button>;
+            }) : <div className="agendaEmpty"><span>□</span><b>Событий нет</b><p>{canEditCourses ? "Дважды нажмите на день, чтобы запланировать событие." : "На этот день ничего не запланировано."}</p></div>}
           </div>
-          <button className="btn ghost full">
-            Настроить доступ к календарю
-          </button>
+          {canEditCourses && <button className="btn ghost full" onClick={() => openNew()}>Добавить на этот день</button>}
         </aside>
       </div>
+      {editing && <Modal title={editing === "new" ? "Новое событие" : "Редактировать событие"} close={() => setEditing(null)}>
+        <form className="calendarForm" onSubmit={(submit) => { submit.preventDefault(); void saveEvent(submit.currentTarget); }}>
+          <label>Название<input name="title" required maxLength={160} defaultValue={formEvent?.title || ""} placeholder="Например, разговорная практика" /></label>
+          <label>Описание<textarea name="description" defaultValue={formEvent?.description || ""} placeholder="Добавьте детали встречи" /></label>
+          <div className="modalGrid"><label>Начало<input name="start" type="datetime-local" required defaultValue={calendarDateTimeValue(formEvent ? new Date(formEvent.start_at) : defaultStart)} /></label><label>Окончание<input name="end" type="datetime-local" required defaultValue={calendarDateTimeValue(formEvent ? new Date(formEvent.end_at) : defaultEnd)} /></label></div>
+          <div className="modalGrid"><label>Доступ<select name="audience" defaultValue={formEvent?.audience || "all"}><option value="all">Для всех</option><option value="students">Для учеников</option><option value="staff">Для сотрудников</option></select></label><label>Курс<select name="courseId" defaultValue={formEvent?.course_id || ""}><option value="">Без привязки к курсу</option>{courses.map((course) => <option key={course.id} value={course.id}>{course.title}</option>)}</select></label></div>
+          <fieldset className="calendarColors"><legend>Цвет события</legend>{(["violet", "blue", "green", "orange", "pink"] as const).map((color) => <label key={color}><input type="radio" name="color" value={color} defaultChecked={(formEvent?.color || "violet") === color} /><i className={color} /></label>)}</fieldset>
+          <div className="calendarFormActions">{formEvent && <button type="button" className="btn danger" onClick={() => void removeEvent(formEvent)}>Удалить</button>}<button className="btn primary" disabled={saving}>{saving ? "Сохраняем…" : "Сохранить событие"}</button></div>
+        </form>
+      </Modal>}
     </main>
   );
 }
