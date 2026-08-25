@@ -1254,6 +1254,53 @@ html[data-theme="dark"] .taskBlockInspector .taskRowNumber {
   }
 }
 
+/* Slim, consistent scrollbars across the platform. */
+* {
+  scrollbar-color: #4f7cff transparent;
+  scrollbar-width: thin;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  min-width: 34px;
+  min-height: 34px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: #4f7cff;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #285fef;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+html[data-theme="dark"] * {
+  scrollbar-color: #6f93ff transparent;
+}
+
+html[data-theme="dark"] *::-webkit-scrollbar-thumb {
+  background: #6f93ff;
+  background-clip: padding-box;
+}
+
+html[data-theme="dark"] *::-webkit-scrollbar-thumb:hover {
+  background: #8aa7ff;
+  background-clip: padding-box;
+}
+
 @media (max-width: 760px) {
   .coursePlayer .playerTree {
     position: static;
