@@ -32,6 +32,18 @@ type LessonBlock = {
   description: string;
 };
 
+function AccountMenuIcon({ kind }: { kind: "profile" | "settings" | "sun" | "moon" | "logout" }) {
+  const paths = {
+    profile: <><circle cx="12" cy="8" r="3.25" /><path d="M5.75 19c.65-3.25 2.75-5 6.25-5s5.6 1.75 6.25 5" /></>,
+    settings: <><path d="M4 7h10M17 7h3M4 17h3M10 17h10" /><circle cx="16" cy="7" r="2" /><circle cx="8" cy="17" r="2" /></>,
+    sun: <><circle cx="12" cy="12" r="4" /><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M18.7 5.3l-1.4 1.4M6.7 17.3l-1.4 1.4" /></>,
+    moon: <path d="M20 15.2A8.5 8.5 0 0 1 8.8 4 8.5 8.5 0 1 0 20 15.2Z" />,
+    logout: <><path d="M10 5H5.5A1.5 1.5 0 0 0 4 6.5v11A1.5 1.5 0 0 0 5.5 19H10M14.5 8l4 4-4 4M18.5 12H9" /></>,
+  } as const;
+
+  return <svg viewBox="0 0 24 24" aria-hidden="true">{paths[kind]}</svg>;
+}
+
 const nav: {
   section?: string;
   items: { id: Page; icon: string; label: string }[];
@@ -399,7 +411,7 @@ function Header({ title, toggleNav }: { title: string; toggleNav: () => void }) 
       </div>
       <div className="accountMenuWrap">
         <button className={`topAvatar ${accountMenu ? "active" : ""}`} onClick={() => setAccountMenu((value) => !value)} aria-expanded={accountMenu} aria-label="Меню аккаунта" title={displayName}>{avatarUrl ? <img src={avatarUrl} alt={displayName}/> : initials}</button>
-        {accountMenu && <><button className="accountMenuScrim" aria-label="Закрыть меню аккаунта" onClick={() => setAccountMenu(false)} /><div className="accountDropdown"><div className="accountSummary"><span>{avatarUrl ? <img src={avatarUrl} alt={displayName}/> : initials}</span><div><b>{displayName}</b><small>{user?.email}</small></div></div><button onClick={() => { setAccountMenu(false); navigate("/profile"); }}><span>○</span>Мой профиль</button><button onClick={() => openDialog("settings")}><span>⚙</span>Настройки</button><button onClick={toggleTheme}><span className="themeMenuIcon">{darkTheme ? "☀" : "◐"}</span>{darkTheme ? "Светлая тема" : "Тёмная тема"}<i className={`themeState ${darkTheme ? "on" : ""}`} /></button><hr/><button className="accountLogout" onClick={() => openDialog("logout")}><span>↗</span>Выйти</button></div></>}
+        {accountMenu && <><button className="accountMenuScrim" aria-label="Закрыть меню аккаунта" onClick={() => setAccountMenu(false)} /><div className="accountDropdown"><div className="accountSummary"><span>{avatarUrl ? <img src={avatarUrl} alt={displayName}/> : initials}</span><div><b>{displayName}</b><small>{user?.email}</small></div></div><button onClick={() => { setAccountMenu(false); navigate("/profile"); }}><span className="accountMenuIcon"><AccountMenuIcon kind="profile" /></span>Мой профиль</button><button onClick={() => openDialog("settings")}><span className="accountMenuIcon"><AccountMenuIcon kind="settings" /></span>Настройки</button><button onClick={toggleTheme}><span className="accountMenuIcon"><AccountMenuIcon kind={darkTheme ? "sun" : "moon"} /></span>{darkTheme ? "Светлая тема" : "Тёмная тема"}<i className={`themeState ${darkTheme ? "on" : ""}`} /></button><hr/><button className="accountLogout" onClick={() => openDialog("logout")}><span className="accountMenuIcon"><AccountMenuIcon kind="logout" /></span>Выйти</button></div></>}
       </div>
       {accountDialog === "settings" && <Modal title="Настройки" close={() => setAccountDialog(null)}><div className="accountSettings"><label><div><b>Уведомления</b><small>Показывать новости курсов и напоминания</small></div><input type="checkbox" checked={notifications} onChange={(e) => setNotifications(e.target.checked)}/><i/></label><button className="btn primary full" onClick={() => { localStorage.setItem("lingvaedu-notifications", String(notifications)); setAccountDialog(null); }}>Сохранить настройки</button></div></Modal>}
       {accountDialog === "logout" && <Modal title="Выйти из аккаунта?" close={() => setAccountDialog(null)}><div className="logoutDialog"><p>Вы действительно хотите завершить текущий сеанс?</p><div><button className="btn ghost" onClick={() => setAccountDialog(null)}>Отмена</button><button className="btn logoutConfirm" onClick={async () => { setAccountDialog(null); await signOut(); }}>Выйти</button></div></div></Modal>}

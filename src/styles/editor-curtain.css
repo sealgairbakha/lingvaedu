@@ -1338,6 +1338,48 @@ html[data-theme="dark"] .taskBlockInspector .taskRowNumber {
   }
 }
 
+/* Account menu uses one consistent outlined icon language. */
+.accountDropdown > button .accountMenuIcon {
+  display: grid;
+  flex: 0 0 24px;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  color: #7d899e;
+  transition: color 0.18s ease, transform 0.18s ease;
+}
+
+.accountDropdown > button .accountMenuIcon svg {
+  width: 19px;
+  height: 19px;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.accountDropdown > button:hover .accountMenuIcon,
+.accountDropdown > button:focus-visible .accountMenuIcon {
+  color: inherit;
+  transform: translateX(1px);
+}
+
+.accountDropdown .accountLogout .accountMenuIcon {
+  color: inherit;
+}
+
+html[data-theme="dark"] .accountDropdown > button .accountMenuIcon {
+  color: #9aa7bd;
+}
+
+html[data-theme="dark"] .accountDropdown > button:hover .accountMenuIcon,
+html[data-theme="dark"] .accountDropdown > button:focus-visible .accountMenuIcon,
+html[data-theme="dark"] .accountDropdown .accountLogout .accountMenuIcon {
+  color: inherit;
+}
+
 @media (max-width: 760px) {
   .coursePlayer .playerTree {
     position: static;
