@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type PointerEvent as ReactPointerEvent,
 } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
@@ -13,6 +14,17 @@ import { useCourses } from "./CourseProvider";
 import { LessonBlockView } from "./CoursePlayerPage";
 import { TaskBlockEditor } from "./TaskBlockEditor";
 import { uid, type BlockKind, type Course, type LessonBlock } from "./types";
+
+const textFontOptions = [
+  { value: "onest", label: "Onest", family: '"Onest Variable", Onest, sans-serif' },
+  { value: "serif", label: "Книжный", family: 'Georgia, "Times New Roman", serif' },
+  { value: "rounded", label: "Округлый", family: '"Trebuchet MS", Arial, sans-serif' },
+  { value: "mono", label: "Моно", family: '"Cascadia Code", Consolas, monospace' },
+] as const;
+
+const textFontFamily = (
+  value?: NonNullable<LessonBlock["textStyle"]>["fontFamily"],
+) => textFontOptions.find((option) => option.value === value)?.family || textFontOptions[0].family;
 
 const palette: {
   kind: BlockKind;
@@ -581,8 +593,8 @@ export function CourseEditorPage() {
       hint,
       x: clientX,
       y: clientY,
-      offsetX: rect.width / 2,
-      offsetY: rect.height / 2,
+      offsetX: Math.max(0, Math.min(rect.width, clientX - rect.left)),
+      offsetY: Math.max(0, Math.min(rect.height, clientY - rect.top)),
       sourceX: rect.left,
       sourceY: rect.top,
       width: rect.width,
@@ -758,6 +770,71 @@ export function CourseEditorPage() {
       next.findIndex((x) => x.id === targetId) + (edge === "after" ? 1 : 0);
     next.splice(insert, 0, item);
     updateBlocks(next);
+  };
+  const beginBlockPointerDrag = (
+    event: ReactPointerEvent<HTMLElement>,
+    block: LessonBlock,
+  ) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const card = event.currentTarget.closest(".lessonBlock");
+    if (!(card instanceof HTMLElement)) return;
+    const descriptor = palette.find(
+      (item) => item.kind === (block.kind === "media" ? "video" : block.kind),
+    );
+    startDragVisual(card, block.kind, block.title, descriptor?.hint || "", event.clientX, event.clientY);
+    setDragging(block.id);
+    document.body.classList.add("editorBlockPointerDragging");
+
+    let activeTarget: { id: string; edge: "before" | "after" } | null = null;
+    const canvas = card.closest(".canvas");
+    const move = (pointerEvent: PointerEvent) => {
+      setDragVisual((current) =>
+        current ? { ...current, x: pointerEvent.clientX, y: pointerEvent.clientY } : current,
+      );
+      const hovered = document.elementFromPoint(pointerEvent.clientX, pointerEvent.clientY)?.closest(".lessonBlock");
+      const group = hovered?.closest<HTMLElement>(".blockEditorGroup");
+      const targetId = group?.dataset.blockId;
+      if (hovered instanceof HTMLElement && targetId && targetId !== block.id) {
+        const rect = hovered.getBoundingClientRect();
+        activeTarget = {
+          id: targetId,
+          edge: pointerEvent.clientY < rect.top + rect.height / 2 ? "before" : "after",
+        };
+        setDropTarget(activeTarget);
+      } else {
+        activeTarget = null;
+        setDropTarget(null);
+      }
+      if (canvas instanceof HTMLElement) {
+        const bounds = canvas.getBoundingClientRect();
+        if (pointerEvent.clientY < bounds.top + 72) canvas.scrollTop -= 14;
+        if (pointerEvent.clientY > bounds.bottom - 72) canvas.scrollTop += 14;
+      }
+    };
+    const cleanup = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", end);
+      window.removeEventListener("pointercancel", cancel);
+      document.body.classList.remove("editorBlockPointerDragging");
+    };
+    const end = () => {
+      cleanup();
+      if (activeTarget) {
+        reorder(block.id, activeTarget.id, activeTarget.edge);
+        completeDragDrop();
+      } else finishDragVisual();
+      setDragging(null);
+      setDropTarget(null);
+    };
+    const cancel = () => {
+      activeTarget = null;
+      end();
+    };
+    window.addEventListener("pointermove", move, { passive: true });
+    window.addEventListener("pointerup", end, { once: true });
+    window.addEventListener("pointercancel", cancel, { once: true });
   };
   const uploadAsset = async (
     targetBlock: LessonBlock,
@@ -1328,40 +1405,11 @@ export function CourseEditorPage() {
                 >
                   <span
                     className="drag blockDragHandle"
-                    draggable
+                    role="button"
+                    tabIndex={0}
                     title="Перетащить блок"
                     aria-label="Перетащить блок"
-                    onDragStart={(e) => {
-                      e.stopPropagation();
-                      e.dataTransfer.effectAllowed = "move";
-                      e.dataTransfer.setData("text/plain", b.id);
-                      e.dataTransfer.setData(
-                        "application/x-lingva-block-id",
-                        b.id,
-                      );
-                      hideNativeDragImage(e.dataTransfer);
-                      const card = e.currentTarget.closest(".lessonBlock");
-                      const descriptor = palette.find(
-                        (item) =>
-                          item.kind === (b.kind === "media" ? "video" : b.kind),
-                      );
-                      if (card instanceof HTMLElement) {
-                        startDragVisual(
-                          card,
-                          b.kind,
-                          b.title,
-                          descriptor?.hint || "",
-                          e.clientX,
-                          e.clientY,
-                        );
-                      }
-                      setDragging(b.id);
-                    }}
-                    onDragEnd={() => {
-                      finishDragVisual();
-                      setDragging(null);
-                      setDropTarget(null);
-                    }}
+                    onPointerDown={(event) => beginBlockPointerDrag(event, b)}
                   >
                     <DragHandleIcon />
                   </span>
@@ -1450,6 +1498,90 @@ export function CourseEditorPage() {
                         block={b}
                         onChange={(content) => updateBlock(b.id, { content })}
                       />
+                    ) : b.kind === "text" || b.kind === "html" ? (
+                      <div className="blockTextEditor">
+                        {b.kind === "text" && (
+                          <div className="textFormatToolbar" aria-label="Оформление текста">
+                            <label>
+                              Шрифт
+                              <select
+                                value={b.textStyle?.fontFamily || "onest"}
+                                onChange={(event) => updateBlock(b.id, {
+                                  textStyle: {
+                                    ...b.textStyle,
+                                    fontFamily: event.target.value as NonNullable<LessonBlock["textStyle"]>["fontFamily"],
+                                  },
+                                })}
+                              >
+                                {textFontOptions.map((option) => (
+                                  <option key={option.value} value={option.value}>{option.label}</option>
+                                ))}
+                              </select>
+                            </label>
+                            <label>
+                              Размер
+                              <select
+                                value={b.textStyle?.fontSize || 16}
+                                onChange={(event) => updateBlock(b.id, {
+                                  textStyle: {
+                                    ...b.textStyle,
+                                    fontSize: Number(event.target.value) as NonNullable<LessonBlock["textStyle"]>["fontSize"],
+                                  },
+                                })}
+                              >
+                                {[14, 16, 18, 20, 24].map((size) => (
+                                  <option key={size} value={size}>{size} px</option>
+                                ))}
+                              </select>
+                            </label>
+                            <label>
+                              Начертание
+                              <select
+                                value={b.textStyle?.fontWeight || 400}
+                                onChange={(event) => updateBlock(b.id, {
+                                  textStyle: {
+                                    ...b.textStyle,
+                                    fontWeight: Number(event.target.value) as NonNullable<LessonBlock["textStyle"]>["fontWeight"],
+                                  },
+                                })}
+                              >
+                                <option value={400}>Обычный</option>
+                                <option value={500}>Средний</option>
+                                <option value={700}>Жирный</option>
+                              </select>
+                            </label>
+                            <div className="textAlignPicker" aria-label="Выравнивание текста">
+                              {(["left", "center", "right"] as const).map((alignment) => (
+                                <button
+                                  key={alignment}
+                                  type="button"
+                                  className={(b.textStyle?.textAlign || "left") === alignment ? "active" : ""}
+                                  title={alignment === "left" ? "По левому краю" : alignment === "center" ? "По центру" : "По правому краю"}
+                                  onClick={() => updateBlock(b.id, {
+                                    textStyle: { ...b.textStyle, textAlign: alignment },
+                                  })}
+                                >
+                                  <span className={`alignGlyph ${alignment}`} />
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        <label>
+                          Содержимое
+                          <textarea
+                            rows={8}
+                            value={b.content}
+                            style={b.kind === "text" ? {
+                              fontFamily: textFontFamily(b.textStyle?.fontFamily),
+                              fontSize: `${b.textStyle?.fontSize || 16}px`,
+                              fontWeight: b.textStyle?.fontWeight || 400,
+                              textAlign: b.textStyle?.textAlign || "left",
+                            } : undefined}
+                            onChange={(event) => updateBlock(b.id, { content: event.target.value })}
+                          />
+                        </label>
+                      </div>
                     ) : (
                       <label>
                         {b.kind === "video" || b.kind === "media"
@@ -1461,15 +1593,6 @@ export function CourseEditorPage() {
                               : b.kind === "file"
                                 ? "Ссылка на файл"
                               : "Содержимое"}
-                        {b.kind === "text" || b.kind === "html" ? (
-                        <textarea
-                          rows={8}
-                          value={b.content}
-                          onChange={(event) =>
-                            updateBlock(b.id, { content: event.target.value })
-                          }
-                        />
-                      ) : (
                         <input
                           type="url"
                           placeholder={
@@ -1502,7 +1625,6 @@ export function CourseEditorPage() {
                             );
                           }}
                         />
-                        )}
                       </label>
                     )}
                     {(b.kind === "video" ||

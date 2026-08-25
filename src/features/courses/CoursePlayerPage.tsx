@@ -6,6 +6,13 @@ import { supabase } from "../../lib/supabase";
 import { useCourses } from "./CourseProvider";
 import type { LessonBlock } from "./types";
 
+const lessonFontFamilies = {
+  onest: '"Onest Variable", Onest, sans-serif',
+  serif: 'Georgia, "Times New Roman", serif',
+  rounded: '"Trebuchet MS", Arial, sans-serif',
+  mono: '"Cascadia Code", Consolas, monospace',
+} as const;
+
 type LessonRun = {
   used: number;
   deadline: number | null;
@@ -720,7 +727,15 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
   return (
     <section className="learningBlock">
       <h3>{block.title}</h3>
-      <p className="lessonText">
+      <p
+        className="lessonText"
+        style={{
+          fontFamily: lessonFontFamilies[block.textStyle?.fontFamily || "onest"],
+          fontSize: `${block.textStyle?.fontSize || 16}px`,
+          fontWeight: block.textStyle?.fontWeight || 400,
+          textAlign: block.textStyle?.textAlign || "left",
+        }}
+      >
         {block.content || "Содержание пока не добавлено."}
       </p>
     </section>

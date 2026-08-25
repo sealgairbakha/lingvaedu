@@ -24,6 +24,12 @@ export type LessonBlock = {
   fileType?: string;
   images?: string[];
   imageLayout?: "grid" | "mosaic" | "filmstrip";
+  textStyle?: {
+    fontFamily?: "onest" | "serif" | "rounded" | "mono";
+    fontSize?: 14 | 16 | 18 | 20 | 24;
+    fontWeight?: 400 | 500 | 700;
+    textAlign?: "left" | "center" | "right";
+  };
 };
 
 export type CourseLesson = {
