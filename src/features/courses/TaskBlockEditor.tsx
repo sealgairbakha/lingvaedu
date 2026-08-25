@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { LessonBlock } from "./types";
 
 type Props = {
@@ -24,6 +25,7 @@ const parseGapRows = (content: string) =>
   });
 const serializeGapRows = (rows: { sentence: string; answer: string }[]) =>
   rows.map((row) => sentenceWithBlank(row.sentence, row.answer)).join("\n");
+const insertBlankFromSpaces = (value: string) => value.replace(/ {3}/g, "___");
 
 function EditorHeader({ title, hint }: { title: string; hint: string }) {
   return (
@@ -32,7 +34,6 @@ function EditorHeader({ title, hint }: { title: string; hint: string }) {
         <b>{title}</b>
         <p>{hint}</p>
       </div>
-      <span aria-hidden="true">✦</span>
     </div>
   );
 }
@@ -59,9 +60,14 @@ function RowActions({
 }
 
 function GapTaskEditor({ block, onChange }: Props) {
-  const rows = parseGapRows(block.content);
-  const safeRows = rows.length ? rows : [{ sentence: "___", answer: "" }];
-  const update = (next: typeof safeRows) => onChange(serializeGapRows(next));
+  const [safeRows, setSafeRows] = useState(() => {
+    const rows = parseGapRows(block.content);
+    return rows.length ? rows : [{ sentence: "", answer: "" }];
+  });
+  const update = (next: typeof safeRows) => {
+    setSafeRows(next);
+    onChange(serializeGapRows(next));
+  };
   const isDrag = block.kind === "drag-words";
   return (
     <div className="taskBuilder">
@@ -81,14 +87,17 @@ function GapTaskEditor({ block, onChange }: Props) {
               <span>Предложение</span>
               <input
                 value={row.sentence}
-                placeholder="Например: He went to work ___ being ill."
+                placeholder="Напишите предложение и нажмите пробел три раза в месте ответа"
                 onChange={(event) => {
                   const next = [...safeRows];
-                  next[index] = { ...row, sentence: event.target.value };
+                  next[index] = {
+                    ...row,
+                    sentence: insertBlankFromSpaces(event.target.value),
+                  };
                   update(next);
                 }}
               />
-              <small>Обозначьте место ответа тремя подчёркиваниями ___</small>
+              <small>Три пробела автоматически создадут место для ответа.</small>
             </label>
             <label className="taskAnswerField">
               <span>Правильный ответ</span>
@@ -115,7 +124,7 @@ function GapTaskEditor({ block, onChange }: Props) {
       <button
         type="button"
         className="taskBuilderAdd"
-        onClick={() => update([...safeRows, { sentence: "___", answer: "" }])}
+        onClick={() => update([...safeRows, { sentence: "", answer: "" }])}
       >
         <span>＋</span> Добавить предложение
       </button>
