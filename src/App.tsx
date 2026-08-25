@@ -497,157 +497,142 @@ function PageTitle({
   );
 }
 
+type DashboardStats = {
+  studentCount: number;
+  activeUsers30d: number;
+  groupCount: number;
+  enrollmentCount: number;
+};
+
 function Overview({ go }: { go: (p: Page) => void }) {
-  const { displayName, isAdmin } = useAuth();
+  const navigate = useNavigate();
+  const { displayName, canEditCourses, session, user } = useAuth();
+  const { courses, loading, enrolledCourseIds, createCourse } = useCourses();
+  const [organization, setOrganization] = useState<DashboardStats | null>(null);
   const firstName = displayName.split(/\s+/)[0];
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Доброе утро" : hour < 18 ? "Добрый день" : "Добрый вечер";
+  const currentDate = new Intl.DateTimeFormat("ru-RU", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(new Date()).toUpperCase();
+
+  useEffect(() => {
+    if (!canEditCourses || !session?.access_token) return;
+    let active = true;
+    void fetch("/api/dashboard", {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    }).then(async (response) => {
+      const type = response.headers.get("content-type") || "";
+      if (!response.ok || !type.includes("application/json")) return null;
+      return response.json() as Promise<{ stats?: DashboardStats }>;
+    }).then((payload) => {
+      if (active && payload?.stats) setOrganization(payload.stats);
+    }).catch(() => undefined);
+    return () => { active = false; };
+  }, [canEditCourses, session?.access_token]);
+
+  const availableCourses = useMemo(() => canEditCourses
+    ? courses
+    : courses.filter((course) => course.status === "published" && enrolledCourseIds.includes(course.id)),
+  [canEditCourses, courses, enrolledCourseIds]);
+
+  const courseProgress = (course: (typeof courses)[number]) => {
+    const lessons = course.modules.flatMap((module) => module.lessons);
+    if (!lessons.length) return 0;
+    if (canEditCourses) {
+      const ready = lessons.filter((lesson) => lesson.blocks.length > 0).length;
+      return Math.round((ready / lessons.length) * 100);
+    }
+    if (!user?.id) return 0;
+    try {
+      const completed = JSON.parse(localStorage.getItem(`lingvaedu-progress-${user.id}-${course.id}`) || "[]") as string[];
+      return Math.round((lessons.filter((lesson) => completed.includes(lesson.id)).length / lessons.length) * 100);
+    } catch {
+      return 0;
+    }
+  };
+
+  const totalLessons = availableCourses.reduce((sum, course) => sum + course.modules.reduce((count, module) => count + module.lessons.length, 0), 0);
+  const totalBlocks = availableCourses.reduce((sum, course) => sum + course.modules.reduce((moduleSum, module) => moduleSum + module.lessons.reduce((lessonSum, lesson) => lessonSum + lesson.blocks.length, 0), 0), 0);
+  const completedCourses = availableCourses.filter((course) => courseProgress(course) === 100).length;
+  const completedLessons = !canEditCourses && user?.id ? availableCourses.reduce((sum, course) => {
+    try {
+      const completed = JSON.parse(localStorage.getItem(`lingvaedu-progress-${user.id}-${course.id}`) || "[]") as string[];
+      return sum + course.modules.flatMap((module) => module.lessons).filter((lesson) => completed.includes(lesson.id)).length;
+    } catch { return sum; }
+  }, 0) : 0;
+  const averageProgress = availableCourses.length
+    ? Math.round(availableCourses.reduce((sum, course) => sum + courseProgress(course), 0) / availableCourses.length)
+    : 0;
+  const assignmentCount = organization?.enrollmentCount ?? courses.reduce((sum, course) => sum + course.students, 0);
+  const published = courses.filter((course) => course.status === "published").length;
+  const draft = courses.filter((course) => course.status === "draft").length;
+  const archived = courses.filter((course) => course.status === "archived").length;
+  const recentCourses = [...availableCourses].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).slice(0, 3);
+  const chartCourses = [...availableCourses].sort((a, b) => new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime()).slice(-7);
+  const chartValues = chartCourses.map((course) => course.modules.reduce((sum, module) => sum + module.lessons.reduce((count, lesson) => count + lesson.blocks.length, 0), 0));
+  const chartMax = Math.max(1, ...chartValues);
+
+  const create = () => {
+    const course = createCourse();
+    navigate(`/courses/editor?course=${course.id}`);
+  };
+
   return (
-    <main className="content fade">
+    <main className="content fade dashboardReal">
       <PageTitle
-        eyebrow="ЧЕТВЕРГ, 13 АВГУСТА"
-        title={`Добрый день, ${firstName}`}
-        text="Вот что происходит в вашем учебном пространстве сегодня."
-        action={isAdmin ? (
-          <button className="btn primary" onClick={() => go("editor")}>
-            ＋ Создать курс
-          </button>
-        ) : undefined}
+        eyebrow={currentDate}
+        title={`${greeting}, ${firstName}`}
+        text={canEditCourses ? "Актуальное состояние учебной платформы." : "Ваш прогресс и назначенные курсы."}
+        action={canEditCourses ? <button className="btn primary" onClick={create}>＋ Создать курс</button> : undefined}
       />
       <section className="metricGrid">
-        <Metric
-          icon="♙"
-          label="Активные ученики"
-          value="1 248"
-          delta="+8,4%"
-          note="за последние 30 дней"
-          tone="violet"
-        />
-        <Metric
-          icon="▤"
-          label="Завершено курсов"
-          value="386"
-          delta="+12,1%"
-          note="за последние 30 дней"
-          tone="blue"
-        />
-        <Metric
-          icon="◎"
-          label="Средний результат"
-          value="82%"
-          delta="+3,2%"
-          note="выше прошлого месяца"
-          tone="green"
-        />
-        <Metric
-          icon="◷"
-          label="Обучение сегодня"
-          value="214 ч"
-          delta="+5,7%"
-          note="вовлечённость растёт"
-          tone="orange"
-        />
+        {canEditCourses ? <>
+          <Metric icon="♙" label={organization ? "Ученики" : "Назначения ученикам"} value={loading ? "…" : String(organization?.studentCount ?? assignmentCount)} delta="" note={organization ? `${organization.activeUsers30d} активны за 30 дней` : "по всем курсам"} tone="violet" />
+          <Metric icon="▤" label="Опубликовано курсов" value={loading ? "…" : String(published)} delta="" note={`из ${courses.length} курсов`} tone="blue" />
+          <Metric icon="◎" label="Учебные материалы" value={loading ? "…" : String(totalBlocks)} delta="" note={`${totalLessons} уроков`} tone="green" />
+          <Metric icon="◉" label="Учебные группы" value={organization ? String(organization.groupCount) : "—"} delta="" note={organization ? `${assignmentCount} назначений` : "доступно через сервер API"} tone="orange" />
+        </> : <>
+          <Metric icon="▤" label="Назначено курсов" value={loading ? "…" : String(availableCourses.length)} delta="" note={`${completedCourses} завершено`} tone="violet" />
+          <Metric icon="✓" label="Пройдено уроков" value={String(completedLessons)} delta="" note={`из ${totalLessons} уроков`} tone="blue" />
+          <Metric icon="◎" label="Общий прогресс" value={`${averageProgress}%`} delta="" note="по назначенным курсам" tone="green" />
+          <Metric icon="▦" label="Учебные материалы" value={String(totalBlocks)} delta="" note="доступно в курсах" tone="orange" />
+        </>}
       </section>
       <div className="overviewGrid">
         <section className="panel activityPanel">
-          <PanelHead
-            title="Активность обучения"
-            text="Часы за последние 7 дней"
-            action={<button className="quiet">Неделя ⌄</button>}
-          />
-          <div className="chart">
-            <div className="yLabels">
-              <span>60</span>
-              <span>40</span>
-              <span>20</span>
-              <span>0</span>
-            </div>
-            <div className="bars">
-              {[
-                { d: "Пн", v: 42 },
-                { d: "Вт", v: 65 },
-                { d: "Ср", v: 51 },
-                { d: "Чт", v: 82 },
-                { d: "Пт", v: 73 },
-                { d: "Сб", v: 35 },
-                { d: "Вс", v: 46 },
-              ].map((b, i) => (
-                <div className="barCol" key={b.d}>
-                  <div className="barTrack">
-                    <i
-                      style={{ height: `${b.v}%` }}
-                      className={i === 3 ? "hot" : ""}
-                    />
-                  </div>
-                  <span>{b.d}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          <PanelHead title="Наполнение курсов" text="Количество блоков в последних курсах" />
+          {chartCourses.length ? <div className="chart dashboardChart">
+            <div className="yLabels"><span>{chartMax}</span><span>{Math.round(chartMax / 2)}</span><span>0</span></div>
+            <div className="bars">{chartCourses.map((course, index) => <div className="barCol" key={course.id} title={`${course.title}: ${chartValues[index]} блоков`}>
+              <div className="barTrack"><i style={{ height: `${Math.max(4, (chartValues[index] / chartMax) * 100)}%` }} className={index === chartCourses.length - 1 ? "hot" : ""} /></div>
+              <span>{course.code.slice(0, 6)}</span>
+            </div>)}</div>
+          </div> : <div className="dashboardEmpty">Курсы появятся здесь после создания.</div>}
         </section>
-        <section className="panel upcoming">
-          <PanelHead
-            title="Ближайшие события"
-            action={
-              <button className="linkBtn" onClick={() => go("calendar")}>
-                Календарь →
-              </button>
-            }
-          />
-          <div className="eventList">
-            <Event
-              time="10:00"
-              date="СЕГОДНЯ"
-              title="Speaking club · Intermediate"
-              people="12 участников"
-              color="violet"
-            />
-            <Event
-              time="14:30"
-              date="СЕГОДНЯ"
-              title="Onboarding новых учеников"
-              people="8 участников"
-              color="orange"
-            />
-            <Event
-              time="11:00"
-              date="ЗАВТРА"
-              title="Разбор результатов группы"
-              people="Sales Team"
-              color="blue"
-            />
+        <section className="panel upcoming dashboardCatalog">
+          <PanelHead title="Состояние каталога" action={<button className="linkBtn" onClick={() => go("courses")}>Открыть курсы</button>} />
+          <div className="dashboardStatusList">
+            <button onClick={() => go("courses")}><i className="published" /> <span><b>Опубликованные</b><small>Доступны ученикам</small></span><strong>{published}</strong></button>
+            <button onClick={() => go("courses")}><i className="draft" /> <span><b>Черновики</b><small>Ожидают публикации</small></span><strong>{draft}</strong></button>
+            <button onClick={() => go("courses")}><i className="archived" /> <span><b>Архив</b><small>Скрытые курсы</small></span><strong>{archived}</strong></button>
           </div>
         </section>
       </div>
       <section className="panel coursesPanel">
-        <PanelHead
-          title="Курсы в работе"
-          text="Актуальный прогресс и вовлечённость"
-          action={
-            <button className="linkBtn" onClick={() => go("courses")}>
-              Все курсы →
-            </button>
-          }
-        />
-        <div className="courseTiles">
-          {courseRows.slice(0, 3).map((c) => (
-            <article key={c.title} onClick={() => go("editor")}>
-              <div className={`courseIcon ${c.color}`}>{c.code}</div>
-              <div className="courseTitle">
-                <b>{c.title}</b>
-                <span>
-                  {c.students} учеников · {c.lessons} урока
-                </span>
-              </div>
-              <div
-                className="ring"
-                style={
-                  { "--value": `${c.progress * 3.6}deg` } as React.CSSProperties
-                }
-              >
-                <span>{c.progress}%</span>
-              </div>
-            </article>
-          ))}
-        </div>
+        <PanelHead title={canEditCourses ? "Недавно обновлённые курсы" : "Продолжить обучение"} text={canEditCourses ? "Реальные данные из каталога" : "Ваш текущий прогресс"} action={<button className="linkBtn" onClick={() => go("courses")}>Все курсы</button>} />
+        {recentCourses.length ? <div className="courseTiles">{recentCourses.map((course, index) => {
+          const lessons = course.modules.reduce((sum, module) => sum + module.lessons.length, 0);
+          const progress = courseProgress(course);
+          const tones = ["violet", "blue", "green"];
+          return <article key={course.id} onClick={() => navigate(canEditCourses ? `/courses/editor?course=${course.id}` : `/courses/learn?course=${course.id}`)}>
+            <div className={`courseIcon ${tones[index % tones.length]}`}>{course.code.slice(0, 3).toUpperCase()}</div>
+            <div className="courseTitle"><b>{course.title}</b><span>{lessons} уроков · {course.students} учеников</span></div>
+            <div className="ring" style={{ "--value": `${progress * 3.6}deg` } as React.CSSProperties}><span>{progress}%</span></div>
+          </article>;
+        })}</div> : <div className="dashboardEmpty">Доступных курсов пока нет.</div>}
       </section>
     </main>
   );
@@ -674,7 +659,7 @@ function Metric({
       <span>{label}</span>
       <strong>{value}</strong>
       <p>
-        <b>↗ {delta}</b> {note}
+        {delta && <b>↗ {delta}</b>} {note}
       </p>
     </article>
   );

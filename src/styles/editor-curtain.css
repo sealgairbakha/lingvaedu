@@ -1380,6 +1380,80 @@ html[data-theme="dark"] .accountDropdown .accountLogout .accountMenuIcon {
   color: inherit;
 }
 
+/* Real dashboard data states. */
+.dashboardChart .barCol > span {
+  max-width: 54px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboardStatusList {
+  display: grid;
+  padding: 0 20px 18px;
+}
+
+.dashboardStatusList button {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 66px;
+  padding: 10px 4px;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: transparent;
+  text-align: left;
+  transition: color 0.18s ease, transform 0.18s ease;
+}
+
+.dashboardStatusList button:hover {
+  color: var(--purple);
+  transform: translateX(2px);
+}
+
+.dashboardStatusList i {
+  width: 9px;
+  height: 9px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.dashboardStatusList i.published { background: #2fb17e; }
+.dashboardStatusList i.draft { background: #f29d49; }
+.dashboardStatusList i.archived { background: #a1a9b8; }
+.dashboardStatusList b,
+.dashboardStatusList small { display: block; }
+.dashboardStatusList b { font-size: 13px; }
+.dashboardStatusList small { margin-top: 4px; color: var(--muted); font-size: 11px; }
+.dashboardStatusList strong { font-size: 20px; }
+
+.dashboardEmpty {
+  display: grid;
+  min-height: 150px;
+  place-items: center;
+  padding: 24px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  text-align: center;
+}
+
+html[data-theme="dark"] .dashboardReal .bars {
+  background: repeating-linear-gradient(to bottom, #171e2c 0, #171e2c 49px, #30394a 50px);
+}
+
+html[data-theme="dark"] .dashboardReal .courseTiles article {
+  background: #171e2c;
+}
+
+html[data-theme="dark"] .dashboardReal .courseTiles article:hover {
+  background: #1d2535;
+}
+
+html[data-theme="dark"] .dashboardReal .ring::before {
+  background: #171e2c;
+}
+
 @media (max-width: 760px) {
   .coursePlayer .playerTree {
     position: static;
