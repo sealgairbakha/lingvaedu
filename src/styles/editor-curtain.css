@@ -2973,7 +2973,7 @@ html[data-theme="dark"] .calendarError{background:#321d25;border-color:#71313b;c
    tree, while the visible toolbar stays on a single, predictable row. */
 .textFormatToolbar,
 .lessonDescriptionToolbar {
-  grid-template-columns: minmax(116px, 1fr) 86px 112px 132px;
+  grid-template-columns: 185px 86px 112px 132px;
   align-items: center;
   gap: 8px;
   overflow-x: auto;
@@ -3015,18 +3015,18 @@ html[data-theme="dark"] .calendarError{background:#321d25;border-color:#71313b;c
 @media (max-width: 760px) {
   .textFormatToolbar,
   .lessonDescriptionToolbar {
-    grid-template-columns: minmax(116px, 1fr) 86px 112px 132px;
+    grid-template-columns: 185px 86px 112px 132px;
   }
 }
 
 @container (max-width: 700px) {
   .lessonDescriptionToolbar {
-    grid-template-columns: minmax(116px, 1fr) 86px 112px 132px;
+    grid-template-columns: 185px 86px 112px 132px;
   }
 }
 
 @container (max-width: 430px) {
   .lessonDescriptionToolbar {
-    grid-template-columns: minmax(116px, 1fr) 86px 112px 132px;
+    grid-template-columns: 185px 86px 112px 132px;
   }
 }
