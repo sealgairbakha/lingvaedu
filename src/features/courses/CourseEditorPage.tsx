@@ -194,10 +194,10 @@ function AddBlockIcon() {
   );
 }
 
-function TrashIcon() {
+function RemoveIcon() {
   return (
     <svg viewBox="0 0 20 20" aria-hidden="true">
-      <path d="M4.5 6h11M8 3.8h4M6.2 6l.6 10h6.4l.6-10M8.3 8.5v5M11.7 8.5v5" />
+      <path d="M5.5 5.5l9 9M14.5 5.5l-9 9" />
     </svg>
   );
 }
@@ -1171,7 +1171,7 @@ export function CourseEditorPage() {
                   aria-label={`Удалить модуль «${m.title}»`}
                   title="Удалить модуль"
                 >
-                  <TrashIcon />
+                  <RemoveIcon />
                 </button>
               </div>
               {m.lessons.map((l, li) => (
@@ -1198,7 +1198,7 @@ export function CourseEditorPage() {
                     aria-label={`Удалить урок «${l.title}»`}
                     title="Удалить урок"
                   >
-                    <TrashIcon />
+                    <RemoveIcon />
                   </button>
                 </div>
               ))}
