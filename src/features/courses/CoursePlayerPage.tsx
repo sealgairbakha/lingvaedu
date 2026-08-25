@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
 import { supabase } from "../../lib/supabase";
@@ -621,7 +622,7 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
         ) : (
           <p className="emptyMaterial">Фото пока не добавлено.</p>
         )}
-        {openedImage !== null && blockImages[openedImage] && (
+        {openedImage !== null && blockImages[openedImage] && createPortal(
           <div className="imageLightbox" role="dialog" aria-modal="true" aria-label={`Просмотр фото: ${block.title}`}>
             <button className="imageLightboxScrim" onClick={() => setOpenedImage(null)} aria-label="Закрыть просмотр" />
             <div className="imageLightboxContent">
@@ -635,7 +636,8 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
                 <button className="imageLightboxNav next" onClick={() => setOpenedImage((openedImage + 1) % blockImages.length)} aria-label="Следующее фото">›</button>
               </>}
             </div>
-          </div>
+          </div>,
+          document.body,
         )}
       </section>
     );

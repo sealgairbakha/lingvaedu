@@ -1688,10 +1688,12 @@ html[data-theme="dark"] .matchGrid button.paired {
 .imageLightbox {
   position: fixed;
   inset: 0;
-  z-index: 300;
+  z-index: 1000;
   display: grid;
   place-items: center;
   padding: 24px;
+  overflow: hidden;
+  isolation: isolate;
   animation: imageLightboxIn .28s ease both;
 }
 
@@ -1709,14 +1711,18 @@ html[data-theme="dark"] .matchGrid button.paired {
   display: flex;
   flex-direction: column;
   width: min(1180px, 100%);
-  height: min(90vh, 900px);
+  max-width: calc(100vw - 48px);
+  height: min(900px, calc(100dvh - 48px));
+  max-height: calc(100dvh - 48px);
   min-height: 0;
+  margin: auto;
 }
 
 .imageLightboxContent>img {
   display: block;
+  flex: 1 1 auto;
   width: 100%;
-  height: calc(100% - 64px);
+  height: 0;
   min-height: 0;
   object-fit: contain;
   border: 0;
@@ -1730,7 +1736,7 @@ html[data-theme="dark"] .matchGrid button.paired {
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  min-height: 54px;
+  flex: 0 0 60px;
   color: #fff;
 }
 
@@ -1759,7 +1765,7 @@ html[data-theme="dark"] .matchGrid button.paired {
   color: #fff;
   font-size: 34px;
   backdrop-filter: blur(8px);
-  transform: translateY(-25%);
+  transform: translateY(-50%);
 }
 .imageLightboxNav:hover { background: var(--purple); }
 .imageLightboxNav.previous { left: 16px; }
@@ -1770,7 +1776,14 @@ html[data-theme="dark"] .matchGrid button.paired {
 @media(max-width:700px) {
   .lessonImageZoom { opacity: 1; transform: translate(-50%,0); bottom: 10px; padding: 7px 10px; font-size: 10px; }
   .imageLightbox { padding: 10px; }
-  .imageLightboxContent { height: 94vh; }
+  .imageLightboxContent {
+    width: 100%;
+    max-width: calc(100vw - 20px);
+    height: calc(100dvh - 20px);
+    max-height: calc(100dvh - 20px);
+  }
+  .imageLightboxHead { flex-basis: 56px; }
+  .imageLightboxContent>img { border-radius: 10px; }
   .imageLightboxNav { width: 40px; height: 48px; }
   .imageLightboxNav.previous { left: 6px; }
   .imageLightboxNav.next { right: 6px; }
