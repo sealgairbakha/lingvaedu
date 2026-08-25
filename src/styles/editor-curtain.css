@@ -1187,6 +1187,91 @@ html[data-theme="dark"] .taskBlockInspector .taskRowNumber {
   }
 }
 
+/* Desktop course contents stay in place and scroll independently. */
+@media (min-width: 761px) {
+  .coursePlayer .playerLayout {
+    grid-template-columns: 320px minmax(0, 1fr);
+    gap: 8px;
+    padding: 16px;
+  }
+
+  .coursePlayer .playerTree {
+    position: sticky;
+    top: 84px;
+    display: flex;
+    align-self: start;
+    flex-direction: column;
+    width: 100%;
+    height: calc(100vh - 100px);
+    max-height: calc(100vh - 100px);
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid #e1e5ed;
+    border-radius: 18px;
+    box-shadow: 0 8px 26px rgba(24, 35, 58, 0.07);
+  }
+
+  .coursePlayer .playerTreeContent {
+    min-height: 0;
+    height: 100%;
+    padding: 16px 12px 20px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    scrollbar-color: #c7cddd transparent;
+    scrollbar-width: thin;
+  }
+
+  .coursePlayer .playerTreeContent::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .coursePlayer .playerTreeContent::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .coursePlayer .playerTreeContent::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: #c7cddd;
+  }
+
+  .coursePlayer .playerTreeContent::-webkit-scrollbar-thumb:hover {
+    background: #aeb6c8;
+  }
+
+  html[data-theme="dark"] .coursePlayer .playerTree {
+    border-color: #30394a;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+  }
+
+  html[data-theme="dark"] .coursePlayer .playerTreeContent {
+    scrollbar-color: #465066 transparent;
+  }
+
+  html[data-theme="dark"] .coursePlayer .playerTreeContent::-webkit-scrollbar-thumb {
+    background: #465066;
+  }
+}
+
+@media (max-width: 760px) {
+  .coursePlayer .playerTree {
+    position: static;
+    width: auto;
+    height: auto;
+    max-height: none;
+    margin: 0;
+    overflow: visible;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .coursePlayer .playerTreeContent {
+    height: auto;
+    scrollbar-gutter: auto;
+  }
+}
+
 .blockGlyph.drag-words,
 .blockGlyph.select-words,
 .blockGlyph.fill-blank,
