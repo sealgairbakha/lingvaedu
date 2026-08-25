@@ -10,7 +10,7 @@ const statusLabel: Record<CourseStatus, string> = { published: "Опублико
 export function CoursesPage() {
   const navigate = useNavigate();
   const { canEditCourses, displayName, avatarUrl, user } = useAuth();
-  const { courses, loading, storage, enrolledCourseIds, createCourse, saveCourse, removeCourse, duplicateCourse } = useCourses();
+  const { courses, loading, enrolledCourseIds, createCourse, saveCourse, removeCourse, duplicateCourse } = useCourses();
   const [tab, setTab] = useState<CourseStatus | "all">("all");
   const [q, setQ] = useState("");
   const [language, setLanguage] = useState("Все");
@@ -24,7 +24,6 @@ export function CoursesPage() {
 
   return <main className="content fade coursesWorking">
     <div className="pageTitle"><div><h1>Курсы</h1><p>Создавайте программы обучения и управляйте их содержанием.</p></div>{canEditCourses && <button className="btn primary" onClick={create}>＋ Новый курс</button>}</div>
-    <div className="courseNotice">{storage === "cloud" ? "● Данные синхронизируются с Supabase" : "● Локальный режим: подключите таблицу courses для общей работы сотрудников"}</div>
     {canEditCourses && <div className="tabs">{(["all","published","draft","archived"] as const).map((x) => <button key={x} className={tab === x ? "active" : ""} onClick={() => setTab(x)}>{labels[x]} <span>{courses.filter((c) => x === "all" || c.status === x).length}</span></button>)}</div>}
     <div className="toolbar"><label><span>⌕</span><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Поиск по курсам" /></label><select className="filter" value={language} onChange={(e) => setLanguage(e.target.value)}><option>Все</option>{languages.map(x => <option key={x}>{x}</option>)}</select><select className="filter" value={author} onChange={(e) => setAuthor(e.target.value)}><option>Все</option>{authors.map(x => <option key={x}>{x}</option>)}</select></div>
     {loading ? <div className="courseEmpty">Загружаем курсы…</div> : rows.length === 0 ? <div className="courseEmpty"><h2>{visibleCourses.length ? "Ничего не найдено" : "Здесь пока нет доступных курсов"}</h2><p>{canEditCourses ? "Создайте первый курс и добавьте в него уроки." : "Курс появится здесь после назначения вам или вашей группе."}</p>{canEditCourses && !courses.length && <button className="btn primary" onClick={create}>Создать курс</button>}</div> : <div className="courseGrid">{rows.map((c) => {
