@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "./auth/AuthProvider";
 import { SelectionTranslator } from "./components/SelectionTranslator";
@@ -10,6 +10,7 @@ import { CoursePlayerPage } from "./features/courses/CoursePlayerPage";
 import { ProfilePage } from "./features/profile/ProfilePage";
 import { UsersPage } from "./features/users/UsersPage";
 import { GroupsPage } from "./features/groups/GroupsPage";
+import { useCourses } from "./features/courses/CourseProvider";
 
 type Page =
   | "overview"
@@ -259,11 +260,16 @@ function Sidebar({
 
 function Header({ title, toggleNav }: { title: string; toggleNav: () => void }) {
   const navigate = useNavigate();
-  const { initials, displayName, avatarUrl, user, signOut } = useAuth();
+  const { initials, displayName, avatarUrl, user, session, isAdmin, canEditCourses, signOut } = useAuth();
+  const { courses } = useCourses();
   const [accountMenu, setAccountMenu] = useState(false);
   const [accountDialog, setAccountDialog] = useState<"settings" | "logout" | null>(null);
   const [notifications, setNotifications] = useState(() => localStorage.getItem("lingvaedu-notifications") !== "false");
   const [darkTheme, setDarkTheme] = useState(() => document.documentElement.dataset.theme === "dark");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [matchedUsers, setMatchedUsers] = useState<{ id: string; fullName: string; email: string }[]>([]);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const openDialog = (dialog: "settings" | "logout") => { setAccountMenu(false); setAccountDialog(dialog); };
   const toggleTheme = () => {
     const next = !darkTheme;
@@ -271,6 +277,84 @@ function Header({ title, toggleNav }: { title: string; toggleNav: () => void }) 
     document.documentElement.dataset.theme = next ? "dark" : "light";
     document.documentElement.style.colorScheme = next ? "dark" : "light";
     localStorage.setItem("lingvaedu-theme", next ? "dark" : "light");
+  };
+  useEffect(() => {
+    const focusSearch = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+        setSearchOpen(true);
+      }
+      if (event.key === "Escape") setSearchOpen(false);
+    };
+    window.addEventListener("keydown", focusSearch);
+    return () => window.removeEventListener("keydown", focusSearch);
+  }, []);
+  useEffect(() => {
+    const normalized = searchQuery.trim();
+    if (!isAdmin || normalized.length < 2 || !session?.access_token) {
+      return;
+    }
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      try {
+        const response = await fetch("/api/users", {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+          signal: controller.signal,
+        });
+        const payload = await response.json() as { users?: { id: string; fullName: string; email: string }[] };
+        const needle = normalized.toLocaleLowerCase();
+        setMatchedUsers((payload.users || []).filter((entry) =>
+          `${entry.fullName} ${entry.email}`.toLocaleLowerCase().includes(needle),
+        ).slice(0, 4));
+      } catch {
+        if (!controller.signal.aborted) setMatchedUsers([]);
+      }
+    }, 220);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [isAdmin, searchQuery, session?.access_token]);
+
+  const searchResults = useMemo(() => {
+    const needle = searchQuery.trim().toLocaleLowerCase();
+    if (!needle) return [];
+    const pageResults = [
+      { label: "Обзор", description: "Главная панель", path: "/", keywords: "главная статистика обзор" },
+      { label: "Курсы", description: "Все учебные курсы", path: "/courses", keywords: "обучение уроки курсы" },
+      { label: "Группы", description: "Учебные группы", path: "/groups", keywords: "группы ученики" },
+      { label: "Календарь", description: "Встречи и события", path: "/calendar", keywords: "календарь события встречи" },
+      { label: "Видеокомнаты", description: "Комнаты для звонков", path: "/video-rooms", keywords: "видео звонки комнаты" },
+      ...(isAdmin ? [
+        { label: "Пользователи", description: "Ученики и сотрудники", path: "/users", keywords: "пользователи ученики сотрудники" },
+        { label: "Отчёты", description: "Результаты обучения", path: "/reports", keywords: "отчеты аналитика результаты" },
+        { label: "Роли и права", description: "Права доступа", path: "/roles", keywords: "роли права доступ" },
+      ] : []),
+    ].filter((entry) => `${entry.label} ${entry.keywords}`.toLocaleLowerCase().includes(needle))
+      .map((entry) => ({ ...entry, type: "Раздел" }));
+    const courseResults = courses
+      .filter((course) => `${course.title} ${course.description} ${course.language}`.toLocaleLowerCase().includes(needle))
+      .slice(0, 5)
+      .map((course) => ({
+        label: course.title,
+        description: `${course.language} · ${course.modules.reduce((total, module) => total + module.lessons.length, 0)} уроков`,
+        path: canEditCourses ? `/courses/editor?course=${course.id}` : `/courses/learn?course=${course.id}`,
+        type: "Курс",
+      }));
+    const userResults = (needle.length >= 2 ? matchedUsers : []).map((entry) => ({
+      label: entry.fullName || entry.email,
+      description: entry.email,
+      path: `/users?search=${encodeURIComponent(entry.email)}`,
+      type: "Пользователь",
+    }));
+    return [...courseResults, ...userResults, ...pageResults].slice(0, 8);
+  }, [canEditCourses, courses, isAdmin, matchedUsers, searchQuery]);
+
+  const openSearchResult = (path: string) => {
+    setSearchOpen(false);
+    setSearchQuery("");
+    navigate(path);
   };
   return (
     <header className="topbar">
@@ -282,15 +366,37 @@ function Header({ title, toggleNav }: { title: string; toggleNav: () => void }) 
         <i>/</i>
         <b>{title}</b>
       </div>
-      <label className="globalSearch">
-        <span>⌕</span>
-        <input placeholder="Найти курс, ученика или отчёт" />
-        <kbd>⌘ K</kbd>
-      </label>
-      <button className="topIcon">?</button>
-      <button className="topIcon notice">
-        ♢<i />
-      </button>
+      <div className="globalSearchWrap" onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setSearchOpen(false);
+      }}>
+        <label className="globalSearch">
+          <span aria-hidden="true">⌕</span>
+          <input
+            ref={searchInputRef}
+            value={searchQuery}
+            onChange={(event) => { setSearchQuery(event.target.value); setSearchOpen(true); }}
+            onFocus={() => setSearchOpen(true)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && searchResults[0]) openSearchResult(searchResults[0].path);
+            }}
+            placeholder="Найти курс, ученика или раздел"
+            aria-label="Глобальный поиск"
+            aria-expanded={searchOpen}
+          />
+          <kbd>Ctrl K</kbd>
+        </label>
+        {searchOpen && searchQuery.trim() && (
+          <div className="globalSearchResults" role="listbox">
+            {searchResults.length ? searchResults.map((result) => (
+              <button key={`${result.type}-${result.path}`} onClick={() => openSearchResult(result.path)} role="option">
+                <span>{result.type === "Курс" ? "▤" : result.type === "Пользователь" ? "○" : "⌁"}</span>
+                <div><b>{result.label}</b><small>{result.description}</small></div>
+                <em>{result.type}</em>
+              </button>
+            )) : <p>Ничего не найдено</p>}
+          </div>
+        )}
+      </div>
       <div className="accountMenuWrap">
         <button className={`topAvatar ${accountMenu ? "active" : ""}`} onClick={() => setAccountMenu((value) => !value)} aria-expanded={accountMenu} aria-label="Меню аккаунта" title={displayName}>{avatarUrl ? <img src={avatarUrl} alt={displayName}/> : initials}</button>
         {accountMenu && <><button className="accountMenuScrim" aria-label="Закрыть меню аккаунта" onClick={() => setAccountMenu(false)} /><div className="accountDropdown"><div className="accountSummary"><span>{avatarUrl ? <img src={avatarUrl} alt={displayName}/> : initials}</span><div><b>{displayName}</b><small>{user?.email}</small></div></div><button onClick={() => { setAccountMenu(false); navigate("/profile"); }}><span>○</span>Мой профиль</button><button onClick={() => openDialog("settings")}><span>⚙</span>Настройки</button><button onClick={toggleTheme}><span className="themeMenuIcon">{darkTheme ? "☀" : "◐"}</span>{darkTheme ? "Светлая тема" : "Тёмная тема"}<i className={`themeState ${darkTheme ? "on" : ""}`} /></button><hr/><button className="accountLogout" onClick={() => openDialog("logout")}><span>↗</span>Выйти</button></div></>}
@@ -1496,7 +1602,7 @@ export default function App() {
     ) : page === "profile" ? (
       <ProfilePage />
     ) : page === "people" ? (
-      <UsersPage />
+      <UsersPage key={location.search} />
     ) : page === "groups" ? (
       <GroupsPage />
     ) : page === "reports" ? (

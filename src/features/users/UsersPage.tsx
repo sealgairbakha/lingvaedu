@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
 
 type UserRole = "admin" | "staff" | "student";
@@ -59,11 +60,12 @@ function csvCell(value: string | number) {
 
 export function UsersPage() {
   const { session } = useAuth();
+  const [searchParams] = useSearchParams();
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(() => searchParams.get("search") || "");
   const [roleFilter, setRoleFilter] = useState<UserRole | "all">("all");
   const [groupFilter, setGroupFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState<UserStatus | "all">("all");
