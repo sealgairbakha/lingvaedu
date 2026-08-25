@@ -1296,6 +1296,7 @@ html[data-theme="dark"] .taskBlockInspector .taskRowNumber {
   }
 
   *::-webkit-scrollbar-thumb:hover {
+    border-width: 0;
     background: #285fef;
     background-clip: padding-box;
   }
@@ -1315,6 +1316,7 @@ html[data-theme="dark"] .taskBlockInspector .taskRowNumber {
   }
 
   html[data-theme="dark"] *::-webkit-scrollbar-thumb:hover {
+    border-width: 0;
     background: #8aa7ff;
     background-clip: padding-box;
   }
