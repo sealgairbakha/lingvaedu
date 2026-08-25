@@ -986,6 +986,207 @@ html[data-theme="dark"] .learningBlockStack {
   box-shadow: 0 12px 34px rgba(0, 0, 0, 0.22);
 }
 
+/* Compact task authoring: responsive to the editor column, not the viewport. */
+.taskBlockInspector {
+  container-type: inline-size;
+  padding: 18px 20px 20px;
+}
+
+.taskBlockInspector .inlineBlockInspectorHead {
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e5e8ef;
+}
+
+.taskBlockInspector .inlineBlockInspectorHead small {
+  display: none;
+}
+
+.taskBlockInspector .inlineBlockInspectorHead b {
+  font-size: 17px;
+}
+
+.taskBlockInspector > label:first-of-type {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 18px;
+  color: #7c8698;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.taskBlockInspector > label:first-of-type input {
+  height: 42px;
+  margin: 0;
+  padding: 0 12px;
+  background: #fff;
+}
+
+.taskBlockInspector .taskBuilder {
+  margin: 0;
+}
+
+.taskBlockInspector .taskBuilderHeader {
+  margin: 0;
+  padding: 0 0 14px;
+}
+
+.taskBlockInspector .taskBuilderHeader b {
+  font-size: 16px;
+}
+
+.taskBlockInspector .taskBuilderHeader p {
+  margin-top: 3px;
+  font-size: 12px;
+}
+
+.taskBlockInspector .taskBuilderRows {
+  gap: 0;
+}
+
+.taskBlockInspector .taskBuilderRow {
+  gap: 12px;
+  padding: 15px 38px 15px 34px;
+  border: 0;
+  border-bottom: 1px solid #e8ebf1;
+  border-radius: 0;
+  background: transparent;
+}
+
+.taskBlockInspector .taskBuilderRow:first-child {
+  border-top: 0;
+}
+
+.taskBlockInspector .taskBuilderRow:focus-within {
+  border-color: #dcd7fa;
+  background: #faf9ff;
+}
+
+.taskBlockInspector .taskRowNumber {
+  top: 23px;
+  left: 5px;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  background: #f0edff;
+  color: var(--purple);
+  font-size: 11px;
+}
+
+.taskBlockInspector .taskBuilderRemove {
+  top: 21px;
+  right: 3px;
+  width: 26px;
+  height: 26px;
+}
+
+.taskBlockInspector .taskBuilderRow label > span,
+.taskBlockInspector .taskStandaloneField > span,
+.taskBlockInspector .taskOptionsEditor > span {
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+
+.taskBlockInspector .taskBuilderRow label input,
+.taskBlockInspector .taskStandaloneField input {
+  height: 44px;
+  border-radius: 9px;
+}
+
+.taskBlockInspector .taskBuilderRow label small {
+  margin-top: 5px;
+  font-size: 11px;
+}
+
+.taskBlockInspector .taskBuilderAdd {
+  min-height: 42px;
+  margin-top: 12px;
+  border-radius: 10px;
+  box-shadow: none;
+}
+
+.taskBlockInspector .quizOptionsEditor {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.taskBlockInspector .taskOptionsEditor > div {
+  min-width: 0;
+}
+
+html[data-theme="dark"] .taskBlockInspector .inlineBlockInspectorHead,
+html[data-theme="dark"] .taskBlockInspector .taskBuilderRow {
+  border-color: #30394a;
+}
+
+html[data-theme="dark"] .taskBlockInspector > label:first-of-type input {
+  border-color: #3b465a;
+  background: #111825;
+  color: var(--ink);
+}
+
+html[data-theme="dark"] .taskBlockInspector .taskBuilderRow,
+html[data-theme="dark"] .taskBlockInspector .quizOptionsEditor {
+  background: transparent;
+}
+
+html[data-theme="dark"] .taskBlockInspector .taskBuilderRow:focus-within {
+  border-color: #514680;
+  background: rgba(41, 36, 66, 0.34);
+}
+
+html[data-theme="dark"] .taskBlockInspector .taskRowNumber {
+  background: #292442;
+  color: #c8bdff;
+}
+
+@container (max-width: 620px) {
+  .taskBlockInspector > label:first-of-type,
+  .taskBlockInspector .gapBuilderRow,
+  .taskBlockInspector .matchBuilderRow,
+  .taskBlockInspector .trueFalseBuilderRow {
+    grid-template-columns: 1fr;
+  }
+
+  .taskBlockInspector > label:first-of-type {
+    gap: 7px;
+  }
+
+  .taskBlockInspector .matchEquals {
+    height: 18px;
+    transform: rotate(90deg);
+  }
+
+  .taskBlockInspector .trueFalseToggle {
+    width: 100%;
+  }
+
+  .taskBlockInspector .trueFalseToggle button {
+    flex: 1;
+  }
+}
+
+@container (max-width: 430px) {
+  .taskBlockInspector {
+    padding: 15px;
+  }
+
+  .taskBlockInspector .taskBuilderRow {
+    padding: 14px 32px 14px 30px;
+  }
+
+  .taskBlockInspector .taskRowNumber {
+    left: 1px;
+  }
+
+  .taskBlockInspector .taskBuilderRemove {
+    right: 0;
+  }
+}
+
 .blockGlyph.drag-words,
 .blockGlyph.select-words,
 .blockGlyph.fill-blank,

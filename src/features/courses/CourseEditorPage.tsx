@@ -1454,7 +1454,7 @@ export function CourseEditorPage() {
                 </article>
                 {selected === b.id && (
                   <div
-                    className={`blockInspector inlineBlockInspector ${closingEditor === b.id ? "closing" : ""}`}
+                    className={`blockInspector inlineBlockInspector ${isTaskKind(b.kind) ? "taskBlockInspector" : ""} ${closingEditor === b.id ? "closing" : ""}`}
                     onClick={(event) => event.stopPropagation()}
                   >
                     <div className="inlineBlockInspectorHead">
