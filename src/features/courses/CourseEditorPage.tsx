@@ -586,6 +586,11 @@ export function CourseEditorPage() {
     clientY: number,
   ) => {
     const rect = element.getBoundingClientRect();
+    const previewWidth = Math.min(
+      rect.width,
+      Math.max(240, Math.min(440, window.innerWidth - 32)),
+    );
+    const horizontalRatio = rect.width ? (clientX - rect.left) / rect.width : 0.5;
     dragDroppedRef.current = false;
     setDragVisual({
       kind,
@@ -593,11 +598,11 @@ export function CourseEditorPage() {
       hint,
       x: clientX,
       y: clientY,
-      offsetX: Math.max(0, Math.min(rect.width, clientX - rect.left)),
-      offsetY: Math.max(0, Math.min(rect.height, clientY - rect.top)),
+      offsetX: Math.max(18, Math.min(previewWidth - 18, previewWidth * horizontalRatio)),
+      offsetY: Math.max(18, Math.min(54, clientY - rect.top)),
       sourceX: rect.left,
       sourceY: rect.top,
-      width: rect.width,
+      width: previewWidth,
     });
   };
   const completeDragDrop = () => {

@@ -825,7 +825,41 @@ html[data-theme="dark"] .textAlignPicker button.active {
 }
 
 .editorFloatingDrag {
-  grid-template-columns: 40px 48px minmax(0, 1fr);
+  grid-template-columns: 32px 44px minmax(0, 1fr);
+  min-height: 74px;
+  gap: 10px;
+  padding: 11px 13px;
+  border-radius: 16px;
+  box-shadow:
+    0 16px 38px rgba(23, 31, 50, 0.2),
+    0 4px 12px rgba(23, 31, 50, 0.1);
+  transform: scale(1.01);
+}
+
+.editorFloatingDrag .blockDragHandle {
+  width: 32px;
+  height: 36px;
+}
+
+.editorFloatingDrag > .blockGlyph {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+}
+
+.editorFloatingDrag b {
+  overflow: hidden;
+  font-size: 15px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editorFloatingDrag small {
+  overflow: hidden;
+  margin-top: 3px;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .blockPalette > button .paletteAddIcon {
