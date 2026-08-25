@@ -1255,11 +1255,21 @@ export function CourseEditorPage() {
                 </span>
                 <span>ОГЛАВЛЕНИЕ УРОКА</span>
               </div>
-              <input
-                aria-label="Название урока"
-                value={lesson?.title || ""}
-                onChange={(e) => updateLesson({ title: e.target.value })}
-              />
+              <label className="lessonTitleEditor">
+                <span className="lessonTitleLabel">Название урока</span>
+                <input
+                  aria-label="Название урока"
+                  value={lesson?.title || ""}
+                  placeholder="Введите название урока"
+                  onChange={(e) => updateLesson({ title: e.target.value })}
+                />
+                <span className="lessonTitleEditIcon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M4 20h4l11-11a2.8 2.8 0 0 0-4-4L4 16v4Z" />
+                    <path d="m13.5 6.5 4 4M4 20h16" />
+                  </svg>
+                </span>
+              </label>
               <textarea
                 ref={lessonDescriptionRef}
                 aria-label="Описание урока"
