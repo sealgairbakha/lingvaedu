@@ -36,6 +36,7 @@ export type CourseLesson = {
   id: string;
   title: string;
   description: string;
+  descriptionStyle?: LessonBlock["textStyle"];
   timeLimit: number;
   attempts: number;
   blocks: LessonBlock[];

@@ -1262,12 +1262,41 @@ export function CourseEditorPage() {
                   e.currentTarget.style.height = `${e.currentTarget.scrollHeight}px`;
                 }}
                 placeholder="Описание урока"
+                style={{
+                  fontFamily: textFontFamily(lesson?.descriptionStyle?.fontFamily),
+                  fontSize: `${lesson?.descriptionStyle?.fontSize || 16}px`,
+                  fontWeight: lesson?.descriptionStyle?.fontWeight || 400,
+                  textAlign: lesson?.descriptionStyle?.textAlign || "left",
+                }}
               />
               <div className="lessonDescriptionMeta">
                 <small>Краткое описание содержания урока</small>
                 <span>
                   {Math.min(lesson?.description.length || 0, 250)} / 250
                 </span>
+              </div>
+              <div className="textFormatToolbar lessonDescriptionToolbar" aria-label="Оформление описания урока">
+                <label>
+                  Шрифт
+                  <select value={lesson?.descriptionStyle?.fontFamily || "onest"} onChange={(event) => updateLesson({ descriptionStyle: { ...lesson?.descriptionStyle, fontFamily: event.target.value as NonNullable<LessonBlock["textStyle"]>["fontFamily"] } })}>
+                    {textFontOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                  </select>
+                </label>
+                <label>
+                  Размер
+                  <select value={lesson?.descriptionStyle?.fontSize || 16} onChange={(event) => updateLesson({ descriptionStyle: { ...lesson?.descriptionStyle, fontSize: Number(event.target.value) as NonNullable<LessonBlock["textStyle"]>["fontSize"] } })}>
+                    {[14, 16, 18, 20, 24].map((size) => <option key={size} value={size}>{size} px</option>)}
+                  </select>
+                </label>
+                <label>
+                  Начертание
+                  <select value={lesson?.descriptionStyle?.fontWeight || 400} onChange={(event) => updateLesson({ descriptionStyle: { ...lesson?.descriptionStyle, fontWeight: Number(event.target.value) as NonNullable<LessonBlock["textStyle"]>["fontWeight"] } })}>
+                    <option value={400}>Обычный</option><option value={500}>Средний</option><option value={700}>Жирный</option>
+                  </select>
+                </label>
+                <div className="textAlignPicker" aria-label="Выравнивание описания">
+                  {(["left", "center", "right"] as const).map((alignment) => <button key={alignment} type="button" className={(lesson?.descriptionStyle?.textAlign || "left") === alignment ? "active" : ""} title={alignment === "left" ? "По левому краю" : alignment === "center" ? "По центру" : "По правому краю"} onClick={() => updateLesson({ descriptionStyle: { ...lesson?.descriptionStyle, textAlign: alignment } })}><span className={`alignGlyph ${alignment}`} /></button>)}
+                </div>
               </div>
             </div>
           </div>
@@ -2222,7 +2251,7 @@ export function CourseEditorPage() {
             </button>
             <small>{course.title}</small>
             <h1>{lesson?.title}</h1>
-            <p>{lesson?.description}</p>
+            <p style={{ fontFamily: textFontFamily(lesson?.descriptionStyle?.fontFamily), fontSize: `${lesson?.descriptionStyle?.fontSize || 16}px`, fontWeight: lesson?.descriptionStyle?.fontWeight || 400, textAlign: lesson?.descriptionStyle?.textAlign || "left" }}>{lesson?.description}</p>
             {rendered.map((b) => (
               <LessonBlockView key={b.id} block={b} />
             ))}

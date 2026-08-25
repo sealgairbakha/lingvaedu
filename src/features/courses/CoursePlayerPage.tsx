@@ -1040,7 +1040,12 @@ export function CoursePlayerPage() {
                   УРОК {currentIndex + 1} ИЗ {lessons.length}
                 </small>
                 <h1>{current.title}</h1>
-                <p>{current.description}</p>
+                <p style={{
+                  fontFamily: lessonFontFamilies[current.descriptionStyle?.fontFamily || "onest"],
+                  fontSize: `${current.descriptionStyle?.fontSize || 17}px`,
+                  fontWeight: current.descriptionStyle?.fontWeight || 400,
+                  textAlign: current.descriptionStyle?.textAlign || "left",
+                }}>{current.description}</p>
                 <div className="readerMeta">
                   {current.timeLimit > 0 && !completed.includes(current.id) && (
                     <span

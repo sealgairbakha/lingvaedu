@@ -1410,7 +1410,7 @@ function Calendar() {
     setLoading(false);
   };
 
-  useEffect(() => { void loadEvents(); }, [cursor.getFullYear(), cursor.getMonth()]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { const request = window.setTimeout(() => void loadEvents(), 0); return () => window.clearTimeout(request); }, [cursor.getFullYear(), cursor.getMonth()]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const visibleDays = useMemo(() => {
     if (view === "week") {
