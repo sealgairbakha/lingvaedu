@@ -9,14 +9,29 @@ type Props = {
 const splitLines = (content: string) => content.split("\n").filter(Boolean);
 const cleanDelimiter = (value: string, delimiter: string) =>
   value.replaceAll(delimiter, " ");
+const draftAnswerPattern = /\s*\[\[gap-answer:([^\]]*)\]\]$/;
+const readDraftAnswer = (value: string) => {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+};
 const sentenceWithBlank = (line: string, answer: string) => {
-  const clean = line.trim() || "___";
+  const clean = line.trim();
   return clean.includes("___")
     ? clean.replace("___", `[${answer}]`)
-    : `${clean} [${answer}]`;
+    : `${clean}${clean ? " " : ""}[[gap-answer:${encodeURIComponent(answer)}]]`;
 };
 const parseGapRows = (content: string) =>
   splitLines(content).map((line) => {
+    const draftMatch = line.match(draftAnswerPattern);
+    if (draftMatch) {
+      return {
+        sentence: line.replace(draftAnswerPattern, ""),
+        answer: readDraftAnswer(draftMatch[1] || ""),
+      };
+    }
     const match = line.match(/\[([^\]]*)\]/);
     return {
       sentence: match ? line.replace(match[0], "___") : line,

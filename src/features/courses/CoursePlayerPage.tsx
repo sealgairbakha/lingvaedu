@@ -23,6 +23,29 @@ const formatAttachmentSize = (bytes?: number) => {
 const normalizeTaskAnswer = (value: string) =>
   value.trim().toLocaleLowerCase().replace(/\s+/g, " ");
 
+const parseGapTaskLine = (line: string) => {
+  const draftMatch = line.match(/\s*\[\[gap-answer:([^\]]*)\]\]$/);
+  if (draftMatch) {
+    let answer = draftMatch[1] || "";
+    try {
+      answer = decodeURIComponent(answer);
+    } catch {
+      // Keep legacy or manually edited text readable.
+    }
+    return {
+      before: line.replace(/\s*\[\[gap-answer:([^\]]*)\]\]$/, ""),
+      answer,
+      after: "",
+    };
+  }
+  const match = line.match(/\[([^\]]*)\]/);
+  return {
+    before: match ? line.slice(0, match.index) : line,
+    answer: match?.[1] || "",
+    after: match ? line.slice((match.index || 0) + match[0].length) : "",
+  };
+};
+
 function TaskActions({
   checked,
   answered,
@@ -102,12 +125,10 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
   }, [blockImages.length, openedImage]);
   if (block.kind === "drag-words") {
     const items = lines.map((line, index) => {
-      const match = line.match(/\[([^\]]+)\]/);
+      const parsed = parseGapTaskLine(line);
       return {
         id: String(index),
-        before: match ? line.slice(0, match.index) : line,
-        answer: match?.[1] || "",
-        after: match ? line.slice((match.index || 0) + match[0].length) : "",
+        ...parsed,
       };
     });
     const wordTokens = items
@@ -279,30 +300,30 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
     const items = lines.map((line, index) => ({
       id: String(index),
       line,
-      match: line.match(/\[([^\]]*)\]/),
+      parsed: parseGapTaskLine(line),
     }));
     const answered = items.filter((item) => taskAnswers[item.id]?.trim()).length;
     const correct = items.filter(
       (item) =>
         normalizeTaskAnswer(taskAnswers[item.id] || "") ===
-        normalizeTaskAnswer(item.match?.[1] || ""),
+        normalizeTaskAnswer(item.parsed.answer),
     ).length;
     return (
       <section className="learningBlock taskLearning fillBlankLearning">
         <h3>{block.title}</h3>
         <ol className="gapSentenceList">
-          {items.map(({ id, line, match }, index) => {
+          {items.map(({ id, parsed }, index) => {
             const value = taskAnswers[id] || "";
             return (
               <li key={id}>
-                {match ? line.slice(0, match.index) : line}
-                {match && (
+                {parsed.before}
+                {parsed.answer && (
                   <input
                     value={value}
                     aria-label={`Ответ ${index + 1}`}
                     className={
                       taskChecked && value
-                        ? normalizeTaskAnswer(value) === normalizeTaskAnswer(match[1])
+                        ? normalizeTaskAnswer(value) === normalizeTaskAnswer(parsed.answer)
                           ? "correct"
                           : "wrong"
                         : ""
@@ -318,7 +339,7 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
                     }
                   />
                 )}
-                {match && line.slice((match.index || 0) + match[0].length)}
+                {parsed.answer && parsed.after}
               </li>
             );
           })}
