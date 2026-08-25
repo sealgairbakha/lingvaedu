@@ -1299,20 +1299,20 @@ export function CourseEditorPage() {
               <div className="fontToolbarCurtain">
               <div className="textFormatToolbar lessonDescriptionToolbar" aria-label="Оформление описания урока">
                 <label>
-                  Шрифт
-                  <select value={lesson?.descriptionStyle?.fontFamily || "onest"} onChange={(event) => updateLesson({ descriptionStyle: { ...lesson?.descriptionStyle, fontFamily: event.target.value as NonNullable<LessonBlock["textStyle"]>["fontFamily"] } })}>
+                  <span className="formatControlLabel">Шрифт</span>
+                  <select aria-label="Шрифт" value={lesson?.descriptionStyle?.fontFamily || "onest"} onChange={(event) => updateLesson({ descriptionStyle: { ...lesson?.descriptionStyle, fontFamily: event.target.value as NonNullable<LessonBlock["textStyle"]>["fontFamily"] } })}>
                     {textFontOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                   </select>
                 </label>
                 <label>
-                  Размер
-                  <select value={lesson?.descriptionStyle?.fontSize || 16} onChange={(event) => updateLesson({ descriptionStyle: { ...lesson?.descriptionStyle, fontSize: Number(event.target.value) as NonNullable<LessonBlock["textStyle"]>["fontSize"] } })}>
+                  <span className="formatControlLabel">Размер</span>
+                  <select aria-label="Размер шрифта" value={lesson?.descriptionStyle?.fontSize || 16} onChange={(event) => updateLesson({ descriptionStyle: { ...lesson?.descriptionStyle, fontSize: Number(event.target.value) as NonNullable<LessonBlock["textStyle"]>["fontSize"] } })}>
                     {[14, 16, 18, 20, 24].map((size) => <option key={size} value={size}>{size} px</option>)}
                   </select>
                 </label>
                 <label>
-                  Начертание
-                  <select value={lesson?.descriptionStyle?.fontWeight || 400} onChange={(event) => updateLesson({ descriptionStyle: { ...lesson?.descriptionStyle, fontWeight: Number(event.target.value) as NonNullable<LessonBlock["textStyle"]>["fontWeight"] } })}>
+                  <span className="formatControlLabel">Начертание</span>
+                  <select aria-label="Начертание шрифта" value={lesson?.descriptionStyle?.fontWeight || 400} onChange={(event) => updateLesson({ descriptionStyle: { ...lesson?.descriptionStyle, fontWeight: Number(event.target.value) as NonNullable<LessonBlock["textStyle"]>["fontWeight"] } })}>
                     <option value={400}>Обычный</option><option value={500}>Средний</option><option value={700}>Жирный</option>
                   </select>
                 </label>
@@ -1563,8 +1563,9 @@ export function CourseEditorPage() {
                           <div className="fontToolbarCurtain">
                           <div className="textFormatToolbar" aria-label="Оформление текста">
                             <label>
-                              Шрифт
+                              <span className="formatControlLabel">Шрифт</span>
                               <select
+                                aria-label="Шрифт"
                                 value={b.textStyle?.fontFamily || "onest"}
                                 onChange={(event) => updateBlock(b.id, {
                                   textStyle: {
@@ -1579,8 +1580,9 @@ export function CourseEditorPage() {
                               </select>
                             </label>
                             <label>
-                              Размер
+                              <span className="formatControlLabel">Размер</span>
                               <select
+                                aria-label="Размер шрифта"
                                 value={b.textStyle?.fontSize || 16}
                                 onChange={(event) => updateBlock(b.id, {
                                   textStyle: {
@@ -1595,8 +1597,9 @@ export function CourseEditorPage() {
                               </select>
                             </label>
                             <label>
-                              Начертание
+                              <span className="formatControlLabel">Начертание</span>
                               <select
+                                aria-label="Начертание шрифта"
                                 value={b.textStyle?.fontWeight || 400}
                                 onChange={(event) => updateBlock(b.id, {
                                   textStyle: {
