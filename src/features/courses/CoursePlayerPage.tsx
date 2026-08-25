@@ -1113,9 +1113,11 @@ export function CoursePlayerPage() {
               ) : (
                 <>
                   {current.blocks.length ? (
-                    current.blocks.map((block) => (
-                      <LessonBlockView key={block.id} block={block} />
-                    ))
+                    <div className="learningBlockStack">
+                      {current.blocks.map((block) => (
+                        <LessonBlockView key={block.id} block={block} />
+                      ))}
+                    </div>
                   ) : (
                     <div className="learningBlock emptyMaterial">
                       В этом уроке пока нет учебных материалов.

@@ -954,6 +954,38 @@ html[data-theme="dark"] .blockPalette > button:hover .paletteAddIcon {
   }
 }
 
+/* Published lessons read as one continuous document instead of loose cards. */
+.learningBlockStack {
+  overflow: hidden;
+  margin: 18px 0;
+  border-radius: 18px;
+  box-shadow: 0 8px 28px rgba(24, 35, 58, 0.08);
+}
+
+.learningBlockStack > .learningBlock {
+  margin: 0;
+  border-top: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.learningBlockStack > .learningBlock:first-child {
+  border-top: 1px solid #e3e6eb;
+  border-radius: 18px 18px 0 0;
+}
+
+.learningBlockStack > .learningBlock:last-child {
+  border-radius: 0 0 18px 18px;
+}
+
+.learningBlockStack > .learningBlock:only-child {
+  border-radius: 18px;
+}
+
+html[data-theme="dark"] .learningBlockStack {
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.22);
+}
+
 .blockGlyph.drag-words,
 .blockGlyph.select-words,
 .blockGlyph.fill-blank,
