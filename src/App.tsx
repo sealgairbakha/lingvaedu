@@ -10,6 +10,7 @@ import { CoursePlayerPage } from "./features/courses/CoursePlayerPage";
 import { ProfilePage } from "./features/profile/ProfilePage";
 import { UsersPage } from "./features/users/UsersPage";
 import { GroupsPage } from "./features/groups/GroupsPage";
+import { VideoRoomsPage } from "./features/video/VideoRoomsPage";
 import { useCourses } from "./features/courses/CourseProvider";
 import { supabase } from "./lib/supabase";
 
@@ -220,7 +221,7 @@ function Sidebar({
         <nav>
           {nav.map((group, gi) => {
             const items = group.items.filter(
-              (item) => isAdmin || (item.id === "groups" && canEditCourses) || !adminOnlyPages.includes(item.id),
+              (item) => (item.id !== "calls" || canEditCourses) && (isAdmin || (item.id === "groups" && canEditCourses) || !adminOnlyPages.includes(item.id)),
             );
             if (!items.length) return null;
             return (
@@ -1245,120 +1246,6 @@ function Reports() {
   );
 }
 
-function Calls() {
-  const [room, setRoom] = useState(false);
-  return (
-    <main className="content fade">
-      <PageTitle
-        title="Видеокомнаты"
-        text="Проводите живые занятия без сторонних сервисов."
-        action={
-          <button className="btn primary" onClick={() => setRoom(true)}>
-            ＋ Создать комнату
-          </button>
-        }
-      />
-      <section className="callHero">
-        <div>
-          <span className="liveDot">● ГОТОВО К ЗВОНКУ</span>
-          <h2>
-            Начните встречу
-            <br />в один клик
-          </h2>
-          <p>
-            Без установки приложений. До 50 участников, демонстрация экрана и
-            чат.
-          </p>
-          <button className="startCall" onClick={() => setRoom(true)}>
-            <span>◇</span>Начать мгновенный звонок
-          </button>
-        </div>
-        <div className="callVisual">
-          <div className="personVideo one">
-            <span>АК</span>
-            <b>Анна Ким</b>
-          </div>
-          <div className="personVideo two">
-            <span>БА</span>
-            <b>Вы</b>
-          </div>
-          <div className="callControls">
-            <i>♩</i>
-            <i>▣</i>
-            <i>□</i>
-            <i className="hang">⌕</i>
-          </div>
-        </div>
-      </section>
-      <h2 className="sectionTitle">Запланированные комнаты</h2>
-      <div className="roomList">
-        <div className="roomRow">
-          <div className="roomDate">
-            <b>14</b>
-            <span>АВГ</span>
-          </div>
-          <div>
-            <h3>Speaking club · Intermediate</h3>
-            <p>Завтра, 10:00–11:00 · Анна Ким</p>
-          </div>
-          <div className="participantDots">
-            <i>АК</i>
-            <i>МИ</i>
-            <i>+10</i>
-          </div>
-          <button className="btn ghost">Копировать ссылку</button>
-          <button>•••</button>
-        </div>
-        <div className="roomRow">
-          <div className="roomDate blue">
-            <b>16</b>
-            <span>АВГ</span>
-          </div>
-          <div>
-            <h3>Onboarding: знакомство с платформой</h3>
-            <p>Суббота, 14:30–15:15 · Баха Админ</p>
-          </div>
-          <div className="participantDots">
-            <i>БА</i>
-            <i>+7</i>
-          </div>
-          <button className="btn ghost">Копировать ссылку</button>
-          <button>•••</button>
-        </div>
-      </div>
-      {room && (
-        <Modal title="Новая видеокомната" close={() => setRoom(false)}>
-          <label>
-            Название встречи
-            <input defaultValue="Разговорная практика" />
-          </label>
-          <div className="modalGrid">
-            <label>
-              Дата
-              <input type="date" defaultValue="2026-08-14" />
-            </label>
-            <label>
-              Время
-              <input type="time" defaultValue="10:00" />
-            </label>
-          </div>
-          <label>
-            Группа
-            <select>
-              <option>Sales Team</option>
-              <option>Newcomers · August</option>
-              <option>Открытая встреча</option>
-            </select>
-          </label>
-          <button className="btn primary full" onClick={() => setRoom(false)}>
-            Создать комнату и получить ссылку
-          </button>
-        </Modal>
-      )}
-    </main>
-  );
-}
-
 type CalendarEventRecord = {
   id: string;
   title: string;
@@ -1652,7 +1539,7 @@ export default function App() {
   const page = pageByPath[location.pathname] ?? "overview";
   const setPage = (next: Page) => navigate(paths[next]);
   const adminOnlyPages: Page[] = ["people", "reports", "roles"];
-  const denied = (!isAdmin && adminOnlyPages.includes(page)) || ((page === "editor" || page === "groups") && !canEditCourses);
+  const denied = (!isAdmin && adminOnlyPages.includes(page)) || ((page === "editor" || page === "groups" || page === "calls") && !canEditCourses);
   const content =
     denied ? (
       <main className="content fade">
@@ -1680,7 +1567,7 @@ export default function App() {
     ) : page === "reports" ? (
       <Reports />
     ) : page === "calls" ? (
-      <Calls />
+      <VideoRoomsPage />
     ) : page === "calendar" ? (
       <Calendar />
     ) : (
