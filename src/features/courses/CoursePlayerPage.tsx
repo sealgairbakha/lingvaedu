@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
 import { supabase } from "../../lib/supabase";
 import { useCourses } from "./CourseProvider";
+import { BlockIcon } from "./BlockIcon";
 import type { LessonBlock } from "./types";
 import { sanitizeRichText } from "./richText";
 
@@ -581,9 +582,8 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
     return (
       <section className="learningBlock audioLearning">
         <div className="mediaBlockHeading">
-          <span>♫</span>
+          <span className="blockGlyph audio"><BlockIcon kind="audio" /></span>
           <div>
-            <small>АУДИО</small>
             <h3>{block.title}</h3>
           </div>
         </div>
@@ -600,9 +600,8 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
     return (
       <section className="learningBlock imageLearning">
         <div className="mediaBlockHeading">
-          <span>▧</span>
+          <span className="blockGlyph image"><BlockIcon kind="image" /></span>
           <div>
-            <small>ФОТО</small>
             <h3>{block.title}</h3>
           </div>
         </div>
@@ -657,9 +656,8 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
     return (
       <section className="learningBlock videoLearning">
         <div className="mediaBlockHeading">
-          <span>▶</span>
+          <span className="blockGlyph video"><BlockIcon kind="video" /></span>
           <div>
-            <small>ВИДЕОУРОК</small>
             <h3>{block.title}</h3>
           </div>
         </div>
