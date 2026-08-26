@@ -16,6 +16,7 @@ export type BlockKind =
 
 export type LessonBlock = {
   id: string;
+  tabId?: string;
   kind: BlockKind;
   title: string;
   content: string;
@@ -24,6 +25,7 @@ export type LessonBlock = {
   fileSize?: number;
   fileType?: string;
   images?: string[];
+  imageCaptions?: string[];
   imageLayout?: "grid" | "mosaic" | "filmstrip";
   textStyle?: {
     fontFamily?: "onest" | "serif" | "rounded" | "mono";
@@ -33,6 +35,11 @@ export type LessonBlock = {
   };
 };
 
+export type LessonTab = {
+  id: string;
+  title: string;
+};
+
 export type CourseLesson = {
   id: string;
   title: string;
@@ -40,6 +47,7 @@ export type CourseLesson = {
   descriptionStyle?: LessonBlock["textStyle"];
   timeLimit: number;
   attempts: number;
+  tabs?: LessonTab[];
   blocks: LessonBlock[];
 };
 

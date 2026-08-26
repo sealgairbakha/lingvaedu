@@ -116,6 +116,9 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
     : block.content
       ? [block.content]
       : [];
+  const blockImageCaptions = blockImages.map(
+    (_, index) => block.imageCaptions?.[index]?.trim() || "",
+  );
   useEffect(() => {
     if (openedImage === null) return;
     const previousOverflow = document.body.style.overflow;
@@ -610,20 +613,26 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
             className={`lessonImageCollage layout-${block.imageLayout || "grid"} ${blockImages.length === 1 ? "single" : ""}`}
           >
             {blockImages.map((src, index) => (
-              <button
-                key={`${src}-${index}`}
-                type="button"
-                className="lessonImageButton"
-                onClick={() => setOpenedImage(index)}
-                aria-label={`Открыть фото ${index + 1} в полном размере`}
-              >
-                <img
-                  src={src}
-                  alt={`${block.title}${blockImages.length > 1 ? ` — фото ${index + 1}` : ""}`}
-                  loading="lazy"
-                />
-                <span className="lessonImageZoom"><i>⌕</i>Открыть полностью</span>
-              </button>
+              <figure className="lessonImageItem" key={`${src}-${index}`}>
+                <button
+                  type="button"
+                  className="lessonImageButton"
+                  onClick={() => setOpenedImage(index)}
+                  aria-label={`Открыть фото ${index + 1} в полном размере`}
+                >
+                  <img
+                    src={src}
+                    alt={blockImageCaptions[index] || `${block.title}${blockImages.length > 1 ? ` — фото ${index + 1}` : ""}`}
+                    loading="lazy"
+                  />
+                  <span className="lessonImageZoom"><i>⌕</i>Открыть полностью</span>
+                </button>
+                {blockImageCaptions[index] && (
+                  <figcaption className="lessonImageCaption">
+                    {blockImageCaptions[index]}
+                  </figcaption>
+                )}
+              </figure>
             ))}
           </div>
         ) : (
@@ -637,7 +646,13 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
                 <div><small>ФОТО {openedImage + 1} ИЗ {blockImages.length}</small><b>{block.title}</b></div>
                 <button onClick={() => setOpenedImage(null)} aria-label="Закрыть">×</button>
               </div>
-              <img src={blockImages[openedImage]} alt={`${block.title} — фото ${openedImage + 1}`} />
+              <img
+                src={blockImages[openedImage]}
+                alt={blockImageCaptions[openedImage] || `${block.title} — фото ${openedImage + 1}`}
+              />
+              {blockImageCaptions[openedImage] && (
+                <p className="imageLightboxCaption">{blockImageCaptions[openedImage]}</p>
+              )}
               {blockImages.length > 1 && <>
                 <button className="imageLightboxNav previous" onClick={() => setOpenedImage((openedImage - 1 + blockImages.length) % blockImages.length)} aria-label="Предыдущее фото">‹</button>
                 <button className="imageLightboxNav next" onClick={() => setOpenedImage((openedImage + 1) % blockImages.length)} aria-label="Следующее фото">›</button>
@@ -766,6 +781,7 @@ export function CoursePlayerPage() {
     [course],
   );
   const [lessonId, setLessonId] = useState(params.get("lesson") || "");
+  const [activeLessonTabId, setActiveLessonTabId] = useState("");
   const [completed, setCompleted] = useState<string[]>([]);
   const [mobileTreeOpen, setMobileTreeOpen] = useState(false);
   const [lessonRuns, setLessonRuns] = useState<Record<string, LessonRun>>({});
@@ -827,6 +843,18 @@ export function CoursePlayerPage() {
   );
   const current = lessons[currentIndex]?.lesson || lessons[0]?.lesson;
   const currentModule = lessons[currentIndex]?.module || lessons[0]?.module;
+  const currentTabs = current?.tabs?.filter((tab) => tab.id) || [];
+  const activeTabId =
+    currentTabs.find((tab) => tab.id === activeLessonTabId)?.id ||
+    currentTabs[0]?.id ||
+    "";
+  const visibleBlocks = current
+    ? currentTabs.length
+      ? current.blocks.filter(
+          (block) => (block.tabId || currentTabs[0].id) === activeTabId,
+        )
+      : current.blocks
+    : [];
   const isLastLesson = currentIndex === lessons.length - 1;
   const currentRun = current ? lessonRuns[current.id] : undefined;
   const isRestricted = Boolean(
@@ -890,6 +918,7 @@ export function CoursePlayerPage() {
   }, [current, currentRun?.deadline, currentRun?.expired]);
   const selectLesson = (id: string) => {
     setLessonId(id);
+    setActiveLessonTabId("");
     setMobileTreeOpen(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -968,11 +997,11 @@ export function CoursePlayerPage() {
           </svg>
           <span>КУРСЫ</span>
         </button>
-        <div>
+        <div className="playerCourseIdentity">
           <small>{course.language}</small>
           <b>{course.title}</b>
         </div>
-        <div className="playerProgress">
+        <div className="playerProgress" aria-label={`Прогресс курса: ${percent}%`}>
           <span>{percent}% завершено</span>
           <i>
             <em style={{ width: `${percent}%` }} />
@@ -985,7 +1014,12 @@ export function CoursePlayerPage() {
             title="Редактировать курс"
             onClick={() => navigate(`/courses/editor?course=${course.id}`)}
           >
-            <span aria-hidden="true">✎</span>
+            <span aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="m4 20 4.2-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Z" />
+                <path d="m13.8 7.2 3 3M4.8 16.2l3 3" />
+              </svg>
+            </span>
             <b>Редактировать</b>
           </button>
         )}
@@ -1019,6 +1053,7 @@ export function CoursePlayerPage() {
                   <button
                     key={lesson.id}
                     className={current?.id === lesson.id ? "active" : ""}
+                    aria-current={current?.id === lesson.id ? "page" : undefined}
                     onClick={() => selectLesson(lesson.id)}
                   >
                     <i className={completed.includes(lesson.id) ? "done" : ""}>
@@ -1032,7 +1067,7 @@ export function CoursePlayerPage() {
                     </i>
                     <span>
                       {lesson.title}
-                      <small>{lesson.blocks.length} блоков</small>
+                      <small>{lesson.blocks.length} материалов</small>
                     </span>
                   </button>
                 ))}
@@ -1094,6 +1129,22 @@ export function CoursePlayerPage() {
                   )}
                 </div>
               </div>
+              {currentTabs.length > 0 && !currentRun?.expired && (
+                <nav className="learnerLessonTabs" aria-label="Разделы урока">
+                  {currentTabs.map((tab, index) => (
+                    <button
+                      type="button"
+                      key={tab.id}
+                      className={tab.id === activeTabId ? "active" : ""}
+                      aria-current={tab.id === activeTabId ? "page" : undefined}
+                      onClick={() => setActiveLessonTabId(tab.id)}
+                    >
+                      <span>{index + 1}</span>
+                      {tab.title || `Вкладка ${index + 1}`}
+                    </button>
+                  ))}
+                </nav>
+              )}
               {currentRun?.expired ? (
                 <section className="lessonExpiredCard">
                   <span className="expiredIcon" aria-hidden="true">
@@ -1125,9 +1176,9 @@ export function CoursePlayerPage() {
                 </section>
               ) : (
                 <>
-                  {current.blocks.length ? (
+                  {visibleBlocks.length ? (
                     <div className="learningBlockStack">
-                      {current.blocks.map((block) => (
+                      {visibleBlocks.map((block) => (
                         <LessonBlockView key={block.id} block={block} />
                       ))}
                     </div>

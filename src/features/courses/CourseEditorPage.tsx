@@ -1,7 +1,6 @@
 import {
   Fragment,
   useEffect,
-  useMemo,
   useRef,
   useState,
   type CSSProperties,
@@ -15,7 +14,13 @@ import { LessonBlockView } from "./CoursePlayerPage";
 import { BlockIcon } from "./BlockIcon";
 import { RichTextEditor } from "./RichTextEditor";
 import { TaskBlockEditor } from "./TaskBlockEditor";
-import { uid, type BlockKind, type Course, type LessonBlock } from "./types";
+import {
+  uid,
+  type BlockKind,
+  type Course,
+  type LessonBlock,
+  type LessonTab,
+} from "./types";
 
 const textFontOptions = [
   { value: "onest", label: "Onest", family: '"Onest Variable", Onest, sans-serif' },
@@ -285,6 +290,8 @@ const getBlockImages = (block: LessonBlock) =>
     : block.content
       ? [block.content]
       : [];
+const getImageCaptions = (block: LessonBlock, imageCount = getBlockImages(block).length) =>
+  Array.from({ length: imageCount }, (_, index) => block.imageCaptions?.[index] || "");
 const courseColors = [
   { value: "purple", label: "Фиолетовый" },
   { value: "blue", label: "Синий" },
@@ -311,6 +318,7 @@ export function CourseEditorPage() {
   const [lessonId, setLessonId] = useState(
     source?.modules[0]?.lessons[0]?.id || "",
   );
+  const [activeLessonTabId, setActiveLessonTabId] = useState("");
   const [selected, setSelected] = useState("");
   const [closingEditor, setClosingEditor] = useState("");
   const closeEditorTimerRef = useRef<number | null>(null);
@@ -463,6 +471,11 @@ export function CourseEditorPage() {
     course?.modules.find((x) => x.id === moduleId) || course?.modules[0];
   const lesson =
     module?.lessons.find((x) => x.id === lessonId) || module?.lessons[0];
+  const lessonTabs = lesson?.tabs?.filter((tab) => tab.id) || [];
+  const activeTabId =
+    lessonTabs.find((tab) => tab.id === activeLessonTabId)?.id ||
+    lessonTabs[0]?.id ||
+    "";
   const block = lesson?.blocks.find((x) => x.id === selected);
   const totalTimeSeconds = Math.max(
     0,
@@ -514,9 +527,83 @@ export function CourseEditorPage() {
       ),
     );
   };
-  const updateImageCollection = (block: LessonBlock, images: string[]) =>
+  const visibleBlocks = lesson
+    ? lessonTabs.length
+      ? lesson.blocks.filter(
+          (item) => (item.tabId || lessonTabs[0].id) === activeTabId,
+        )
+      : lesson.blocks
+    : [];
+  const addLessonTab = () => {
+    if (!lesson) return;
+    if (!lessonTabs.length) {
+      const mainTab: LessonTab = { id: uid(), title: "Основное" };
+      const newTab: LessonTab = { id: uid(), title: "Вкладка 2" };
+      updateLesson({
+        tabs: [mainTab, newTab],
+        blocks: lesson.blocks.map((item) => ({ ...item, tabId: mainTab.id })),
+      });
+      setActiveLessonTabId(newTab.id);
+      setSelected("");
+      return;
+    }
+    const nextTab: LessonTab = {
+      id: uid(),
+      title: `Вкладка ${lessonTabs.length + 1}`,
+    };
+    updateLesson({ tabs: [...lessonTabs, nextTab] });
+    setActiveLessonTabId(nextTab.id);
+    setSelected("");
+  };
+  const renameLessonTab = (id: string, title: string) =>
+    updateLesson({
+      tabs: lessonTabs.map((tab) =>
+        tab.id === id ? { ...tab, title: title.slice(0, 40) } : tab,
+      ),
+    });
+  const removeLessonTab = (id: string) => {
+    if (!lesson) return;
+    const target = lessonTabs.find((tab) => tab.id === id);
+    const containedBlocks = lesson.blocks.filter(
+      (item) => (item.tabId || lessonTabs[0]?.id) === id,
+    );
+    if (
+      containedBlocks.length &&
+      !window.confirm(
+        `Удалить вкладку «${target?.title || "Без названия"}» и ${containedBlocks.length} ${containedBlocks.length === 1 ? "блок" : "блока"} внутри?`,
+      )
+    )
+      return;
+    const remainingTabs = lessonTabs.filter((tab) => tab.id !== id);
+    const remainingBlocks = lesson.blocks.filter(
+      (item) => (item.tabId || lessonTabs[0]?.id) !== id,
+    );
+    if (remainingTabs.length <= 1) {
+      updateLesson({
+        tabs: undefined,
+        blocks: remainingBlocks.map((item) => {
+          const nextItem = { ...item };
+          delete nextItem.tabId;
+          return nextItem;
+        }),
+      });
+      setActiveLessonTabId("");
+    } else {
+      updateLesson({ tabs: remainingTabs, blocks: remainingBlocks });
+      setActiveLessonTabId((current) =>
+        current === id ? remainingTabs[0].id : current,
+      );
+    }
+    setSelected("");
+  };
+  const updateImageCollection = (
+    block: LessonBlock,
+    images: string[],
+    imageCaptions = getImageCaptions(block, images.length),
+  ) =>
     updateBlock(block.id, {
       images,
+      imageCaptions,
       content: images[0] || "",
       imageLayout: block.imageLayout || "grid",
     });
@@ -529,8 +616,13 @@ export function CourseEditorPage() {
     const toIndex = fromIndex + direction;
     if (toIndex < 0 || toIndex >= images.length) return;
     const next = [...images];
+    const nextCaptions = getImageCaptions(block);
     [next[fromIndex], next[toIndex]] = [next[toIndex], next[fromIndex]];
-    updateImageCollection(block, next);
+    [nextCaptions[fromIndex], nextCaptions[toIndex]] = [
+      nextCaptions[toIndex],
+      nextCaptions[fromIndex],
+    ];
+    updateImageCollection(block, next, nextCaptions);
   };
   const updateTimerDigits = (rawValue: string) => {
     const digits = rawValue.replace(/\D/g, "").slice(-6) || "0";
@@ -705,7 +797,7 @@ export function CourseEditorPage() {
     mutate((current) => ({ ...current, modules: nextModules }));
   };
   const addBlock = (kind: BlockKind) => {
-    const b = makeBlock(kind);
+    const b = { ...makeBlock(kind), tabId: activeTabId || undefined };
     updateBlocks([...(lesson?.blocks || []), b]);
     setSelected(b.id);
   };
@@ -715,7 +807,10 @@ export function CourseEditorPage() {
     edge: "before" | "after" = "after",
   ) => {
     if (!lesson) return;
-    const blockToAdd = makeBlock(kind);
+    const blockToAdd = {
+      ...makeBlock(kind),
+      tabId: activeTabId || undefined,
+    };
     const next = [...lesson.blocks];
     const targetIndex = targetId
       ? next.findIndex((item) => item.id === targetId)
@@ -854,6 +949,10 @@ export function CourseEditorPage() {
                   ...x,
                   content: getBlockImages(targetBlock)[0] || uploadedUrls[0],
                   images: [...getBlockImages(targetBlock), ...uploadedUrls],
+                  imageCaptions: [
+                    ...getImageCaptions(targetBlock),
+                    ...uploadedUrls.map(() => ""),
+                  ],
                   imageLayout: targetBlock.imageLayout || "grid",
                 }
               : targetBlock.kind === "file"
@@ -980,7 +1079,7 @@ export function CourseEditorPage() {
     setUploadError("");
     setSaved(true);
   };
-  const rendered = useMemo(() => lesson?.blocks || [], [lesson?.blocks]);
+  const rendered = visibleBlocks;
   if (!canEditCourses)
     return (
       <main className="content">
@@ -1282,6 +1381,59 @@ export function CourseEditorPage() {
               </div>
             </div>
           </div>
+          <div className={`lessonTabsEditor ${lessonTabs.length ? "hasTabs" : ""}`}>
+            {lessonTabs.length > 0 && (
+              <div className="lessonTabsEditorList" role="tablist" aria-label="Вкладки урока">
+                {lessonTabs.map((tab, index) => {
+                  const isActive = tab.id === activeTabId;
+                  return (
+                    <div
+                      className={`lessonTabEditorItem ${isActive ? "active" : ""}`}
+                      key={tab.id}
+                      role="tab"
+                      aria-selected={isActive}
+                    >
+                      <input
+                        type="text"
+                        aria-label={`Название вкладки ${index + 1}`}
+                        title="Нажмите, чтобы переименовать вкладку"
+                        value={tab.title}
+                        placeholder={`Вкладка ${index + 1}`}
+                        maxLength={40}
+                        onFocus={() => {
+                          if (!isActive) {
+                            setActiveLessonTabId(tab.id);
+                            setSelected("");
+                          }
+                        }}
+                        onClick={(event) => event.stopPropagation()}
+                        onChange={(event) =>
+                          renameLessonTab(tab.id, event.target.value)
+                        }
+                      />
+                      <button
+                        type="button"
+                        className="lessonTabRemove"
+                        aria-label={`Удалить вкладку «${tab.title || index + 1}»`}
+                        title="Удалить вкладку"
+                        onClick={() => removeLessonTab(tab.id)}
+                      >
+                        <RemoveIcon />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            <button
+              type="button"
+              className="addLessonTab"
+              onClick={addLessonTab}
+            >
+              <AddBlockIcon />
+              <span>Вкладка</span>
+            </button>
+          </div>
           <div
             className={`blockCanvas ${paletteDropActive ? "paletteDropActive" : ""}`}
             onDragOver={(e) => {
@@ -1316,8 +1468,8 @@ export function CourseEditorPage() {
               if (!paletteKind && !draggedBlockId) return;
               e.preventDefault();
               if (paletteKind) dropPaletteBlock(paletteKind);
-              if (draggedBlockId && lesson?.blocks.length) {
-                const lastBlock = lesson.blocks[lesson.blocks.length - 1];
+              if (draggedBlockId && visibleBlocks.length) {
+                const lastBlock = visibleBlocks[visibleBlocks.length - 1];
                 if (lastBlock.id !== draggedBlockId)
                   reorder(draggedBlockId, lastBlock.id, "after");
               }
@@ -1328,7 +1480,7 @@ export function CourseEditorPage() {
               setDropTarget(null);
             }}
           >
-            {lesson?.blocks.map((b) => (
+            {visibleBlocks.map((b) => (
               <div
                 key={b.id}
                 className={`blockEditorGroup ${selected === b.id ? "editorOpen" : ""}`}
@@ -1455,8 +1607,8 @@ export function CourseEditorPage() {
                         setClosingEditor("");
                       }
                       updateBlocks(
-                          lesson.blocks.filter((x) => x.id !== b.id),
-                        );
+                        (lesson?.blocks || []).filter((x) => x.id !== b.id),
+                      );
                       }}
                     >
                       ×
@@ -1560,6 +1712,9 @@ export function CourseEditorPage() {
                                 ? {
                                     content,
                                     images: content ? [content] : [],
+                                    imageCaptions: content
+                                      ? [b.imageCaptions?.[0] || ""]
+                                      : [],
                                   }
                                 : b.kind === "file"
                                   ? {
@@ -1695,43 +1850,64 @@ export function CourseEditorPage() {
                                 >
                                   {getBlockImages(b).map((src, index) => (
                                     <figure key={`${src}-${index}`}>
-                                      <img src={src} alt={`${b.title} ${index + 1}`} />
-                                      <div>
-                                        <button
-                                          type="button"
-                                          disabled={index === 0}
-                                          aria-label="Переместить фото влево"
-                                          onClick={() => moveImage(b, index, -1)}
-                                        >
-                                          ‹
-                                        </button>
-                                        <span>{index + 1}</span>
-                                        <button
-                                          type="button"
-                                          disabled={
-                                            index === getBlockImages(b).length - 1
-                                          }
-                                          aria-label="Переместить фото вправо"
-                                          onClick={() => moveImage(b, index, 1)}
-                                        >
-                                          ›
-                                        </button>
-                                        <button
-                                          type="button"
-                                          className="removeImage"
-                                          aria-label="Удалить фото из коллажа"
-                                          onClick={() =>
-                                            updateImageCollection(
-                                              b,
-                                              getBlockImages(b).filter(
-                                                (_, itemIndex) => itemIndex !== index,
-                                              ),
-                                            )
-                                          }
-                                        >
-                                          ×
-                                        </button>
+                                      <div className="imageEditorFrame">
+                                        <img src={src} alt={`${b.title} ${index + 1}`} />
+                                        <div>
+                                          <button
+                                            type="button"
+                                            disabled={index === 0}
+                                            aria-label="Переместить фото влево"
+                                            onClick={() => moveImage(b, index, -1)}
+                                          >
+                                            ‹
+                                          </button>
+                                          <span>{index + 1}</span>
+                                          <button
+                                            type="button"
+                                            disabled={
+                                              index === getBlockImages(b).length - 1
+                                            }
+                                            aria-label="Переместить фото вправо"
+                                            onClick={() => moveImage(b, index, 1)}
+                                          >
+                                            ›
+                                          </button>
+                                          <button
+                                            type="button"
+                                            className="removeImage"
+                                            aria-label="Удалить фото из коллажа"
+                                            onClick={() =>
+                                              updateImageCollection(
+                                                b,
+                                                getBlockImages(b).filter(
+                                                  (_, itemIndex) => itemIndex !== index,
+                                                ),
+                                                getImageCaptions(b).filter(
+                                                  (_, itemIndex) => itemIndex !== index,
+                                                ),
+                                              )
+                                            }
+                                          >
+                                            ×
+                                          </button>
+                                        </div>
                                       </div>
+                                      <figcaption>
+                                        <label>
+                                          <span>Подпись к фото</span>
+                                          <input
+                                            type="text"
+                                            maxLength={160}
+                                            placeholder="Например: Диалог в магазине"
+                                            value={getImageCaptions(b)[index]}
+                                            onChange={(event) => {
+                                              const imageCaptions = getImageCaptions(b);
+                                              imageCaptions[index] = event.target.value;
+                                              updateBlock(b.id, { imageCaptions });
+                                            }}
+                                          />
+                                        </label>
+                                      </figcaption>
                                     </figure>
                                   ))}
                                 </div>
@@ -1745,9 +1921,11 @@ export function CourseEditorPage() {
                 )}
               </div>
             ))}
-            {!lesson?.blocks.length && (
+            {!visibleBlocks.length && (
               <div className="emptyCanvas">
-                Перетащите сюда блок из правой панели или нажмите на него.
+                {lessonTabs.length
+                  ? "В этой вкладке пока нет блоков. Перетащите блок из правой панели или нажмите на него."
+                  : "Перетащите сюда блок из правой панели или нажмите на него."}
               </div>
             )}
           </div>
@@ -2166,6 +2344,20 @@ export function CourseEditorPage() {
             <small>{course.title}</small>
             <h1>{lesson?.title}</h1>
             <p style={{ fontFamily: textFontFamily(lesson?.descriptionStyle?.fontFamily), fontSize: `${lesson?.descriptionStyle?.fontSize || 16}px`, fontWeight: lesson?.descriptionStyle?.fontWeight || 400, textAlign: lesson?.descriptionStyle?.textAlign || "left" }}>{lesson?.description}</p>
+            {lessonTabs.length > 0 && (
+              <div className="lessonPreviewTabs" role="tablist" aria-label="Вкладки урока">
+                {lessonTabs.map((tab, index) => (
+                  <button
+                    type="button"
+                    key={tab.id}
+                    className={tab.id === activeTabId ? "active" : ""}
+                    onClick={() => setActiveLessonTabId(tab.id)}
+                  >
+                    {tab.title || `Вкладка ${index + 1}`}
+                  </button>
+                ))}
+              </div>
+            )}
             {rendered.map((b) => (
               <LessonBlockView key={b.id} block={b} />
             ))}
