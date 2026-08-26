@@ -112,3 +112,27 @@ body:has(.meetingPage),
   .mobile-one-to-one > .meetingControls { left: 50%; right: auto; width: auto; min-width: 360px; height: 74px; padding: 8px 14px calc(8px + env(safe-area-inset-bottom)); border-radius: 20px 20px 0 0; transform: translateX(-50%); }
   .mobile-one-to-one .meetingReactions { bottom: 82px; }
 }
+
+/* A single participant on a phone uses the whole camera canvas instead of a desktop 16:9 tile. */
+@media (max-width: 700px), (max-height: 500px) {
+  .meetingPage.mobile-solo { display: block; background: #070b12; }
+  .mobile-solo > header { position: absolute; z-index: 20; top: 0; left: 0; right: 0; display: flex; height: auto; min-height: 84px; padding: calc(12px + env(safe-area-inset-top)) 16px 24px; border: 0; background: linear-gradient(#080c14cc, transparent); }
+  .mobile-solo > header > .meetingBrand,
+  .mobile-solo .desktopMeetingIdentity { display: none; }
+  .mobile-solo .mobileMeetingBack { display: grid; place-items: center; width: 36px; height: 36px; margin: -3px 6px 0 -7px; border: 0; border-radius: 50%; background: #080c144d; color: #fff; font-size: 34px; font-weight: 300; line-height: 1; }
+  .mobile-solo .mobileMeetingIdentity { display: block; padding-left: 0; }
+  .mobile-solo .meetingBody { position: absolute; inset: 0; display: block; }
+  .mobile-solo .videoStage { position: absolute; inset: 0; display: block; padding: 0; }
+  .videoGrid.mobile-solo { position: relative; display: block; width: 100%; height: 100%; overflow: hidden; }
+  .mobile-solo .localTile { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; border-radius: 0; }
+  .mobile-solo .localTile video { object-fit: cover; }
+  .mobile-solo .meetingChat { position: fixed; inset: 0; }
+  .mobile-solo > .meetingControls { position: absolute; z-index: 25; left: 0; right: 0; bottom: 0; height: calc(94px + env(safe-area-inset-bottom)); padding: 20px 8px calc(12px + env(safe-area-inset-bottom)); border: 0; background: linear-gradient(transparent, #080c14e8); }
+  .mobile-solo .meetingReactions { bottom: 115px; }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  .mobile-solo > header { min-height: 64px; padding-top: calc(8px + env(safe-area-inset-top)); }
+  .mobile-solo > .meetingControls { left: 50%; right: auto; width: auto; min-width: 360px; height: 74px; padding: 8px 14px calc(8px + env(safe-area-inset-bottom)); border-radius: 20px 20px 0 0; transform: translateX(-50%); }
+  .mobile-solo .meetingReactions { bottom: 82px; }
+}

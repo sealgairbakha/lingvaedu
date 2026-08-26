@@ -114,7 +114,7 @@ function useMobileMeeting() {
   return mobile;
 }
 
-function VideoGrid({ count, mode, children }: { count: number; mode: "grid" | "mobile-one-to-one" | "screen-share"; children: React.ReactNode }) {
+function VideoGrid({ count, mode, children }: { count: number; mode: "grid" | "mobile-solo" | "mobile-one-to-one" | "screen-share"; children: React.ReactNode }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
   useEffect(() => {
@@ -394,7 +394,13 @@ export function VideoRoomPage() {
     ...Object.entries(remoteStreams).map(([id, stream]) => { const participant = participants.find((item) => item.id === id); return { id, stream, label: participantName(id), isLocal: false, isScreen: participant?.sharing ?? false, cameraOn: participant?.cameraOn ?? true, micOn: participant?.micOn ?? true, handRaised: participant?.handRaised ?? false }; }),
   ];
   const screenShare = tileRecords.find((item) => item.isScreen);
-  const layoutMode: "mobile-one-to-one" | "screen-share" | "grid" = screenShare ? "screen-share" : isMobile && tileRecords.length === 2 ? "mobile-one-to-one" : "grid";
+  const layoutMode: "mobile-solo" | "mobile-one-to-one" | "screen-share" | "grid" = screenShare
+    ? "screen-share"
+    : isMobile && tileRecords.length === 1
+      ? "mobile-solo"
+      : isMobile && tileRecords.length === 2
+        ? "mobile-one-to-one"
+        : "grid";
   const orderedTiles = layoutMode === "screen-share" && screenShare
     ? [screenShare, ...tileRecords.filter((item) => item.id !== screenShare.id)]
     : layoutMode === "mobile-one-to-one"
