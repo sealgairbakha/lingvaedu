@@ -15,6 +15,15 @@ const lessonFontFamilies = {
   mono: '"Cascadia Code", Consolas, monospace',
 } as const;
 
+const taskBlockKinds = new Set<LessonBlock["kind"]>([
+  "drag-words",
+  "select-words",
+  "fill-blank",
+  "match",
+  "true-false",
+  "quiz",
+]);
+
 type LessonRun = {
   used: number;
   deadline: number | null;
@@ -103,13 +112,27 @@ function TaskActions({
   );
 }
 
-export function LessonBlockView({ block }: { block: LessonBlock }) {
+export function LessonBlockView({
+  block,
+  onTaskResult,
+}: {
+  block: LessonBlock;
+  onTaskResult?: (blockId: string, passed: boolean) => void;
+}) {
   const [answer, setAnswer] = useState("");
   const [taskAnswers, setTaskAnswers] = useState<Record<string, string>>({});
   const [activeWord, setActiveWord] = useState("");
   const [activeMatch, setActiveMatch] = useState("");
   const [taskChecked, setTaskChecked] = useState(false);
   const [openedImage, setOpenedImage] = useState<number | null>(null);
+  const invalidateTask = () => {
+    setTaskChecked(false);
+    onTaskResult?.(block.id, false);
+  };
+  const checkTask = (correct: number, total: number) => {
+    setTaskChecked(true);
+    onTaskResult?.(block.id, total > 0 && correct === total);
+  };
   const lines = block.content.split("\n").filter(Boolean);
   const blockImages = block.images?.length
     ? block.images
@@ -159,7 +182,7 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
         return next;
       });
       setActiveWord("");
-      setTaskChecked(false);
+      invalidateTask();
     };
     const answered = items.filter((item) => taskAnswers[item.id]).length;
     const correct = items.filter(
@@ -210,7 +233,7 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
                       delete next[item.id];
                       return next;
                     });
-                    setTaskChecked(false);
+                    invalidateTask();
                   }
                 }}
                 onDragOver={(event) => event.preventDefault()}
@@ -230,11 +253,11 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
           answered={answered}
           total={items.length}
           correct={correct}
-          onCheck={() => setTaskChecked(true)}
+          onCheck={() => checkTask(correct, items.length)}
           onReset={() => {
             setTaskAnswers({});
             setActiveWord("");
-            setTaskChecked(false);
+            invalidateTask();
           }}
         />
       </section>
@@ -280,7 +303,7 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
                           ...current,
                           [id]: event.target.value,
                         }));
-                        setTaskChecked(false);
+                        invalidateTask();
                       }
                     }
                   >
@@ -300,10 +323,10 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
           answered={answered}
           total={items.length}
           correct={correct}
-          onCheck={() => setTaskChecked(true)}
+          onCheck={() => checkTask(correct, items.length)}
           onReset={() => {
             setTaskAnswers({});
-            setTaskChecked(false);
+            invalidateTask();
           }}
         />
       </section>
@@ -347,7 +370,7 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
                           ...current,
                           [id]: event.target.value,
                         }));
-                        setTaskChecked(false);
+                        invalidateTask();
                       }
                     }
                   />
@@ -362,10 +385,10 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
           answered={answered}
           total={items.length}
           correct={correct}
-          onCheck={() => setTaskChecked(true)}
+          onCheck={() => checkTask(correct, items.length)}
           onReset={() => {
             setTaskAnswers({});
-            setTaskChecked(false);
+            invalidateTask();
           }}
         />
       </section>
@@ -401,7 +424,7 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
                 }
                 onClick={() => {
                   setActiveMatch(pair.id);
-                  setTaskChecked(false);
+                  invalidateTask();
                 }}
               >
                 {pair.left}
@@ -435,7 +458,7 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
                           return next;
                         });
                         setActiveMatch(pairedId);
-                        setTaskChecked(false);
+                        invalidateTask();
                       }
                       return;
                     }
@@ -446,7 +469,7 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
                       [activeMatch]: item.id,
                     }));
                     setActiveMatch("");
-                    setTaskChecked(false);
+                    invalidateTask();
                   }}
                 >
                   {item.right}
@@ -460,11 +483,11 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
           answered={answered}
           total={pairs.length}
           correct={correct}
-          onCheck={() => setTaskChecked(true)}
+          onCheck={() => checkTask(correct, pairs.length)}
           onReset={() => {
             setTaskAnswers({});
             setActiveMatch("");
-            setTaskChecked(false);
+            invalidateTask();
           }}
         />
       </section>
@@ -502,7 +525,7 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
                     }
                     onClick={() => {
                       setTaskAnswers((current) => ({ ...current, [id]: value }));
-                      setTaskChecked(false);
+                      invalidateTask();
                     }}
                   >
                     {value === "true" ? "Верно" : "Неверно"}
@@ -517,10 +540,10 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
           answered={answered}
           total={items.length}
           correct={correct}
-          onCheck={() => setTaskChecked(true)}
+          onCheck={() => checkTask(correct, items.length)}
           onReset={() => {
             setTaskAnswers({});
-            setTaskChecked(false);
+            invalidateTask();
           }}
         />
       </section>
@@ -549,7 +572,7 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
                 checked={answer === String(optionIndex + 1)}
                 onChange={() => {
                   setAnswer(String(optionIndex + 1));
-                  setTaskChecked(false);
+                  invalidateTask();
                 }}
               />
               {option}
@@ -560,10 +583,10 @@ export function LessonBlockView({ block }: { block: LessonBlock }) {
             answered={answered}
             total={1}
             correct={correctCount}
-            onCheck={() => setTaskChecked(true)}
+            onCheck={() => checkTask(correctCount, 1)}
             onReset={() => {
               setAnswer("");
-              setTaskChecked(false);
+              invalidateTask();
             }}
           />
         </section>
@@ -783,6 +806,7 @@ export function CoursePlayerPage() {
   const [lessonId, setLessonId] = useState(params.get("lesson") || "");
   const [activeLessonTabId, setActiveLessonTabId] = useState("");
   const [completed, setCompleted] = useState<string[]>([]);
+  const [passedTaskBlocks, setPassedTaskBlocks] = useState<Record<string, boolean>>({});
   const [loadedProgressKey, setLoadedProgressKey] = useState("");
   const [mobileTreeOpen, setMobileTreeOpen] = useState(false);
   const [lessonRuns, setLessonRuns] = useState<Record<string, LessonRun>>({});
@@ -874,6 +898,10 @@ export function CoursePlayerPage() {
         )
       : current.blocks
     : [];
+  const currentTaskBlocks = current?.blocks.filter((block) => taskBlockKinds.has(block.kind)) || [];
+  const currentTasksPassed =
+    completed.includes(current?.id || "") ||
+    currentTaskBlocks.every((block) => passedTaskBlocks[block.id]);
   const isLastLesson = currentIndex === lessons.length - 1;
   const currentRun = current ? lessonRuns[current.id] : undefined;
   const isRestricted = Boolean(
@@ -948,7 +976,7 @@ export function CoursePlayerPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
   const complete = () => {
-    if (!current || !course || !user || currentRun?.expired) return;
+    if (!current || !course || !user || currentRun?.expired || !currentTasksPassed) return;
     const next = [...new Set([...completed, current.id])];
     setCompleted(next);
     localStorage.setItem(
@@ -1220,7 +1248,16 @@ export function CoursePlayerPage() {
                   {visibleBlocks.length ? (
                     <div className="learningBlockStack">
                       {visibleBlocks.map((block) => (
-                        <LessonBlockView key={block.id} block={block} />
+                        <LessonBlockView
+                          key={block.id}
+                          block={block}
+                          onTaskResult={(blockId, passed) =>
+                            setPassedTaskBlocks((previous) => ({
+                              ...previous,
+                              [blockId]: passed,
+                            }))
+                          }
+                        />
                       ))}
                     </div>
                   ) : (
@@ -1240,9 +1277,19 @@ export function CoursePlayerPage() {
                     </button>
                     <button
                       className="btn primary readerNextButton"
+                      disabled={!currentTasksPassed}
+                      title={
+                        currentTasksPassed
+                          ? undefined
+                          : "Сначала правильно выполните все задания урока"
+                      }
                       onClick={complete}
                     >
-                      {isLastLesson ? "Завершить курс" : "Дальше"}
+                      {!currentTasksPassed
+                        ? "Выполните задания"
+                        : isLastLesson
+                          ? "Завершить курс"
+                          : "Дальше"}
                     </button>
                   </footer>
                 </>
