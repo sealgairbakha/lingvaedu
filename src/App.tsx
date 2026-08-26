@@ -242,7 +242,7 @@ function Sidebar({
                     }}
                   >
                     <i><NavIcon name={item.id} /></i>
-                    {item.label}
+                    {!canEditCourses && item.id === "courses" ? "Мои курсы" : item.label}
                   </button>
                 ))}
               </div>
@@ -509,7 +509,7 @@ type DashboardStats = {
 function Overview({ go }: { go: (p: Page) => void }) {
   const navigate = useNavigate();
   const { displayName, canEditCourses, session, user } = useAuth();
-  const { courses, loading, enrolledCourseIds, createCourse } = useCourses();
+  const { courses, loading, enrolledCourseIds, progress, createCourse } = useCourses();
   const [organization, setOrganization] = useState<DashboardStats | null>(null);
   const firstName = displayName.split(/\s+/)[0];
   const hour = new Date().getHours();
@@ -548,23 +548,14 @@ function Overview({ go }: { go: (p: Page) => void }) {
       return Math.round((ready / lessons.length) * 100);
     }
     if (!user?.id) return 0;
-    try {
-      const completed = JSON.parse(localStorage.getItem(`lingvaedu-progress-${user.id}-${course.id}`) || "[]") as string[];
-      return Math.round((lessons.filter((lesson) => completed.includes(lesson.id)).length / lessons.length) * 100);
-    } catch {
-      return 0;
-    }
+    const completed = progress.filter((item) => item.courseId === course.id && item.status === "completed");
+    return Math.round((lessons.filter((lesson) => completed.some((item) => item.lessonId === lesson.id)).length / lessons.length) * 100);
   };
 
   const totalLessons = availableCourses.reduce((sum, course) => sum + course.modules.reduce((count, module) => count + module.lessons.length, 0), 0);
   const totalBlocks = availableCourses.reduce((sum, course) => sum + course.modules.reduce((moduleSum, module) => moduleSum + module.lessons.reduce((lessonSum, lesson) => lessonSum + lesson.blocks.length, 0), 0), 0);
   const completedCourses = availableCourses.filter((course) => courseProgress(course) === 100).length;
-  const completedLessons = !canEditCourses && user?.id ? availableCourses.reduce((sum, course) => {
-    try {
-      const completed = JSON.parse(localStorage.getItem(`lingvaedu-progress-${user.id}-${course.id}`) || "[]") as string[];
-      return sum + course.modules.flatMap((module) => module.lessons).filter((lesson) => completed.includes(lesson.id)).length;
-    } catch { return sum; }
-  }, 0) : 0;
+  const completedLessons = !canEditCourses && user?.id ? availableCourses.reduce((sum, course) => sum + course.modules.flatMap((module) => module.lessons).filter((lesson) => progress.some((item) => item.courseId === course.id && item.lessonId === lesson.id && item.status === "completed")).length, 0) : 0;
   const averageProgress = availableCourses.length
     ? Math.round(availableCourses.reduce((sum, course) => sum + courseProgress(course), 0) / availableCourses.length)
     : 0;
@@ -1404,29 +1395,132 @@ function Calendar() {
   );
 }
 
+type PermissionKey =
+  | "courses.view" | "courses.edit" | "courses.publish"
+  | "users.view" | "users.add" | "users.roles"
+  | "reports.view" | "reports.export" | "calls.create";
+
+type AccessRole = {
+  id: string;
+  name: string;
+  description: string;
+  color: "violet" | "blue" | "green" | "orange" | "pink";
+  permissions: PermissionKey[];
+  system?: boolean;
+};
+
+const permissionGroups: { title: string; items: { id: PermissionKey; label: string }[] }[] = [
+  { title: "Курсы и контент", items: [
+    { id: "courses.view", label: "Просматривать назначенные курсы" },
+    { id: "courses.edit", label: "Редактировать уроки" },
+    { id: "courses.publish", label: "Публиковать изменения" },
+  ] },
+  { title: "Пользователи", items: [
+    { id: "users.view", label: "Просматривать учеников своих групп" },
+    { id: "users.add", label: "Добавлять учеников в группу" },
+    { id: "users.roles", label: "Изменять роли пользователей" },
+  ] },
+  { title: "Отчёты и встречи", items: [
+    { id: "reports.view", label: "Просматривать отчёты своих групп" },
+    { id: "reports.export", label: "Экспортировать отчёты" },
+    { id: "calls.create", label: "Создавать видеокомнаты" },
+  ] },
+];
+
+const allPermissions = permissionGroups.flatMap((group) => group.items.map((item) => item.id));
+const defaultRoles: AccessRole[] = [
+  { id: "admin", name: "Администратор", description: "Полный доступ ко всем функциям", color: "violet", permissions: allPermissions, system: true },
+  { id: "staff", name: "Наставник", description: "Ведёт назначенные курсы и группы", color: "green", permissions: ["courses.view", "courses.edit", "users.view", "users.add", "reports.view", "reports.export", "calls.create"], system: true },
+  { id: "student", name: "Ученик", description: "Учится на назначенных курсах", color: "pink", permissions: ["courses.view"], system: true },
+];
+
+function readSavedRoles() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("lingvaedu.roles") || "null") as AccessRole[] | null;
+    if (Array.isArray(saved) && saved.length) {
+      const custom = saved.filter((role) => !defaultRoles.some((item) => item.id === role.id));
+      return defaultRoles.map((role) => saved.find((item) => item.id === role.id) || role).concat(custom);
+    }
+  } catch { /* use safe defaults */ }
+  return defaultRoles;
+}
+
 function Roles() {
+  const { session } = useAuth();
+  const [roles, setRoles] = useState<AccessRole[]>(readSavedRoles);
+  const [selectedId, setSelectedId] = useState("staff");
+  const [draft, setDraft] = useState<AccessRole>(() => ({ ...defaultRoles[1], permissions: [...defaultRoles[1].permissions] }));
+  const [counts, setCounts] = useState<Record<string, number>>({});
+  const [creating, setCreating] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [message, setMessage] = useState("");
+  const selected = roles.find((role) => role.id === selectedId) || roles[0];
+
+  useEffect(() => {
+    if (!session?.access_token) return;
+    void fetch("/api/users", { headers: { Authorization: `Bearer ${session.access_token}` } })
+      .then((response) => response.ok ? response.json() : Promise.reject())
+      .then((payload: { users?: { role: string }[] }) => {
+        const next: Record<string, number> = {};
+        for (const user of payload.users || []) next[user.role] = (next[user.role] || 0) + 1;
+        setCounts(next);
+      })
+      .catch(() => undefined);
+  }, [session]);
+
+  const saveRoles = (next: AccessRole[]) => {
+    setRoles(next);
+    localStorage.setItem("lingvaedu.roles", JSON.stringify(next));
+  };
+  const selectRole = (id: string) => {
+    const role = roles.find((item) => item.id === id);
+    if (!role) return;
+    setSelectedId(id);
+    setDraft({ ...role, permissions: [...role.permissions] });
+    setMessage("");
+  };
+  const saveDraft = () => {
+    const name = draft.name.trim();
+    if (!name) return;
+    const next = roles.map((role) => role.id === draft.id ? { ...draft, name } : role);
+    saveRoles(next);
+    setMessage("Изменения сохранены");
+    window.setTimeout(() => setMessage(""), 2500);
+  };
+  const createRole = () => {
+    const name = newName.trim();
+    if (!name) return;
+    const role: AccessRole = { id: crypto.randomUUID(), name, description: "Новая пользовательская роль", color: "blue", permissions: [] };
+    saveRoles([...roles, role]);
+    setSelectedId(role.id); setDraft({ ...role, permissions: [] }); setCreating(false); setNewName(""); setMessage("Роль создана");
+  };
+  const duplicate = () => {
+    const copy: AccessRole = { ...draft, id: crypto.randomUUID(), name: `${draft.name} — копия`, system: false, permissions: [...draft.permissions] };
+    saveRoles([...roles, copy]); setSelectedId(copy.id); setDraft({ ...copy, permissions: [...copy.permissions] }); setMessage("Копия роли создана");
+  };
+  const remove = () => {
+    if (draft.system || !window.confirm(`Удалить роль «${draft.name}»?`)) return;
+    const next = roles.filter((role) => role.id !== draft.id);
+    saveRoles(next); setSelectedId(next[0].id); setDraft({ ...next[0], permissions: [...next[0].permissions] }); setMessage("Роль удалена");
+  };
+
   return (
     <main className="content fade">
       <PageTitle
         title="Роли и права"
         text="Создавайте роли и точно настраивайте доступ к функциям."
-        action={<button className="btn primary">＋ Создать роль</button>}
+        action={<button className="btn primary" onClick={() => setCreating(true)}>＋ Создать роль</button>}
       />
       <div className="roleLayout">
         <section className="roleList panel">
-          <PanelHead title="Роли" text="6 ролей · 1 248 пользователей" />
-          {[
-            { n: "Владелец", u: 1, c: "violet" },
-            { n: "Администратор", u: 3, c: "blue" },
-            { n: "Наставник", u: 24, c: "green" },
-            { n: "Менеджер группы", u: 8, c: "orange" },
-            { n: "Ученик", u: 1212, c: "pink" },
-          ].map((r, i) => (
-            <button className={i === 2 ? "active" : ""} key={r.n}>
-              <span className={r.c}>{r.n[0]}</span>
+          <PanelHead title="Роли" text={`${roles.length} ролей · ${Object.values(counts).reduce((sum, value) => sum + value, 0)} пользователей`} />
+          <select className="roleMobileSelect" value={selectedId} onChange={(event) => selectRole(event.target.value)} aria-label="Выбрать роль">{roles.map((role) => <option value={role.id} key={role.id}>{role.name}</option>)}</select>
+          {roles.map((role) => (
+            <button className={selectedId === role.id ? "active" : ""} key={role.id} onClick={() => selectRole(role.id)}>
+              <span className={role.color}>{role.name[0]}</span>
               <div>
-                <b>{r.n}</b>
-                <small>{r.u} пользователей</small>
+                <b>{role.name}</b>
+                <small>{counts[role.id] || 0} пользователей{role.system ? " · системная" : ""}</small>
               </div>
               <i>›</i>
             </button>
@@ -1434,59 +1528,34 @@ function Roles() {
         </section>
         <section className="permissions panel">
           <div className="permissionHead">
-            <div className="roleBadge green">Н</div>
+            <div className={`roleBadge ${draft.color}`}>{draft.name[0] || "Р"}</div>
             <div>
               <span>РОЛЬ</span>
-              <h2>Наставник</h2>
-              <p>Ведёт назначенные курсы и группы</p>
+              <input className="roleNameInput" value={draft.name} maxLength={60} onChange={(event) => setDraft({ ...draft, name: event.target.value })} aria-label="Название роли" />
+              <input className="roleDescriptionInput" value={draft.description} maxLength={160} onChange={(event) => setDraft({ ...draft, description: event.target.value })} aria-label="Описание роли" />
             </div>
-            <button className="btn ghost">Дублировать</button>
+            <button className="btn ghost" onClick={duplicate}>Дублировать</button>
           </div>
-          {[
-            {
-              t: "Курсы и контент",
-              items: [
-                "Просматривать назначенные курсы",
-                "Редактировать уроки",
-                "Публиковать изменения",
-              ],
-            },
-            {
-              t: "Пользователи",
-              items: [
-                "Просматривать учеников своих групп",
-                "Добавлять учеников в группу",
-                "Изменять роли пользователей",
-              ],
-            },
-            {
-              t: "Отчёты и встречи",
-              items: [
-                "Просматривать отчёты своих групп",
-                "Экспортировать отчёты",
-                "Создавать видеокомнаты",
-              ],
-            },
-          ].map((s, si) => (
-            <div className="permissionSection" key={s.t}>
-              <h3>{s.t}</h3>
-              {s.items.map((x, i) => (
-                <label key={x}>
-                  <span>{x}</span>
+          {permissionGroups.map((group) => (
+            <div className="permissionSection" key={group.title}>
+              <h3>{group.title}</h3>
+              {group.items.map((permission) => (
+                <label key={permission.id}>
+                  <span>{permission.label}</span>
                   <input
                     type="checkbox"
-                    defaultChecked={si === 0 ? i < 2 : si === 1 ? i < 2 : true}
+                    checked={draft.permissions.includes(permission.id)}
+                    onChange={() => setDraft({ ...draft, permissions: draft.permissions.includes(permission.id) ? draft.permissions.filter((id) => id !== permission.id) : [...draft.permissions, permission.id] })}
                   />
                   <i />
                 </label>
               ))}
             </div>
           ))}
-          <button className="btn primary permissionSave">
-            Сохранить изменения
-          </button>
+          <div className="permissionActions"><button className="btn primary" onClick={saveDraft} disabled={!draft.name.trim()}>Сохранить изменения</button>{!draft.system && <button className="btn danger" onClick={remove}>Удалить роль</button>} {message && <span className="roleMessage">✓ {message}</span>}</div>
         </section>
       </div>
+      {creating && <Modal title="Создать роль" close={() => setCreating(false)}><form onSubmit={(event) => { event.preventDefault(); createRole(); }}><label>Название роли<input autoFocus required maxLength={60} value={newName} onChange={(event) => setNewName(event.target.value)} placeholder="Например, Куратор" /></label><button className="btn primary full" disabled={!newName.trim()}>Создать роль</button></form></Modal>}
     </main>
   );
 }

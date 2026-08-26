@@ -335,9 +335,15 @@ export function CourseEditorPage() {
   } | null>(null);
   const [saved, setSaved] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const changeVersionRef = useRef(0);
+  const [treeCollapsed, setTreeCollapsed] = useState(() => localStorage.getItem("lingvaedu-editor-tree-collapsed") === "true");
+  const [paletteCollapsed, setPaletteCollapsed] = useState(() => localStorage.getItem("lingvaedu-editor-palette-collapsed") === "true");
   const [timerInputDigits, setTimerInputDigits] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  const [coverUploading, setCoverUploading] = useState(false);
+  const [coverUploadError, setCoverUploadError] = useState("");
   const [preview, setPreview] = useState(false);
   const [mobilePanel, setMobilePanel] = useState<"tree" | "blocks" | null>(
     null,
@@ -500,8 +506,10 @@ export function CourseEditorPage() {
   }, [lesson?.description, lesson?.id]);
   const mutate = (fn: (draft: Course) => Course) => {
     if (course) {
+      changeVersionRef.current += 1;
       setCourse(fn(structuredClone(course)));
       setSaved(false);
+      setSaveError("");
     }
   };
   const updateLesson = (patch: object) =>
@@ -979,6 +987,38 @@ export function CourseEditorPage() {
       setUploading(false);
     }
   };
+  const uploadCourseCover = async (file: File) => {
+    if (!course || !supabase || !user) {
+      setCoverUploadError("Загрузка недоступна: подключите Supabase Storage");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      setCoverUploadError("Выберите изображение PNG, JPG, WebP или AVIF");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setCoverUploadError("Размер изображения не должен превышать 10 МБ");
+      return;
+    }
+    setCoverUploading(true);
+    setCoverUploadError("");
+    try {
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
+      const path = `${user.id}/${course.id}/covers/${uid()}-${safeName}`;
+      const { error } = await supabase.storage.from("course-media").upload(path, file, {
+        contentType: file.type,
+        upsert: false,
+      });
+      if (error) throw error;
+      const { data } = supabase.storage.from("course-media").getPublicUrl(path);
+      mutate((value) => ({ ...value, coverImage: data.publicUrl }));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Не удалось загрузить обложку";
+      setCoverUploadError(/bucket not found/i.test(message) ? "Хранилище course-media не создано. Выполните миграцию 005." : message);
+    } finally {
+      setCoverUploading(false);
+    }
+  };
   const lessonSettingsEditor = (
     <div className="lessonSettings lessonSettingsSidebar">
       <div className="lessonSettingsTitle">
@@ -988,8 +1028,16 @@ export function CourseEditorPage() {
             <path d="M12 8v4l2.7 1.7M9 3h6" />
           </svg>
         </span>
-        <span>ТАЙМЕР И ПОПЫТКИ</span>
+        <span>ПАРАМЕТРЫ УРОКА</span>
       </div>
+      <label className="lessonSettingField lessonGoalField">
+        <span className="lessonSettingCopy"><b>Цель урока</b></span>
+        <textarea aria-label="Цель урока" maxLength={240} value={lesson?.goal || ""} placeholder="После урока ученик сможет…" onChange={(event) => updateLesson({ goal: event.target.value })} />
+      </label>
+      <label className="lessonSettingField">
+        <span className="lessonSettingCopy"><b>Примерное время</b></span>
+        <input aria-label="Примерное время урока в минутах" type="number" min="0" max="999" value={lesson?.estimatedMinutes || 0} onChange={(event) => updateLesson({ estimatedMinutes: Math.max(0, Number(event.target.value)) })} />
+      </label>
       <label className="lessonSettingField">
         <span className="lessonSettingIcon" aria-hidden="true">
           <svg viewBox="0 0 24 24">
@@ -1052,16 +1100,39 @@ export function CourseEditorPage() {
   );
   const save = async () => {
     if (course && !saved && !saving) {
+      const version = changeVersionRef.current;
       setSaving(true);
+      setSaveError("");
       try {
         await store.saveCourse(course);
         savedCourseRef.current = structuredClone(course);
-        setSaved(true);
+        if (version === changeVersionRef.current) setSaved(true);
+      } catch {
+        setSaveError("Ошибка сохранения");
       } finally {
         setSaving(false);
       }
     }
   };
+  useEffect(() => {
+    if (!course || saved || saving) return;
+    const snapshot = structuredClone(course);
+    const version = changeVersionRef.current;
+    const timer = window.setTimeout(async () => {
+      setSaving(true);
+      setSaveError("");
+      try {
+        await store.saveCourse(snapshot);
+        savedCourseRef.current = structuredClone(snapshot);
+        if (version === changeVersionRef.current) setSaved(true);
+      } catch {
+        setSaveError("Ошибка сохранения");
+      } finally {
+        setSaving(false);
+      }
+    }, 800);
+    return () => window.clearTimeout(timer);
+  }, [course, saved, saving, store]);
   const cancelChanges = () => {
     const snapshot = savedCourseRef.current;
     if (!snapshot || saving) return;
@@ -1164,12 +1235,12 @@ export function CourseEditorPage() {
           </button>
         </div>
         <div className="saveState">
-          <i className={saved ? "saved" : ""} />
-          {saving
+          <i className={saveError ? "error" : saved ? "saved" : ""} />
+          {saveError || (saving
             ? "Сохраняем изменения…"
             : saved
               ? "Все изменения сохранены"
-              : "Есть несохранённые изменения"}
+              : "Ожидает сохранения")}
         </div>
         <button
           className={`btn previewUndoButton ${saved ? "previewMode" : "undoMode"}`}
@@ -1200,7 +1271,7 @@ export function CourseEditorPage() {
         />
       )}
       <div
-        className="editorLayout"
+        className={`editorLayout ${treeCollapsed ? "treeCollapsed" : ""} ${paletteCollapsed ? "paletteCollapsed" : ""}`}
         style={
           {
             "--palette-width": `${paletteWidth}px`,
@@ -1208,6 +1279,46 @@ export function CourseEditorPage() {
           } as CSSProperties
         }
       >
+        <button
+          type="button"
+          className={`editorPanelEdgeToggle treePanelEdgeToggle ${treeCollapsed ? "collapsed" : ""}`}
+          aria-pressed={!treeCollapsed}
+          aria-label={treeCollapsed ? "Показать содержание курса" : "Скрыть содержание курса"}
+          title={treeCollapsed ? "Показать содержание курса" : "Скрыть содержание курса"}
+          onClick={() =>
+            setTreeCollapsed((value) => {
+              localStorage.setItem(
+                "lingvaedu-editor-tree-collapsed",
+                String(!value),
+              );
+              return !value;
+            })
+          }
+        >
+          <svg viewBox="0 0 20 20" aria-hidden="true">
+            <path d="m12.5 5-5 5 5 5" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          className={`editorPanelEdgeToggle palettePanelEdgeToggle ${paletteCollapsed ? "collapsed" : ""}`}
+          aria-pressed={!paletteCollapsed}
+          aria-label={paletteCollapsed ? "Показать настройки и блоки" : "Скрыть настройки и блоки"}
+          title={paletteCollapsed ? "Показать настройки и блоки" : "Скрыть настройки и блоки"}
+          onClick={() =>
+            setPaletteCollapsed((value) => {
+              localStorage.setItem(
+                "lingvaedu-editor-palette-collapsed",
+                String(!value),
+              );
+              return !value;
+            })
+          }
+        >
+          <svg viewBox="0 0 20 20" aria-hidden="true">
+            <path d="m7.5 5 5 5-5 5" />
+          </svg>
+        </button>
         <aside
           className={`lessonTree ${mobilePanel === "tree" ? "editorPanelOpen" : ""}`}
         >
@@ -1973,6 +2084,10 @@ export function CourseEditorPage() {
                 <option>Японский</option>
               </select>
             </label>
+            <label>
+              <span>Уровень</span>
+              <input aria-label="Уровень курса" value={course.level || ""} placeholder="Например, B1" onChange={(event) => mutate((value) => ({ ...value, level: event.target.value }))} />
+            </label>
             <div className="courseColorField">
               <span>Цвет обложки</span>
               <details ref={colorPickerRef} className="courseColorPicker">
@@ -2024,17 +2139,37 @@ export function CourseEditorPage() {
                 <option value="archived">Архив</option>
               </select>
             </label>
+            <div className="courseCoverDesigner">
+              <label>
+                <span>Стиль обложки</span>
+                <select aria-label="Стиль обложки" value={course.coverStyle || "orbit"} onChange={(event) => mutate((value) => ({ ...value, coverStyle: event.target.value as Course["coverStyle"] }))}>
+                  <option value="orbit">Орбиты</option><option value="grid">Сетка</option><option value="waves">Волны</option>
+                </select>
+              </label>
+              <div className="courseCoverUploadField">
+                <span>Изображение обложки</span>
+                <label className={`courseCoverUploader ${coverUploading ? "uploading" : ""}`}>
+                  <UploadIcon />
+                  <b>{coverUploading ? "Загрузка…" : course.coverImage ? "Заменить изображение" : "Загрузить изображение"}</b>
+                  <small>PNG, JPG, WebP или AVIF · до 10 МБ</small>
+                  <input type="file" disabled={coverUploading} accept="image/jpeg,image/png,image/webp,image/avif" onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadCourseCover(file); event.currentTarget.value = ""; }} />
+                </label>
+                {coverUploadError && <p className="uploadError">{coverUploadError}</p>}
+                {course.coverImage && <button type="button" className="removeCourseCover" onClick={() => mutate((value) => ({ ...value, coverImage: undefined }))}>Удалить изображение</button>}
+              </div>
+            </div>
             <div className="courseStylePreview">
               <small>Превью карточки</small>
               <div className="courseStylePreviewCard">
                 <div
-                  className="courseStylePreviewCover"
-                  data-color={course.color}
+                  className={`courseStylePreviewCover courseCoverArt ${course.color} cover-${course.coverStyle || "orbit"} ${course.coverImage ? "has-image" : ""}`}
+                  style={course.coverImage ? { "--cover-image": `url(${course.coverImage})` } as CSSProperties : undefined}
                 >
-                  <span>{course.language.toUpperCase()}</span>
-                  <i />
+                  {!course.coverImage && <><i /><i /><i /></>}
+                  <small>{course.language.toUpperCase()}</small>
+                  <b>{course.code || course.title.slice(0, 2).toUpperCase()}</b>
                 </div>
-                <div>
+                <div className="courseStylePreviewBody">
                   <em
                     className={
                       course.status === "published" ? "published" : "draft"
@@ -2048,6 +2183,8 @@ export function CourseEditorPage() {
                         : "Черновик"}
                   </em>
                   <b>{course.title || "Название курса"}</b>
+                  <small>{course.language}{course.level ? ` · ${course.level}` : ""}</small>
+                  {course.description && <p>{course.description}</p>}
                 </div>
               </div>
             </div>

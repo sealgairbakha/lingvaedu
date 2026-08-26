@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
-import { supabase } from "../../lib/supabase";
 import { useCourses } from "./CourseProvider";
 import { BlockIcon } from "./BlockIcon";
 import type { LessonBlock } from "./types";
@@ -72,6 +71,8 @@ function TaskActions({
   correct,
   onCheck,
   onReset,
+  onContinue,
+  continueLabel,
 }: {
   checked: boolean;
   answered: number;
@@ -79,6 +80,8 @@ function TaskActions({
   correct: number;
   onCheck: () => void;
   onReset: () => void;
+  onContinue?: () => void;
+  continueLabel?: string;
 }) {
   const complete = total > 0 && answered === total;
   return (
@@ -104,9 +107,9 @@ function TaskActions({
         type="button"
         className={checked ? "taskResetButton" : "taskCheckButton"}
         disabled={!checked && !complete}
-        onClick={checked ? onReset : onCheck}
+        onClick={checked && correct === total && onContinue ? onContinue : checked ? onReset : onCheck}
       >
-        {checked ? "Сбросить ответы" : "Проверить"}
+        {checked && correct === total && onContinue ? continueLabel || "Следующее задание →" : checked ? "Сбросить ответы" : "Проверить"}
       </button>
     </div>
   );
@@ -115,9 +118,13 @@ function TaskActions({
 export function LessonBlockView({
   block,
   onTaskResult,
+  onContinue,
+  continueLabel,
 }: {
   block: LessonBlock;
   onTaskResult?: (blockId: string, passed: boolean) => void;
+  onContinue?: () => void;
+  continueLabel?: string;
 }) {
   const [answer, setAnswer] = useState("");
   const [taskAnswers, setTaskAnswers] = useState<Record<string, string>>({});
@@ -259,6 +266,8 @@ export function LessonBlockView({
             setActiveWord("");
             invalidateTask();
           }}
+          onContinue={onContinue}
+          continueLabel={continueLabel}
         />
       </section>
     );
@@ -328,6 +337,8 @@ export function LessonBlockView({
             setTaskAnswers({});
             invalidateTask();
           }}
+          onContinue={onContinue}
+          continueLabel={continueLabel}
         />
       </section>
     );
@@ -390,6 +401,8 @@ export function LessonBlockView({
             setTaskAnswers({});
             invalidateTask();
           }}
+          onContinue={onContinue}
+          continueLabel={continueLabel}
         />
       </section>
     );
@@ -489,6 +502,8 @@ export function LessonBlockView({
             setActiveMatch("");
             invalidateTask();
           }}
+          onContinue={onContinue}
+          continueLabel={continueLabel}
         />
       </section>
     );
@@ -545,6 +560,8 @@ export function LessonBlockView({
             setTaskAnswers({});
             invalidateTask();
           }}
+          onContinue={onContinue}
+          continueLabel={continueLabel}
         />
       </section>
     );
@@ -588,6 +605,8 @@ export function LessonBlockView({
               setAnswer("");
               invalidateTask();
             }}
+            onContinue={onContinue}
+            continueLabel={continueLabel}
           />
         </section>
       );
@@ -791,8 +810,8 @@ export function LessonBlockView({
 export function CoursePlayerPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const { courses, loading } = useCourses();
-  const { user, role, canEditCourses } = useAuth();
+  const { courses, loading, progress, progressLoading, saveLessonProgress } = useCourses();
+  const { user, canEditCourses } = useAuth();
   const course = courses.find((x) => x.id === params.get("course"));
   const courseId = course?.id;
   const learnerId = user?.id || "guest";
@@ -807,13 +826,15 @@ export function CoursePlayerPage() {
   const [activeLessonTabId, setActiveLessonTabId] = useState("");
   const [completed, setCompleted] = useState<string[]>([]);
   const [passedTaskBlocks, setPassedTaskBlocks] = useState<Record<string, boolean>>({});
+  const [completedLessonNotice, setCompletedLessonNotice] = useState("");
   const [loadedProgressKey, setLoadedProgressKey] = useState("");
   const [mobileTreeOpen, setMobileTreeOpen] = useState(false);
   const [lessonRuns, setLessonRuns] = useState<Record<string, LessonRun>>({});
   const [runsReady, setRunsReady] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  const openedLessonKeyRef = useRef("");
   useEffect(() => {
-    if (!course || !user) return;
+    if (!course || !user || progressLoading) return;
     const progressKey = `${user.id}-${course.id}`;
     const value = localStorage.getItem(
       `lingvaedu-progress-${user.id}-${course.id}`,
@@ -821,30 +842,18 @@ export function CoursePlayerPage() {
     const timer = setTimeout(() => {
       try {
         const stored = value ? JSON.parse(value) : [];
-        setCompleted(Array.isArray(stored) ? stored : []);
+        const legacyCompleted = Array.isArray(stored) ? stored : [];
+        const syncedCompleted = progress
+          .filter((item) => item.courseId === course.id && item.status === "completed")
+          .map((item) => item.lessonId);
+        setCompleted([...new Set([...legacyCompleted, ...syncedCompleted])]);
       } catch {
         setCompleted([]);
       }
       setLoadedProgressKey(progressKey);
     }, 0);
     return () => clearTimeout(timer);
-  }, [course, user]);
-  useEffect(() => {
-    if (
-      !supabase ||
-      !course ||
-      !user ||
-      role !== "student" ||
-      course.status !== "published"
-    )
-      return;
-    void supabase
-      .from("course_enrollments")
-      .upsert(
-        { course_id: course.id, user_id: user.id },
-        { onConflict: "course_id,user_id" },
-      );
-  }, [course, role, user]);
+  }, [course, progress, progressLoading, user]);
   useEffect(() => {
     if (!courseId) return;
     const loadRuns = window.setTimeout(() => {
@@ -878,12 +887,9 @@ export function CoursePlayerPage() {
   );
   const lastUnlockedIndex =
     firstIncompleteIndex < 0 ? Math.max(lessons.length - 1, 0) : firstIncompleteIndex;
-  const currentIndex =
-    canEditCourses || !progressReady
-      ? canEditCourses
-        ? requestedIndex
-        : 0
-      : Math.min(requestedIndex, lastUnlockedIndex);
+  const currentIndex = !progressReady
+    ? 0
+    : Math.min(requestedIndex, lastUnlockedIndex);
   const current = lessons[currentIndex]?.lesson || lessons[0]?.lesson;
   const currentModule = lessons[currentIndex]?.module || lessons[0]?.module;
   const currentTabs = current?.tabs?.filter((tab) => tab.id) || [];
@@ -902,6 +908,19 @@ export function CoursePlayerPage() {
   const currentTasksPassed =
     completed.includes(current?.id || "") ||
     currentTaskBlocks.every((block) => passedTaskBlocks[block.id]);
+  useEffect(() => {
+    if (!course || !current || !user || !progressReady) return;
+    const key = `${course.id}-${current.id}`;
+    if (openedLessonKeyRef.current === key) return;
+    openedLessonKeyRef.current = key;
+    void saveLessonProgress({
+      courseId: course.id,
+      lessonId: current.id,
+      status: completed.includes(current.id) ? "completed" : "in_progress",
+      progress: completed.includes(current.id) ? 100 : 1,
+      lastOpenedAt: new Date().toISOString(),
+    });
+  }, [completed, course, current, progressReady, saveLessonProgress, user]);
   const isLastLesson = currentIndex === lessons.length - 1;
   const currentRun = current ? lessonRuns[current.id] : undefined;
   const isRestricted = Boolean(
@@ -917,7 +936,6 @@ export function CoursePlayerPage() {
     currentRun?.expired && attemptsRemaining === 0,
   );
   const isLessonUnlocked = (index: number) =>
-    canEditCourses ||
     index === 0 ||
     lessons.slice(0, index).every(({ lesson }) => completed.includes(lesson.id));
   useEffect(() => {
@@ -971,6 +989,7 @@ export function CoursePlayerPage() {
     const targetIndex = lessons.findIndex(({ lesson }) => lesson.id === id);
     if (targetIndex < 0 || !isLessonUnlocked(targetIndex)) return;
     setLessonId(id);
+    setCompletedLessonNotice("");
     setActiveLessonTabId("");
     setMobileTreeOpen(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -983,6 +1002,14 @@ export function CoursePlayerPage() {
       `lingvaedu-progress-${user.id}-${course.id}`,
       JSON.stringify(next),
     );
+    void saveLessonProgress({
+      courseId: course.id,
+      lessonId: current.id,
+      status: "completed",
+      progress: 100,
+      completedAt: new Date().toISOString(),
+    });
+    setCompletedLessonNotice(current.id);
     setLessonRuns((previous) =>
       previous[current.id]
         ? {
@@ -995,8 +1022,6 @@ export function CoursePlayerPage() {
           }
         : previous,
     );
-    if (currentIndex < lessons.length - 1)
-      selectLesson(lessons[currentIndex + 1].lesson.id);
   };
   const retryLesson = () => {
     if (!current || attemptBlocked) return;
@@ -1019,8 +1044,9 @@ export function CoursePlayerPage() {
   };
   if (loading)
     return (
-      <main className="content">
-        <div className="courseEmpty">Загружаем курс…</div>
+      <main className="coursePlayer playerSkeleton" aria-label="Загружаем курс">
+        <div className="playerSkeletonHeader" />
+        <div className="playerSkeletonLayout"><aside><i /><i /><i /><i /></aside><article><i /><i /><i /></article></div>
       </main>
     );
   if (!course || (course.status !== "published" && !canEditCourses))
@@ -1106,9 +1132,7 @@ export function CoursePlayerPage() {
                   const lessonIndex = lessons.findIndex(
                     ({ lesson: item }) => item.id === lesson.id,
                   );
-                  const locked =
-                    !canEditCourses &&
-                    (!progressReady || !isLessonUnlocked(lessonIndex));
+                  const locked = !progressReady || !isLessonUnlocked(lessonIndex);
                   return (
                     <button
                       key={lesson.id}
@@ -1135,7 +1159,17 @@ export function CoursePlayerPage() {
                       </i>
                       <span>
                         {lesson.title}
-                        <small>{locked ? "Завершите предыдущий урок" : `${lesson.blocks.length} материалов`}</small>
+                        <small>
+                          {locked
+                            ? "Завершите предыдущий урок"
+                            : completed.includes(lesson.id)
+                              ? `Завершён${lesson.estimatedMinutes ? ` · ${lesson.estimatedMinutes} мин` : ""}`
+                              : current?.id === lesson.id
+                                ? `Текущий${lesson.estimatedMinutes ? ` · ${lesson.estimatedMinutes} мин` : ""}`
+                                : lesson.estimatedMinutes
+                                  ? `${lesson.estimatedMinutes} мин`
+                                  : "Не начат"}
+                        </small>
                       </span>
                     </button>
                   );
@@ -1152,13 +1186,23 @@ export function CoursePlayerPage() {
                   УРОК {currentIndex + 1} ИЗ {lessons.length}
                 </small>
                 <h1>{current.title}</h1>
-                <p style={{
+                {(current.goal || current.description) && <p style={{
                   fontFamily: lessonFontFamilies[current.descriptionStyle?.fontFamily || "onest"],
                   fontSize: `${current.descriptionStyle?.fontSize || 17}px`,
                   fontWeight: current.descriptionStyle?.fontWeight || 400,
                   textAlign: current.descriptionStyle?.textAlign || "left",
-                }}>{current.description}</p>
+                }}>{current.goal || current.description}</p>}
                 <div className="readerMeta">
+                  {current.estimatedMinutes && current.estimatedMinutes > 0 && (
+                    <span className="readerLimit">
+                      <small>Время</small><b>≈ {current.estimatedMinutes} мин</b>
+                    </span>
+                  )}
+                  {currentTaskBlocks.length > 0 && (
+                    <span className="readerLimit">
+                      <small>Практика</small><b>{currentTaskBlocks.length} {currentTaskBlocks.length === 1 ? "задание" : "заданий"}</b>
+                    </span>
+                  )}
                   {current.timeLimit > 0 && !completed.includes(current.id) && (
                     <span
                       className={`readerLimit timerLimit ${secondsRemaining !== null && secondsRemaining < 60 ? "ending" : ""}`}
@@ -1247,23 +1291,33 @@ export function CoursePlayerPage() {
                 <>
                   {visibleBlocks.length ? (
                     <div className="learningBlockStack">
-                      {visibleBlocks.map((block) => (
-                        <LessonBlockView
-                          key={block.id}
-                          block={block}
-                          onTaskResult={(blockId, passed) =>
-                            setPassedTaskBlocks((previous) => ({
-                              ...previous,
-                              [blockId]: passed,
-                            }))
-                          }
-                        />
-                      ))}
+                      {visibleBlocks.map((block) => {
+                        const taskIndex = currentTaskBlocks.findIndex((item) => item.id === block.id);
+                        const nextTask = taskIndex >= 0 ? currentTaskBlocks[taskIndex + 1] : undefined;
+                        return <div className="lessonBlockAnchor" id={`learning-block-${block.id}`} key={block.id}>
+                          <LessonBlockView
+                            block={block}
+                            onTaskResult={(blockId, passed) => setPassedTaskBlocks((previous) => ({ ...previous, [blockId]: passed }))}
+                            continueLabel={nextTask ? "Следующее задание →" : "Завершить урок"}
+                            onContinue={taskIndex < 0 ? undefined : () => {
+                              if (!nextTask) { complete(); return; }
+                              if (nextTask.tabId) setActiveLessonTabId(nextTask.tabId);
+                              window.setTimeout(() => document.getElementById(`learning-block-${nextTask.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" }), 0);
+                            }}
+                          />
+                        </div>;
+                      })}
                     </div>
                   ) : (
                     <div className="learningBlock emptyMaterial">
                       В этом уроке пока нет учебных материалов.
                     </div>
+                  )}
+                  {completedLessonNotice === current.id && (
+                    <section className="lessonCompletedCard" aria-live="polite">
+                      <span>✓</span><div><small>УРОК ЗАВЕРШЁН</small><h2>{current.title} пройден</h2><p>Курс завершён на {percent}%.</p></div>
+                      {currentIndex < lessons.length - 1 && <button className="btn primary" onClick={() => selectLesson(lessons[currentIndex + 1].lesson.id)}>Перейти к {lessons[currentIndex + 1].lesson.title} →</button>}
+                    </section>
                   )}
                   <footer className="readerFooter">
                     <button
@@ -1283,9 +1337,11 @@ export function CoursePlayerPage() {
                           ? undefined
                           : "Сначала правильно выполните все задания урока"
                       }
-                      onClick={complete}
+                      onClick={() => completed.includes(current.id) && currentIndex < lessons.length - 1 ? selectLesson(lessons[currentIndex + 1].lesson.id) : complete()}
                     >
-                      {!currentTasksPassed
+                      {completed.includes(current.id) && currentIndex < lessons.length - 1
+                        ? "Следующий урок →"
+                        : !currentTasksPassed
                         ? "Выполните задания"
                         : isLastLesson
                           ? "Завершить курс"
@@ -1297,7 +1353,7 @@ export function CoursePlayerPage() {
             </>
           ) : (
             <div className="courseEmpty">
-              <h2>В курсе пока нет уроков</h2>
+              <h2>{canEditCourses ? "В курсе пока нет уроков" : "В этом курсе пока нет опубликованных уроков."}</h2>
             </div>
           )}
         </article>

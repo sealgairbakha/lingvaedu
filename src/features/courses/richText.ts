@@ -1,6 +1,6 @@
 const allowedTags = new Set([
   "P", "DIV", "BR", "SPAN", "STRONG", "B", "EM", "I", "U", "S",
-  "UL", "OL", "LI", "BLOCKQUOTE",
+  "H1", "H2", "H3", "UL", "OL", "LI", "BLOCKQUOTE", "A",
 ]);
 
 const allowedStyleProperties = new Set([
@@ -57,7 +57,13 @@ export function sanitizeRichText(value: string) {
       return;
     }
     for (const attribute of [...normalized.attributes]) {
-      if (attribute.name !== "style") normalized.removeAttribute(attribute.name);
+      if (normalized.tagName === "A" && attribute.name === "href") {
+        if (!/^(https?:|mailto:)/i.test(attribute.value)) normalized.removeAttribute("href");
+      } else if (attribute.name !== "style") normalized.removeAttribute(attribute.name);
+    }
+    if (normalized.tagName === "A") {
+      normalized.setAttribute("target", "_blank");
+      normalized.setAttribute("rel", "noreferrer");
     }
     cleanStyle(normalized as HTMLElement);
   };
@@ -65,4 +71,3 @@ export function sanitizeRichText(value: string) {
   for (const child of [...root.children]) visit(child);
   return root.innerHTML;
 }
-

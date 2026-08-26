@@ -47,6 +47,8 @@ export type CourseLesson = {
   descriptionStyle?: LessonBlock["textStyle"];
   timeLimit: number;
   attempts: number;
+  estimatedMinutes?: number;
+  goal?: string;
   tabs?: LessonTab[];
   blocks: LessonBlock[];
 };
@@ -59,12 +61,15 @@ export type Course = {
   code: string;
   description: string;
   language: string;
+  level?: string;
   author: string;
   authorId?: string;
   mentor: string;
   mentorAvatar?: string;
   status: CourseStatus;
   color: string;
+  coverStyle?: "orbit" | "grid" | "waves";
+  coverImage?: string;
   students: number;
   updatedAt: string;
   modules: CourseModule[];

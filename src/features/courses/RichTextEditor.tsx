@@ -197,6 +197,16 @@ export function RichTextEditor({ block, onChange }: Props) {
             {button("italic", "Курсив", "I")}
             {button("underline", "Подчёркнутый", "U")}
           </div>
+          <div className="richBlockActions" aria-label="Структура текста">
+            <select aria-label="Стиль абзаца" defaultValue="p" onPointerDown={rememberSelection} onChange={(event) => runCommand("formatBlock", event.target.value)}>
+              <option value="p">Текст</option><option value="h1">Заголовок 1</option><option value="h2">Заголовок 2</option><option value="h3">Заголовок 3</option><option value="blockquote">Цитата</option>
+            </select>
+            <button type="button" aria-label="Маркированный список" title="Маркированный список" onPointerDown={preventSelectionLoss} onClick={() => runCommand("insertUnorderedList")}>•≡</button>
+            <button type="button" aria-label="Нумерованный список" title="Нумерованный список" onPointerDown={preventSelectionLoss} onClick={() => runCommand("insertOrderedList")}>1≡</button>
+            <button type="button" aria-label="Добавить ссылку" title="Добавить ссылку" onPointerDown={preventSelectionLoss} onClick={() => { const url = window.prompt("Ссылка (https://…)"); if (url) runCommand("createLink", url); }}>↗</button>
+            <button type="button" aria-label="Отменить" title="Отменить" onPointerDown={preventSelectionLoss} onClick={() => runCommand("undo")}>↶</button>
+            <button type="button" aria-label="Повторить" title="Повторить" onPointerDown={preventSelectionLoss} onClick={() => runCommand("redo")}>↷</button>
+          </div>
           <div className="textAlignPicker richAlignPicker" aria-label="Выравнивание текста">
             {(["left", "center", "right"] as const).map((align) => (
               <button
