@@ -1,0 +1,114 @@
+/* Viewport-bound meeting layouts */
+:root:has(.meetingPage),
+body:has(.meetingPage),
+#root:has(.meetingPage) { height: 100%; overflow: hidden; }
+
+.meetingPage {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  height: 100svh;
+  height: 100dvh;
+  max-height: 100dvh;
+  min-height: 0;
+  grid-template-rows: 68px minmax(0, 1fr) calc(76px + env(safe-area-inset-bottom));
+  overflow: hidden;
+}
+.meetingPage > header { min-width: 0; min-height: 0; padding-top: env(safe-area-inset-top); }
+.meetingBody { min-width: 0; min-height: 0; overflow: hidden; }
+.meetingBody.withChat { grid-template-columns: minmax(0, 1fr) clamp(300px, 24vw, 370px); }
+.videoStage { min-width: 0; min-height: 0; padding: 12px; overflow: hidden; }
+.videoGrid { width: 100%; height: 100%; min-width: 0; min-height: 0; gap: 10px; overflow: hidden; align-content: center; justify-content: center; }
+.meetingTile { width: 100%; height: 100%; min-width: 0; min-height: 0; }
+.meetingTile video { object-fit: cover; }
+.meetingTile.screenTile video { object-fit: contain; background: #090d15; }
+.videoGrid.screen-share { align-content: stretch; justify-content: stretch; }
+.screen-share .shareMain { grid-column: 1; grid-row: 1 / -1; }
+.screen-share .shareCompanion { grid-column: 2; }
+.meetingControls { min-height: 0; height: auto; padding-bottom: env(safe-area-inset-bottom); }
+.mobileMeetingIdentity,
+.mobileMeetingBack { display: none; }
+.desktopMeetingIdentity { min-width: 0; }
+
+.meetingCameraOff { position: absolute; right: 50px; bottom: 11px; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: #252d3dcc; color: #f4f6fa; font-style: normal; backdrop-filter: blur(8px); }
+.meetingCameraOff svg { width: 17px; height: 17px; }
+.meetingHandRaised { position: absolute; right: 12px; top: 12px; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: #fff; color: #1a2030; font-size: 20px; font-style: normal; box-shadow: 0 7px 22px #0006; }
+
+.reactionControl { position: relative; }
+.reactionControl > button { display: grid; place-items: center; width: 56px; height: 56px; border: 1px solid #39445a; border-radius: 17px; background: #222a3a; color: #fff; }
+.reactionControl > button svg { width: 25px; height: 25px; }
+.reactionControl > button:hover,
+.reactionControl > button.active { border-color: #806df8; background: #5a45dc; }
+.reactionPicker { position: absolute; z-index: 50; left: 50%; bottom: 70px; width: 190px; padding: 7px; border: 1px solid #3b4559; border-radius: 14px; background: #202838; box-shadow: 0 16px 45px #0009; transform: translateX(-50%); }
+.reactionPicker::after { content: ""; position: absolute; left: 50%; bottom: -6px; width: 12px; height: 12px; background: #202838; border-right: 1px solid #3b4559; border-bottom: 1px solid #3b4559; transform: translateX(-50%) rotate(45deg); }
+.reactionPicker button { position: relative; z-index: 1; display: flex; align-items: center; width: 100%; height: 42px; padding: 0 10px; border: 0; border-radius: 9px; background: transparent; color: #e9edf5; text-align: left; font-size: 12px; }
+.reactionPicker button:hover,
+.reactionPicker button.selected { background: #303a50; }
+.reactionPicker button span { width: 34px; font-size: 21px; }
+.meetingReactions { position: absolute; z-index: 35; left: 50%; bottom: 105px; display: flex; align-items: flex-end; gap: 10px; pointer-events: none; transform: translateX(-50%); }
+.meetingReactions > div { display: grid; justify-items: center; animation: meetingReaction 3.2s ease both; }
+.meetingReactions b { display: grid; place-items: center; width: 68px; height: 68px; border-radius: 50%; background: #202838dd; font-size: 38px; box-shadow: 0 12px 35px #0008; backdrop-filter: blur(10px); }
+.meetingReactions span { margin-top: 5px; padding: 3px 7px; border-radius: 10px; background: #080b11aa; color: #fff; font-size: 9px; }
+@keyframes meetingReaction { 0% { opacity: 0; transform: translateY(28px) scale(.6); } 15%, 72% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translateY(-75px) scale(1.15); } }
+
+@media (max-width: 700px), (max-height: 500px) {
+  .meetingPage { grid-template-rows: 58px minmax(0, 1fr) calc(70px + env(safe-area-inset-bottom)); }
+  .meetingPage > header { height: auto; padding: env(safe-area-inset-top) 12px 0; }
+  .meetingPage > header > .meetingBrand,
+  .meetingPage > header > .copyInvite { display: none; }
+  .meetingPage > header h1 { font-size: 13px; }
+  .meetingBody.withChat { grid-template-columns: 1fr; }
+  .meetingBody.withChat .videoStage { display: block; }
+  .videoStage { padding: 6px; }
+  .videoGrid { gap: 6px; }
+  .meetingTile { border-radius: 10px; }
+  .meetingTileName { left: 7px !important; bottom: 7px !important; padding: 5px 7px !important; font-size: 10px !important; }
+  .meetingChat { position: absolute; z-index: 45; inset: 0; grid-template-rows: 64px minmax(0, 1fr) calc(78px + env(safe-area-inset-bottom)); border: 0; }
+  .meetingChat .chatHead { padding-top: env(safe-area-inset-top); }
+  .meetingControls { gap: 7px; padding-inline: 8px; }
+  .meetingControls > button,
+  .reactionControl > button { width: 48px; height: 48px; border-radius: 15px; }
+  .meetingControls > button.hangup { width: 54px; }
+  .meetingControlDivider { height: 30px; margin: 0 1px; }
+  .reactionPicker { left: auto; right: -68px; bottom: 62px; transform: none; }
+  .reactionPicker::after { left: auto; right: 84px; transform: rotate(45deg); }
+  .meetingReactions { bottom: 85px; }
+  .meetingReactions b { width: 58px; height: 58px; font-size: 32px; }
+  .videoGrid.screen-share { position: relative; display: block; }
+  .screen-share .shareMain { position: absolute; inset: 0; }
+  .screen-share .shareCompanion { position: relative; z-index: 2; float: right; clear: right; width: 105px; height: 78px; margin: 8px 8px 0 0; border: 1px solid #ffffff42; box-shadow: 0 8px 24px #0008; }
+  .meetingCameraOff { right: 42px; bottom: 8px; width: 29px; height: 29px; }
+  .meetingMicOff { right: 8px; bottom: 8px; }
+  .meetingHandRaised { right: 8px; top: 8px; width: 33px; height: 33px; font-size: 17px; }
+
+  .meetingPage.mobile-one-to-one { display: block; background: #070b12; }
+  .mobile-one-to-one > header { position: absolute; z-index: 20; top: 0; left: 0; right: 0; display: flex; height: auto; min-height: 84px; padding: calc(12px + env(safe-area-inset-top)) 16px 24px; border: 0; background: linear-gradient(#080c14cc, transparent); }
+  .mobile-one-to-one > header > div:nth-child(2) { display: none; }
+  .mobile-one-to-one .mobileMeetingBack { display: grid; place-items: center; width: 36px; height: 36px; margin: -3px 6px 0 -7px; border: 0; border-radius: 50%; background: #080c144d; color: #fff; font-size: 34px; font-weight: 300; line-height: 1; }
+  .mobile-one-to-one .desktopMeetingIdentity { display: none; }
+  .mobile-one-to-one .mobileMeetingIdentity { display: block; padding-left: 0; }
+  .mobileMeetingIdentity b,
+  .mobileMeetingIdentity span { display: block; }
+  .mobileMeetingIdentity b { font-size: 16px; }
+  .mobileMeetingIdentity span { margin-top: 3px; color: #c7cfdb; font-size: 11px; }
+  .mobile-one-to-one .meetingBody { position: absolute; inset: 0; display: block; }
+  .mobile-one-to-one .videoStage { position: absolute; inset: 0; padding: 0; }
+  .videoGrid.mobile-one-to-one { position: relative; display: block; width: 100%; height: 100%; overflow: hidden; }
+  .mobile-one-to-one .remoteTile { position: absolute; inset: 0; border: 0; border-radius: 0; }
+  .mobile-one-to-one .remoteTile video { object-fit: cover; }
+  .mobile-one-to-one .localTile { position: absolute; z-index: 12; top: calc(76px + env(safe-area-inset-top)); right: 14px; width: clamp(104px, 29vw, 145px); height: auto; aspect-ratio: 3 / 4; border: 1px solid #ffffff52; border-radius: 15px; box-shadow: 0 12px 35px #0009; }
+  .mobile-one-to-one .localTile .meetingAvatar { width: 58px; height: 58px; font-size: 18px; }
+  .mobile-one-to-one .localTile .meetingTileName { font-size: 9px !important; }
+  .mobile-one-to-one .localTile .meetingMicOff { right: 6px; width: 25px; height: 25px; bottom: 6px; }
+  .mobile-one-to-one .localTile .meetingCameraOff { right: 36px; }
+  .mobile-one-to-one .meetingChat { position: fixed; inset: 0; }
+  .mobile-one-to-one > .meetingControls { position: absolute; z-index: 25; left: 0; right: 0; bottom: 0; height: calc(94px + env(safe-area-inset-bottom)); padding: 20px 8px calc(12px + env(safe-area-inset-bottom)); border: 0; background: linear-gradient(transparent, #080c14e8); }
+  .mobile-one-to-one .meetingReactions { bottom: 115px; }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  .mobile-one-to-one .localTile { top: calc(55px + env(safe-area-inset-top)); right: calc(14px + env(safe-area-inset-right)); width: auto; height: min(32vh, 135px); aspect-ratio: 4 / 3; }
+  .mobile-one-to-one > header { min-height: 64px; padding-top: calc(8px + env(safe-area-inset-top)); }
+  .mobile-one-to-one > .meetingControls { left: 50%; right: auto; width: auto; min-width: 360px; height: 74px; padding: 8px 14px calc(8px + env(safe-area-inset-bottom)); border-radius: 20px 20px 0 0; transform: translateX(-50%); }
+  .mobile-one-to-one .meetingReactions { bottom: 82px; }
+}

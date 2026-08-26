@@ -8,6 +8,7 @@ import { AuthProvider } from "./auth/AuthProvider";
 import { CourseProvider } from "./features/courses/CourseProvider";
 import { VideoRoomPage } from "./features/video/VideoRoomsPage";
 import "./styles/index.css";
+import "./styles/video-room-layout.css";
 import "./styles/typography.css";
 import "./styles/editor-curtain.css";
 import "./styles/groups.css";
