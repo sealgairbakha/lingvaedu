@@ -783,19 +783,26 @@ export function CoursePlayerPage() {
   const [lessonId, setLessonId] = useState(params.get("lesson") || "");
   const [activeLessonTabId, setActiveLessonTabId] = useState("");
   const [completed, setCompleted] = useState<string[]>([]);
+  const [loadedProgressKey, setLoadedProgressKey] = useState("");
   const [mobileTreeOpen, setMobileTreeOpen] = useState(false);
   const [lessonRuns, setLessonRuns] = useState<Record<string, LessonRun>>({});
   const [runsReady, setRunsReady] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     if (!course || !user) return;
+    const progressKey = `${user.id}-${course.id}`;
     const value = localStorage.getItem(
       `lingvaedu-progress-${user.id}-${course.id}`,
     );
-    const timer = setTimeout(
-      () => setCompleted(value ? JSON.parse(value) : []),
-      0,
-    );
+    const timer = setTimeout(() => {
+      try {
+        const stored = value ? JSON.parse(value) : [];
+        setCompleted(Array.isArray(stored) ? stored : []);
+      } catch {
+        setCompleted([]);
+      }
+      setLoadedProgressKey(progressKey);
+    }, 0);
     return () => clearTimeout(timer);
   }, [course, user]);
   useEffect(() => {
@@ -837,10 +844,22 @@ export function CoursePlayerPage() {
       JSON.stringify(lessonRuns),
     );
   }, [courseId, learnerId, lessonRuns, runsReady]);
-  const currentIndex = Math.max(
+  const progressReady = loadedProgressKey === `${learnerId}-${courseId}`;
+  const requestedIndex = Math.max(
     0,
     lessons.findIndex((x) => x.lesson.id === lessonId),
   );
+  const firstIncompleteIndex = lessons.findIndex(
+    ({ lesson }) => !completed.includes(lesson.id),
+  );
+  const lastUnlockedIndex =
+    firstIncompleteIndex < 0 ? Math.max(lessons.length - 1, 0) : firstIncompleteIndex;
+  const currentIndex =
+    canEditCourses || !progressReady
+      ? canEditCourses
+        ? requestedIndex
+        : 0
+      : Math.min(requestedIndex, lastUnlockedIndex);
   const current = lessons[currentIndex]?.lesson || lessons[0]?.lesson;
   const currentModule = lessons[currentIndex]?.module || lessons[0]?.module;
   const currentTabs = current?.tabs?.filter((tab) => tab.id) || [];
@@ -869,6 +888,10 @@ export function CoursePlayerPage() {
   const attemptBlocked = Boolean(
     currentRun?.expired && attemptsRemaining === 0,
   );
+  const isLessonUnlocked = (index: number) =>
+    canEditCourses ||
+    index === 0 ||
+    lessons.slice(0, index).every(({ lesson }) => completed.includes(lesson.id));
   useEffect(() => {
     if (
       !runsReady ||
@@ -917,6 +940,8 @@ export function CoursePlayerPage() {
     };
   }, [current, currentRun?.deadline, currentRun?.expired]);
   const selectLesson = (id: string) => {
+    const targetIndex = lessons.findIndex(({ lesson }) => lesson.id === id);
+    if (targetIndex < 0 || !isLessonUnlocked(targetIndex)) return;
     setLessonId(id);
     setActiveLessonTabId("");
     setMobileTreeOpen(false);
@@ -1049,28 +1074,44 @@ export function CoursePlayerPage() {
                   <span>{mi + 1}</span>
                   {module.title}
                 </h3>
-                {module.lessons.map((lesson, li) => (
-                  <button
-                    key={lesson.id}
-                    className={current?.id === lesson.id ? "active" : ""}
-                    aria-current={current?.id === lesson.id ? "page" : undefined}
-                    onClick={() => selectLesson(lesson.id)}
-                  >
-                    <i className={completed.includes(lesson.id) ? "done" : ""}>
-                      {completed.includes(lesson.id) ? (
-                        <svg viewBox="0 0 20 20" aria-hidden="true">
-                          <path d="m5.5 10.2 2.8 2.8 6.2-6.2" />
-                        </svg>
-                      ) : (
-                        li + 1
-                      )}
-                    </i>
-                    <span>
-                      {lesson.title}
-                      <small>{lesson.blocks.length} материалов</small>
-                    </span>
-                  </button>
-                ))}
+                {module.lessons.map((lesson, li) => {
+                  const lessonIndex = lessons.findIndex(
+                    ({ lesson: item }) => item.id === lesson.id,
+                  );
+                  const locked =
+                    !canEditCourses &&
+                    (!progressReady || !isLessonUnlocked(lessonIndex));
+                  return (
+                    <button
+                      key={lesson.id}
+                      className={`${current?.id === lesson.id ? "active" : ""} ${locked ? "locked" : ""}`.trim()}
+                      aria-current={current?.id === lesson.id ? "page" : undefined}
+                      aria-label={locked ? `${lesson.title}. Сначала завершите предыдущий урок` : undefined}
+                      title={locked ? "Сначала завершите предыдущий урок" : undefined}
+                      disabled={locked}
+                      onClick={() => selectLesson(lesson.id)}
+                    >
+                      <i className={completed.includes(lesson.id) ? "done" : locked ? "locked" : ""}>
+                        {completed.includes(lesson.id) ? (
+                          <svg viewBox="0 0 20 20" aria-hidden="true">
+                            <path d="m5.5 10.2 2.8 2.8 6.2-6.2" />
+                          </svg>
+                        ) : locked ? (
+                          <svg viewBox="0 0 20 20" aria-hidden="true">
+                            <rect x="5.5" y="8.5" width="9" height="7" rx="1.5" />
+                            <path d="M7.5 8.5V6.8a2.5 2.5 0 0 1 5 0v1.7" />
+                          </svg>
+                        ) : (
+                          li + 1
+                        )}
+                      </i>
+                      <span>
+                        {lesson.title}
+                        <small>{locked ? "Завершите предыдущий урок" : `${lesson.blocks.length} материалов`}</small>
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             ))}
           </div>

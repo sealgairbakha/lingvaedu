@@ -3500,6 +3500,24 @@ html[data-theme="dark"] .coursePlayer .imageLearning .lessonImageButton {
   box-shadow: inset 3px 0 var(--purple);
 }
 
+.coursePlayer .playerTree button.locked,
+.coursePlayer .playerTree button.locked:hover {
+  cursor: not-allowed;
+  opacity: 0.58;
+  background: transparent;
+  color: inherit;
+}
+
+.coursePlayer .playerTree button i.locked svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .coursePlayer .playerTree button span {
   min-width: 0;
   font-size: 13px;
