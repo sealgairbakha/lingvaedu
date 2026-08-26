@@ -238,3 +238,48 @@ html[data-theme="dark"] .globalSearchResults>button:focus-visible { background: 
 @media(max-width:800px){.videoRoomsPage .roomRow{grid-template-columns:50px 1fr}.videoRoomsPage .roomRow>.btn{width:100%;grid-column:auto}.meetingBody.withChat{grid-template-columns:1fr}.meetingBody.withChat .videoStage{display:none}.meetingChat{border-left:0}.meetingPage>header{padding:0 12px}.meetingPage>header>.meetingBrand{display:none}.meetingControls{gap:10px}.meetingControls button{width:40px;height:40px}.meetingControls span{display:none}.videoGrid,.videoGrid.tiles2,.videoGrid.tiles3,.videoGrid.tiles4{grid-template-columns:1fr}.meetingLobby>section{padding:26px}.lobbyToggles{grid-template-columns:1fr}}
 @media(max-width:480px){.meetingPage>header>button{max-width:115px;overflow:hidden;white-space:nowrap}.meetingControls{gap:7px}.videoRoomsPage .roomRow{grid-template-columns:45px 1fr}.videoRoomsPage .roomRow>.btn{grid-column:1/-1}.meetingLobby h1{font-size:25px}}
 html[data-theme="dark"] .videoRoomsPage .roomList{background:#171e2c}html[data-theme="dark"] .roomPrivacyNote{background:#292442;color:#c7bdff}
+
+.meetingControls{gap:14px}.meetingControls>button{display:grid;place-items:center;width:56px;height:56px;padding:0;border-radius:17px}.meetingControls>button svg{width:25px;height:25px}.meetingControls>button.hangup{width:66px;border-radius:17px}.meetingControls>button.hangup svg{width:27px;height:27px}.meetingControls>button:disabled{opacity:.45;cursor:not-allowed}.meetingControlDivider{width:1px;height:34px;margin:0 3px;background:#30394b}
+@media(max-width:560px){.meetingControls{gap:8px}.meetingControls>button{width:49px;height:49px;border-radius:15px}.meetingControls>button.hangup{width:55px}.meetingControls>button svg{width:22px;height:22px}.meetingControlDivider{margin:0}}
+
+.chatHead b{font-size:16px}.chatHead span{margin-top:4px;font-size:11px}.chatMessages b{font-size:12px}.chatMessages time{font-size:10px}.chatMessages p{margin-top:6px;padding:11px 13px;font-size:14px;line-height:1.5}.chatMessages article{margin-bottom:18px}.chatComposer textarea{font-size:14px}
+.meetingTile.cameraOff video{opacity:0}.meetingAvatar{position:absolute;left:50%;top:50%;display:grid;place-items:center;width:104px;height:104px;border:1px solid #7465dd;border-radius:50%;background:linear-gradient(145deg,#6955e8,#44349f);color:#fff;font-size:30px;font-weight:800;letter-spacing:-1px;transform:translate(-50%,-50%);box-shadow:0 14px 35px #07091066}.meetingMicOff{position:absolute;right:12px;bottom:11px;display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:#252d3dcc;color:#f4f6fa;font-style:normal;backdrop-filter:blur(8px)}.meetingMicOff svg{width:17px;height:17px}.meetingTileName{padding-right:10px}
+.meetingTile.mirrored video{transform:scaleX(-1)}
+@media(max-width:560px){.meetingAvatar{width:82px;height:82px;font-size:24px}.meetingMicOff{right:9px;bottom:9px;width:29px;height:29px}}
+
+.videoRoomsPage .roomRow{grid-template-columns:58px minmax(220px,1fr) auto}.roomActions{display:flex;align-items:center;gap:9px}.roomActions .btn{white-space:nowrap}.videoRoomsPage>.pageTitle .btn{white-space:nowrap}
+@media(max-width:700px){
+  .videoRoomsPage.content{padding:24px 18px 48px;overflow:hidden}
+  .videoRoomsPage>.pageTitle{display:flex;flex-direction:column;align-items:stretch;gap:18px;margin-bottom:22px}
+  .videoRoomsPage>.pageTitle>div:first-child>span{margin-bottom:7px;font-size:10px}
+  .videoRoomsPage>.pageTitle h1{font-size:32px;line-height:1.08;letter-spacing:-.8px}
+  .videoRoomsPage>.pageTitle p{max-width:390px;margin-top:9px;font-size:15px;line-height:1.5}
+  .videoRoomsPage>.pageTitle>.btn{width:100%;height:48px;font-size:13px}
+  .videoRoomsPage .callHero{min-height:0;border-radius:18px;grid-template-columns:1fr}
+  .videoRoomsPage .callHero>div:first-child{padding:30px 24px 26px}
+  .videoRoomsPage .liveDot{font-size:10px}
+  .videoRoomsPage .callHero h2{margin:14px 0 12px;font-size:31px;line-height:1.08}
+  .videoRoomsPage .callHero p{max-width:none;margin:0;font-size:14px;line-height:1.55}
+  .videoRoomsPage .startCall{width:100%;height:50px;margin-top:22px;padding:0 12px;font-size:13px}
+  .videoRoomsPage .callVisual{height:220px;margin:0 16px 16px;border-radius:13px}
+  .videoRoomsPage .personVideo.one{left:10px;top:10px;bottom:62px;width:calc(50% - 15px)}
+  .videoRoomsPage .personVideo.two{right:10px;top:10px;bottom:62px;width:calc(50% - 15px)}
+  .videoRoomsPage .personVideo span{width:54px;height:54px;font-size:15px}
+  .videoRoomsPage .personVideo b{left:9px;bottom:8px;font-size:10px}
+  .videoRoomsPage .callControls{bottom:12px;gap:7px}
+  .videoRoomsPage .callControls i{width:32px;height:32px}
+  .videoRoomsHeading{margin:25px 0 12px}
+  .videoRoomsHeading h2{font-size:21px}
+  .videoRoomsHeading p{font-size:13px;line-height:1.45}
+  .videoRoomsPage .roomList{overflow:hidden}
+  .videoRoomsPage .roomRow{min-width:0;grid-template-columns:50px minmax(0,1fr);gap:12px;padding:16px}
+  .videoRoomsPage .roomDate{grid-column:1;grid-row:1}
+  .videoRoomsPage .roomRow>div:nth-child(2){grid-column:2;grid-row:1;min-width:0}
+  .videoRoomsPage .roomRow h3{overflow:hidden;font-size:14px;line-height:1.35;text-overflow:ellipsis}
+  .videoRoomsPage .roomRow p{font-size:11px;line-height:1.4}
+  .videoRoomsPage .roomActions{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1.5fr) minmax(90px,1fr);gap:8px}
+  .videoRoomsPage .roomActions .btn{width:100%;padding:0 10px}
+  .videoRoomsPage .roomsEmpty{padding:38px 18px}
+  .videoRoomsPage .modal{width:calc(100% - 28px);max-width:none;padding:20px}
+}
+@media(max-width:380px){.videoRoomsPage.content{padding-inline:12px}.videoRoomsPage>.pageTitle h1{font-size:28px}.videoRoomsPage .callHero>div:first-child{padding:26px 19px 22px}.videoRoomsPage .callHero h2{font-size:28px}.videoRoomsPage .callVisual{height:195px;margin-inline:10px}.videoRoomsPage .roomActions{grid-template-columns:1fr}.videoRoomsPage .roomActions .btn{height:42px}}

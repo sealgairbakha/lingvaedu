@@ -18,6 +18,7 @@ const initialTheme = savedTheme === "dark" || (!savedTheme && window.matchMedia(
 document.documentElement.dataset.theme = initialTheme;
 document.documentElement.style.colorScheme = initialTheme;
 
+// eslint-disable-next-line react-refresh/only-export-components
 function RootRoutes() {
   const location = useLocation();
   const isVideoRoom = /^\/video-room\/[a-f0-9]{32}\/?$/i.test(location.pathname);

@@ -5,7 +5,7 @@ import { useAuth } from "../../auth/AuthProvider";
 import { supabase } from "../../lib/supabase";
 
 type SavedRoom = { id: string; title: string; createdAt: string };
-type Participant = { id: string; name: string; isHost: boolean };
+type Participant = { id: string; name: string; isHost: boolean; cameraOn: boolean; micOn: boolean; sharing: boolean };
 type ChatMessage = { id: string; from: string; name: string; text: string; sentAt: string };
 type SignalPayload = {
   from: string;
@@ -75,18 +75,29 @@ export function VideoRoomsPage() {
       {rooms.length ? rooms.map((room) => <article className="roomRow" key={room.id}>
         <div className="roomDate"><b>{new Date(room.createdAt).getDate()}</b><span>{new Intl.DateTimeFormat("ru-RU", { month: "short" }).format(new Date(room.createdAt)).toUpperCase()}</span></div>
         <div><h3>{room.title}</h3><p>Создана {new Date(room.createdAt).toLocaleString("ru-RU", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}</p></div>
-        <button className="btn ghost" onClick={() => void copy(room)}>{copied === room.id ? "✓ Ссылка скопирована" : "Копировать ссылку"}</button>
-        <button className="btn primary" onClick={() => { sessionStorage.setItem(`lingvaedu-room-owner:${room.id}`, "1"); sessionStorage.setItem(`lingvaedu-room-title:${room.id}`, room.title); navigate(`${ROOM_PREFIX}${room.id}`); }}>Войти</button>
+        <div className="roomActions"><button className="btn ghost" onClick={() => void copy(room)}>{copied === room.id ? "✓ Скопировано" : "Копировать ссылку"}</button><button className="btn primary" onClick={() => { sessionStorage.setItem(`lingvaedu-room-owner:${room.id}`, "1"); sessionStorage.setItem(`lingvaedu-room-title:${room.id}`, room.title); navigate(`${ROOM_PREFIX}${room.id}`); }}>Войти</button></div>
       </article>) : <div className="roomsEmpty"><span>◇</span><h3>Комнат пока нет</h3><p>Создайте первую комнату и отправьте ученикам ссылку-приглашение.</p></div>}
     </section>
     {creating && <div className="modalLayer"><button className="modalScrim" onClick={() => setCreating(false)}/><section className="modal"><div className="modalHead"><h2>Новая видеокомната</h2><button onClick={() => setCreating(false)}>×</button></div><label>Название встречи<input value={title} maxLength={100} autoFocus onChange={(event) => setTitle(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") createRoom(); }}/></label><p className="roomPrivacyNote">Случайная защищённая ссылка будет создана автоматически. Без неё ученики не увидят комнату.</p><button className="btn primary full" onClick={createRoom}>Создать и войти</button></section></div>}
   </main>;
 }
 
-function MediaTile({ stream, label, muted = false, isScreen = false }: { stream: MediaStream; label: string; muted?: boolean; isScreen?: boolean }) {
+function MediaTile({ stream, label, muted = false, isScreen = false, cameraOn = true, micOn = true, mirrored = false }: { stream: MediaStream; label: string; muted?: boolean; isScreen?: boolean; cameraOn?: boolean; micOn?: boolean; mirrored?: boolean }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   useEffect(() => { if (videoRef.current) videoRef.current.srcObject = stream; }, [stream]);
-  return <div className={`meetingTile ${isScreen ? "screenTile" : ""}`}><video ref={videoRef} autoPlay playsInline muted={muted}/><span>{label}</span></div>;
+  const initials = label.replace(/ ·.*$/, "").split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
+  return <div className={`meetingTile ${isScreen ? "screenTile" : ""} ${mirrored && !isScreen ? "mirrored" : ""} ${!cameraOn && !isScreen ? "cameraOff" : ""}`}><video ref={videoRef} autoPlay playsInline muted={muted}/>{!cameraOn && !isScreen && <div className="meetingAvatar" aria-label="Камера выключена">{initials}</div>}<span className="meetingTileName">{label}</span>{!micOn && <i className="meetingMicOff" title="Микрофон выключен"><MeetingControlIcon kind="mic" off/></i>}</div>;
+}
+
+function MeetingControlIcon({ kind, off = false }: { kind: "mic" | "camera" | "screen" | "chat" | "hangup"; off?: boolean }) {
+  const paths = {
+    mic: <><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4M9 21h6"/>{off && <path d="m4 4 16 16"/>}</>,
+    camera: <><rect x="3" y="6" width="13" height="12" rx="2.5"/><path d="m16 10 5-3v10l-5-3z"/>{off && <path d="m4 4 16 16"/>}</>,
+    screen: <><rect x="3" y="4" width="18" height="14" rx="2.5"/><path d="M8 21h8M12 18v3M8.5 11.5 12 8l3.5 3.5M12 8v7"/></>,
+    chat: <path d="M5 4h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H10l-5 4v-4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/>,
+    hangup: <><path d="M5.2 15.8a10.8 10.8 0 0 1 13.6 0"/><path d="m4.2 14.7-1 3.7 3.8.8 1.1-3.4M19.8 14.7l1 3.7-3.8.8-1.1-3.4"/></>,
+  };
+  return <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{paths[kind]}</svg>;
 }
 
 export function VideoRoomPage() {
@@ -110,14 +121,15 @@ export function VideoRoomPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [message, setMessage] = useState("");
   const [chatOpen, setChatOpen] = useState(true);
-  const localStreamRef = useRef<MediaStream>(new MediaStream());
+  const [localStream, setLocalStream] = useState<MediaStream>(() => new MediaStream());
+  const localStreamRef = useRef<MediaStream>(localStream);
   const cameraStreamRef = useRef<MediaStream | null>(null);
   const screenStreamRef = useRef<MediaStream | null>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
   const peersRef = useRef(new Map<string, RTCPeerConnection>());
   const audioContextRef = useRef<AudioContext | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const [localStream, setLocalStream] = useState<MediaStream>(localStreamRef.current);
+  const participantDisplayName = name.trim() || (isHost ? displayName : "");
 
   const sendBroadcast = async (event: string, payload: object) => {
     await channelRef.current?.send({ type: "broadcast", event, payload });
@@ -199,7 +211,7 @@ export function VideoRoomPage() {
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
   const join = async () => {
-    if (!name.trim() || !supabase) return;
+    if (!participantDisplayName || !supabase) return;
     setJoining(true); setError("");
     try {
       let media = new MediaStream();
@@ -209,6 +221,8 @@ export function VideoRoomPage() {
         setError("Камера или микрофон недоступны. Вы вошли без них — разрешения можно проверить в настройках браузера.");
       }
       cameraStreamRef.current = media;
+      setCameraOn(media.getVideoTracks().length > 0);
+      setMicOn(media.getAudioTracks().length > 0);
       updateLocalStream(media);
       const channel = supabase.channel(`video-room:${roomId}`, { config: { broadcast: { self: false }, presence: { key: peerId } } });
       channelRef.current = channel;
@@ -218,14 +232,14 @@ export function VideoRoomPage() {
       channel.on("broadcast", { event: "room-info-request" }, () => { if (isHost) void sendBroadcast("room-info", { title: roomTitle }); });
       channel.on("presence", { event: "sync" }, () => {
         const state = channel.presenceState<Participant>();
-        const active = Object.values(state).flat().map((entry) => ({ id: entry.id, name: entry.name, isHost: entry.isHost }));
+        const active = Object.values(state).flat().map((entry) => ({ id: entry.id, name: entry.name, isHost: entry.isHost, cameraOn: entry.cameraOn ?? true, micOn: entry.micOn ?? true, sharing: entry.sharing ?? false }));
         setParticipants(active);
         const activeIds = new Set(active.map((item) => item.id));
         peersRef.current.forEach((_peer, id) => { if (!activeIds.has(id)) closePeer(id); });
         active.filter((item) => item.id !== peerId && peerId < item.id && !peersRef.current.has(item.id)).forEach((item) => void makeOffer(item.id));
       });
       await new Promise<void>((resolve, reject) => channel.subscribe(async (status) => {
-        if (status === "SUBSCRIBED") { await channel.track({ id: peerId, name: name.trim(), isHost }); resolve(); }
+        if (status === "SUBSCRIBED") { await channel.track({ id: peerId, name: participantDisplayName, isHost, cameraOn: media.getVideoTracks().length > 0, micOn: media.getAudioTracks().length > 0, sharing: false }); resolve(); }
         else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") reject(new Error("Не удалось подключиться к комнате"));
       }));
       setJoined(true);
@@ -239,10 +253,12 @@ export function VideoRoomPage() {
   const toggleMic = () => {
     const next = !micOn; setMicOn(next);
     localStreamRef.current.getAudioTracks().forEach((track) => { track.enabled = next; });
+    void channelRef.current?.track({ id: peerId, name: participantDisplayName, isHost, cameraOn, micOn: next, sharing });
   };
   const toggleCamera = () => {
     const next = !cameraOn; setCameraOn(next);
     cameraStreamRef.current?.getVideoTracks().forEach((track) => { track.enabled = next; });
+    void channelRef.current?.track({ id: peerId, name: participantDisplayName, isHost, cameraOn: next, micOn, sharing });
   };
 
   const stopSharing = async () => {
@@ -259,6 +275,7 @@ export function VideoRoomPage() {
     await audioContextRef.current?.close(); audioContextRef.current = null;
     updateLocalStream(cameraStreamRef.current || new MediaStream());
     setSharing(false); setSystemAudio(false);
+    void channelRef.current?.track({ id: peerId, name: participantDisplayName, isHost, cameraOn, micOn, sharing: false });
   };
 
   const shareScreen = async () => {
@@ -284,6 +301,7 @@ export function VideoRoomPage() {
       }
       const preview = new MediaStream([screenVideo, ...(outgoingAudio ? [outgoingAudio] : [])]);
       updateLocalStream(preview); setSharing(true); setSystemAudio(Boolean(screenAudio));
+      void channelRef.current?.track({ id: peerId, name: participantDisplayName, isHost, cameraOn, micOn, sharing: true });
       if (!screenAudio) setError("Экран демонстрируется без системного звука. Выберите вкладку или экран и включите «Поделиться аудио» в окне браузера.");
       else setError("");
       screenVideo.onended = () => void stopSharing();
@@ -295,20 +313,20 @@ export function VideoRoomPage() {
 
   const sendMessage = async () => {
     const text = message.trim(); if (!text) return;
-    const chat: ChatMessage = { id: crypto.randomUUID(), from: peerId, name: name.trim(), text, sentAt: new Date().toISOString() };
+    const chat: ChatMessage = { id: crypto.randomUUID(), from: peerId, name: participantDisplayName, text, sentAt: new Date().toISOString() };
     setMessages((current) => [...current, chat]); setMessage("");
     await sendBroadcast("chat", chat);
   };
 
-  if (!joined) return <main className="meetingLobby"><section><div className="meetingBrand">Lingva<span>Edu</span></div><span className="meetingLock">🔒 Вход только по приглашению</span><h1>{roomTitle}</h1><p>{isHost ? "Вы создаёте и ведёте эту встречу" : "Представьтесь перед входом в видеокомнату"}</p><label>Ваше имя<input value={name} autoFocus={!isHost} maxLength={60} placeholder="Имя и фамилия" onChange={(event) => setName(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void join(); }}/></label><div className="lobbyToggles"><button className={micOn ? "on" : ""} onClick={() => setMicOn(!micOn)}>🎙 {micOn ? "Микрофон включён" : "Микрофон выключен"}</button><button className={cameraOn ? "on" : ""} onClick={() => setCameraOn(!cameraOn)}>▣ {cameraOn ? "Камера включена" : "Камера выключена"}</button></div>{error && <p className="meetingError">{error}</p>}<button className="joinMeeting" disabled={!name.trim() || joining} onClick={() => void join()}>{joining ? "Подключаем…" : "Войти в комнату"}</button><small>Камера и микрофон включатся только после вашего разрешения.</small></section></main>;
+  if (!joined) return <main className="meetingLobby"><section><div className="meetingBrand">Lingva<span>Edu</span></div><span className="meetingLock">🔒 Вход только по приглашению</span><h1>{roomTitle}</h1><p>{isHost ? "Вы создаёте и ведёте эту встречу" : "Представьтесь перед входом в видеокомнату"}</p><label>Ваше имя<input value={name || (isHost ? displayName : "")} autoFocus={!isHost} maxLength={60} placeholder="Имя и фамилия" onChange={(event) => setName(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void join(); }}/></label><div className="lobbyToggles"><button className={micOn ? "on" : ""} onClick={() => setMicOn(!micOn)}>🎙 {micOn ? "Микрофон включён" : "Микрофон выключен"}</button><button className={cameraOn ? "on" : ""} onClick={() => setCameraOn(!cameraOn)}>▣ {cameraOn ? "Камера включена" : "Камера выключена"}</button></div>{error && <p className="meetingError">{error}</p>}<button className="joinMeeting" disabled={!participantDisplayName || joining} onClick={() => void join()}>{joining ? "Подключаем…" : "Войти в комнату"}</button><small>Камера и микрофон включатся только после вашего разрешения.</small></section></main>;
 
   const participantName = (id: string) => participants.find((item) => item.id === id)?.name || "Участник";
   return <main className="meetingPage">
     <header><div className="meetingBrand">Lingva<span>Edu</span></div><div><h1>{roomTitle}</h1><span><i/> В эфире · {Math.max(participants.length, 1)} участников</span></div>{isHost && <button onClick={() => void copyText(roomUrl(roomId))}>🔗 Скопировать приглашение</button>}</header>
     {error && <div className="meetingNotice">{error}<button onClick={() => setError("")}>×</button></div>}
-    <div className={`meetingBody ${chatOpen ? "withChat" : ""}`}><section className="videoStage"><div className={`videoGrid tiles${Object.keys(remoteStreams).length + 1}`}><MediaTile stream={localStream} muted label={sharing ? `Вы · Экран${systemAudio ? " · звук включён" : ""}` : "Вы"} isScreen={sharing}/>{Object.entries(remoteStreams).map(([id, stream]) => <MediaTile key={id} stream={stream} label={participantName(id)}/>)}</div></section>
+    <div className={`meetingBody ${chatOpen ? "withChat" : ""}`}><section className="videoStage"><div className={`videoGrid tiles${Object.keys(remoteStreams).length + 1}`}><MediaTile stream={localStream} muted mirrored={!sharing} label={sharing ? `Вы · Экран${systemAudio ? " · звук включён" : ""}` : "Вы"} isScreen={sharing} cameraOn={sharing || (cameraOn && localStream.getVideoTracks().length > 0)} micOn={micOn && localStream.getAudioTracks().length > 0}/>{Object.entries(remoteStreams).map(([id, stream]) => { const participant = participants.find((item) => item.id === id); return <MediaTile key={id} stream={stream} label={participantName(id)} isScreen={participant?.sharing} cameraOn={participant?.cameraOn ?? true} micOn={participant?.micOn ?? true}/>; })}</div></section>
       {chatOpen && <aside className="meetingChat"><div className="chatHead"><div><b>Чат встречи</b><span>{messages.length} сообщений</span></div><button onClick={() => setChatOpen(false)}>×</button></div><div className="chatMessages">{messages.length ? messages.map((item) => <article className={item.from === peerId ? "own" : ""} key={item.id}><div><b>{item.from === peerId ? "Вы" : item.name}</b><time>{new Date(item.sentAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}</time></div><p>{item.text}</p></article>) : <div className="chatEmpty">Сообщений пока нет.<br/>Начните обсуждение занятия.</div>}<div ref={chatEndRef}/></div><div className="chatComposer"><textarea value={message} placeholder="Напишите сообщение…" onChange={(event) => setMessage(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void sendMessage(); } }}/><button disabled={!message.trim()} onClick={() => void sendMessage()}>➤</button></div></aside>}
     </div>
-    <footer className="meetingControls"><div><button className={micOn ? "" : "off"} onClick={toggleMic} title="Микрофон">🎙</button><span>{micOn ? "Микрофон" : "Без звука"}</span></div><div><button className={cameraOn ? "" : "off"} disabled={sharing} onClick={toggleCamera} title="Камера">▣</button><span>{cameraOn ? "Камера" : "Без видео"}</span></div><div><button className={sharing ? "active" : ""} onClick={() => void shareScreen()} title="Демонстрация экрана">▤</button><span>{sharing ? "Остановить показ" : "Показать экран"}</span></div><div><button className={chatOpen ? "active" : ""} onClick={() => setChatOpen(!chatOpen)} title="Чат">▱</button><span>Чат</span></div><div><button className="hangup" onClick={leave} title="Выйти">×</button><span>Завершить</span></div></footer>
+    <footer className="meetingControls"><button className={micOn ? "" : "off"} onClick={toggleMic} title={micOn ? "Выключить микрофон" : "Включить микрофон"} aria-label={micOn ? "Выключить микрофон" : "Включить микрофон"}><MeetingControlIcon kind="mic" off={!micOn}/></button><button className={cameraOn ? "" : "off"} disabled={sharing} onClick={toggleCamera} title={cameraOn ? "Выключить камеру" : "Включить камеру"} aria-label={cameraOn ? "Выключить камеру" : "Включить камеру"}><MeetingControlIcon kind="camera" off={!cameraOn}/></button><button className={sharing ? "active" : ""} onClick={() => void shareScreen()} title={sharing ? "Остановить демонстрацию" : "Показать экран"} aria-label={sharing ? "Остановить демонстрацию" : "Показать экран"}><MeetingControlIcon kind="screen"/></button><button className={chatOpen ? "active" : ""} onClick={() => setChatOpen(!chatOpen)} title={chatOpen ? "Закрыть чат" : "Открыть чат"} aria-label={chatOpen ? "Закрыть чат" : "Открыть чат"}><MeetingControlIcon kind="chat"/></button><span className="meetingControlDivider"/><button className="hangup" onClick={leave} title="Завершить звонок" aria-label="Завершить звонок"><MeetingControlIcon kind="hangup"/></button></footer>
   </main>;
 }
