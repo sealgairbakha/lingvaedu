@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
 import { useCourses } from "./CourseProvider";
 import { BlockIcon } from "./BlockIcon";
+import { CourseAssignmentBlock } from "./CourseAssignmentBlock";
 import type { LessonBlock } from "./types";
 import { sanitizeRichText } from "./richText";
 
@@ -21,6 +22,7 @@ const taskBlockKinds = new Set<LessonBlock["kind"]>([
   "match",
   "true-false",
   "quiz",
+  "assignment",
 ]);
 
 type LessonRun = {
@@ -120,11 +122,15 @@ export function LessonBlockView({
   onTaskResult,
   onContinue,
   continueLabel,
+  courseId,
+  lessonId,
 }: {
   block: LessonBlock;
   onTaskResult?: (blockId: string, passed: boolean) => void;
   onContinue?: () => void;
   continueLabel?: string;
+  courseId?: string;
+  lessonId?: string;
 }) {
   const [answer, setAnswer] = useState("");
   const [taskAnswers, setTaskAnswers] = useState<Record<string, string>>({});
@@ -166,6 +172,15 @@ export function LessonBlockView({
       window.removeEventListener("keydown", closeOnEscape);
     };
   }, [blockImages.length, openedImage]);
+  if (block.kind === "assignment")
+    return (
+      <CourseAssignmentBlock
+        block={block}
+        courseId={courseId}
+        lessonId={lessonId}
+        onSubmitted={(submitted) => onTaskResult?.(block.id, submitted)}
+      />
+    );
   if (block.kind === "drag-words") {
     const items = lines.map((line, index) => {
       const parsed = parseGapTaskLine(line);
@@ -1297,6 +1312,8 @@ export function CoursePlayerPage() {
                         return <div className="lessonBlockAnchor" id={`learning-block-${block.id}`} key={block.id}>
                           <LessonBlockView
                             block={block}
+                            courseId={course.id}
+                            lessonId={current.id}
                             onTaskResult={(blockId, passed) => setPassedTaskBlocks((previous) => ({ ...previous, [blockId]: passed }))}
                             continueLabel={nextTask ? "Следующее задание →" : "Завершить урок"}
                             onContinue={taskIndex < 0 ? undefined : () => {

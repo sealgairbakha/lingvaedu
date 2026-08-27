@@ -122,6 +122,12 @@ const palette: {
     hint: "Определить истинность утверждений",
     group: "Задания",
   },
+  {
+    kind: "assignment",
+    title: "Развёрнутое задание",
+    hint: "Текст, файл и ответ преподавателя",
+    group: "Задания",
+  },
 ];
 
 const taskKinds: BlockKind[] = [
@@ -266,6 +272,7 @@ type DragVisual = {
   returning?: boolean;
 };
 const taskTemplates: Partial<Record<BlockKind, string>> = {
+  assignment: "Опишите, что нужно выполнить, и укажите требования к ответу.",
   "drag-words":
     "He went to work [despite] being ill.\nJake couldn't sleep [because] he was tired.",
   "select-words":
@@ -1771,7 +1778,22 @@ export function CourseEditorPage() {
                         }
                       />
                     </label>
-                    {isTaskKind(b.kind) ? (
+                    {b.kind === "assignment" ? (
+                      <div className="blockTextEditor assignmentBlockEditor">
+                        <label>
+                          Задание для ученика
+                          <textarea
+                            rows={7}
+                            placeholder="Опишите задание, критерии и ожидаемый результат"
+                            value={b.content}
+                            onChange={(event) =>
+                              updateBlock(b.id, { content: event.target.value })
+                            }
+                          />
+                        </label>
+                        <p>Ученик сможет написать развёрнутый ответ, приложить файл и получить ответ преподавателя.</p>
+                      </div>
+                    ) : isTaskKind(b.kind) ? (
                       <TaskBlockEditor
                         block={b}
                         onChange={(content) => updateBlock(b.id, { content })}

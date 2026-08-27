@@ -42,6 +42,12 @@ export function BlockIcon({ kind }: { kind: BlockKind }) {
           <path d="M5 5h5M14 19h5" />
         </>
       )}
+      {normalized === "assignment" && (
+        <>
+          <path d="M5 4.5h14v11H9l-4 4Z" />
+          <path d="M8 8h8M8 11.5h5" />
+        </>
+      )}
       {normalized === "html" && <path d="m8 7-5 5 5 5M16 7l5 5-5 5M14 4l-4 16" />}
       {normalized === "file" && (
         <>

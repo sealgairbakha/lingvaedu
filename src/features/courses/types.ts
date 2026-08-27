@@ -11,6 +11,7 @@ export type BlockKind =
   | "quiz"
   | "match"
   | "true-false"
+  | "assignment"
   | "html"
   | "file";
 
