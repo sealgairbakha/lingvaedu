@@ -205,7 +205,7 @@ export function CourseAssignmentBlock({
             setSubmissions(nextSubmissions);
             setReplies(nextReplies);
             setBody(nextSubmissions.find((item) => item.userId === user.id)?.body || "");
-            setReplyDrafts(Object.fromEntries(nextReplies.map((item) => [item.submissionId, item.body])));
+            setReplyDrafts({});
             setLoading(false);
           }
           const urls: Record<string, string> = {};
@@ -235,7 +235,7 @@ export function CourseAssignmentBlock({
         setSubmissions(nextSubmissions);
         setReplies(nextReplies);
         setBody(nextSubmissions.find((item) => item.userId === learnerId)?.body || "");
-        setReplyDrafts(Object.fromEntries(nextReplies.map((item) => [item.submissionId, item.body])));
+        setReplyDrafts({});
         setAttachmentUrls(Object.fromEntries(nextSubmissions.filter((item) => item.attachmentPath?.startsWith("data:")).map((item) => [item.id, item.attachmentPath || ""])));
         setLoading(false);
       }
@@ -399,6 +399,7 @@ export function CourseAssignmentBlock({
         });
         setReplies((current) => [next, ...current.filter((item) => item.submissionId !== next.submissionId)]);
       }
+      setReplyDrafts((current) => ({ ...current, [submission.id]: "" }));
     } catch (replyError) {
       setError(replyError instanceof Error ? replyError.message : "Не удалось сохранить ответ.");
     } finally {
@@ -409,7 +410,7 @@ export function CourseAssignmentBlock({
   if (!courseId || !lessonId) {
     return (
       <section className="learningBlock assignmentLearning assignmentPreview">
-        <div className="assignmentHeading"><span className="blockGlyph assignment"><BlockIcon kind="assignment" /></span><div><small>ЗАДАНИЕ С ОТВЕТОМ</small><h3>{block.title}</h3></div></div>
+        <div className="assignmentHeading"><span className="blockGlyph assignment"><BlockIcon kind="assignment" /></span><div><h3>{block.title}</h3></div></div>
         <p className="assignmentPrompt">{block.content || "Опишите задание для ученика."}</p>
         <div className="assignmentComposer previewComposer"><AttachmentIcon /><span>Написать ответ или прикрепить файл…</span><i><SendIcon /></i></div>
       </section>
@@ -420,7 +421,7 @@ export function CourseAssignmentBlock({
     <section className="learningBlock assignmentLearning">
       <div className="assignmentHeading">
         <span className="blockGlyph assignment"><BlockIcon kind="assignment" /></span>
-        <div><small>ЗАДАНИЕ С ОТВЕТОМ</small><h3>{block.title}</h3></div>
+        <div><h3>{block.title}</h3></div>
       </div>
       <p className="assignmentPrompt">{block.content || "Выполните задание и отправьте ответ преподавателю."}</p>
       {loading ? <div className="assignmentLoading">Загружаем ответы…</div> : canEditCourses ? (

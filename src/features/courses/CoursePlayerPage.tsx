@@ -34,6 +34,112 @@ type LessonRun = {
 const formatTimer = (seconds: number) =>
   `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
 
+const formatAudioTime = (seconds: number) => {
+  if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
+  return `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
+};
+
+function LessonAudioPlayer({ src, title }: { src: string; title: string }) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [muted, setMuted] = useState(false);
+  const [speed, setSpeed] = useState(1);
+  const [failed, setFailed] = useState(false);
+  const progress = duration ? Math.min((currentTime / duration) * 100, 100) : 0;
+
+  const togglePlayback = async () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (audio.paused) {
+      try {
+        await audio.play();
+      } catch {
+        setFailed(true);
+      }
+    } else {
+      audio.pause();
+    }
+  };
+
+  const cycleSpeed = () => {
+    const values = [1, 1.25, 1.5, 0.75];
+    const next = values[(values.indexOf(speed) + 1) % values.length];
+    setSpeed(next);
+    if (audioRef.current) audioRef.current.playbackRate = next;
+  };
+
+  return (
+    <div className={`lessonAudioPlayer ${failed ? "failed" : ""}`}>
+      <audio
+        ref={audioRef}
+        className="lessonAudioElement"
+        preload="metadata"
+        src={src}
+        onLoadedMetadata={(event) => {
+          setDuration(event.currentTarget.duration || 0);
+          setFailed(false);
+        }}
+        onDurationChange={(event) => setDuration(event.currentTarget.duration || 0)}
+        onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+        onEnded={() => setPlaying(false)}
+        onError={() => setFailed(true)}
+      />
+      <button
+        type="button"
+        className="lessonAudioPlay"
+        aria-label={playing ? "Пауза" : "Воспроизвести"}
+        onClick={() => void togglePlayback()}
+      >
+        {playing ? (
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6v12M16 6v12" /></svg>
+        ) : (
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 9 6-9 6Z" /></svg>
+        )}
+      </button>
+      <div className="lessonAudioMain">
+        <div className="lessonAudioInfo">
+          <span><b>{title}</b><small>{failed ? "Не удалось загрузить аудио" : playing ? "Воспроизводится" : "Готово к прослушиванию"}</small></span>
+          <time>{formatAudioTime(currentTime)} / {formatAudioTime(duration)}</time>
+        </div>
+        <input
+          className="lessonAudioProgress"
+          type="range"
+          min="0"
+          max={duration || 0}
+          step="0.1"
+          value={Math.min(currentTime, duration || 0)}
+          aria-label="Позиция воспроизведения"
+          style={{ background: `linear-gradient(90deg,var(--purple) ${progress}%,#dfe3eb ${progress}%)` }}
+          onChange={(event) => {
+            const value = Number(event.target.value);
+            setCurrentTime(value);
+            if (audioRef.current) audioRef.current.currentTime = value;
+          }}
+        />
+      </div>
+      <div className="lessonAudioControls">
+        <button type="button" className="lessonAudioSpeed" onClick={cycleSpeed} aria-label={`Скорость ${speed}`} title="Скорость воспроизведения">{speed}×</button>
+        <button
+          type="button"
+          className="lessonAudioMute"
+          aria-label={muted ? "Включить звук" : "Выключить звук"}
+          onClick={() => {
+            const next = !muted;
+            setMuted(next);
+            if (audioRef.current) audioRef.current.muted = next;
+          }}
+        >
+          {muted ? <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 10h4l5-4v12l-5-4H5ZM18 9l4 6m0-6-4 6" /></svg> : <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 10h4l5-4v12l-5-4H5ZM17 9.5a4 4 0 0 1 0 5M19.5 7a7.5 7.5 0 0 1 0 10" /></svg>}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 const formatAttachmentSize = (bytes?: number) => {
   if (!bytes) return "Учебный материал";
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} КБ`;
@@ -648,9 +754,7 @@ export function LessonBlockView({
           </div>
         </div>
         {block.content ? (
-          <audio controls preload="metadata" src={block.content}>
-            Ваш браузер не поддерживает аудио.
-          </audio>
+          <LessonAudioPlayer src={block.content} title={block.title} />
         ) : (
           <p className="emptyMaterial">Аудиофайл пока не добавлен.</p>
         )}
@@ -847,7 +951,30 @@ export function CoursePlayerPage() {
   const [lessonRuns, setLessonRuns] = useState<Record<string, LessonRun>>({});
   const [runsReady, setRunsReady] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  const [headerHidden, setHeaderHidden] = useState(false);
   const openedLessonKeyRef = useRef("");
+  const lastScrollYRef = useRef(0);
+  useEffect(() => {
+    lastScrollYRef.current = window.scrollY;
+    let frame = 0;
+    const handleScroll = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        const currentY = window.scrollY;
+        const delta = currentY - lastScrollYRef.current;
+        if (currentY < 72) setHeaderHidden(false);
+        else if (delta > 8) setHeaderHidden(true);
+        else if (delta < -8) setHeaderHidden(false);
+        lastScrollYRef.current = currentY;
+        frame = 0;
+      });
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, []);
   useEffect(() => {
     if (!course || !user || progressLoading) return;
     const progressKey = `${user.id}-${course.id}`;
@@ -1081,7 +1208,7 @@ export function CoursePlayerPage() {
     : 0;
   return (
     <main className="coursePlayer fade">
-      <header className="playerHeader">
+      <header className={`playerHeader ${headerHidden ? "playerHeaderHidden" : ""}`}>
         <button
           className="playerCoursesBack"
           onClick={() => navigate("/courses")}
@@ -1267,7 +1394,6 @@ export function CoursePlayerPage() {
                       aria-current={tab.id === activeTabId ? "page" : undefined}
                       onClick={() => setActiveLessonTabId(tab.id)}
                     >
-                      <span>{index + 1}</span>
                       {tab.title || `Вкладка ${index + 1}`}
                     </button>
                   ))}
