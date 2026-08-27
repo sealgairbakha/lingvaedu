@@ -4,8 +4,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
 import { supabase } from "../../lib/supabase";
 
-type SavedRoom = { id: string; title: string; createdAt: string };
-type Participant = { id: string; name: string; isHost: boolean; cameraOn: boolean; micOn: boolean; sharing: boolean; handRaised: boolean };
+type SavedRoom = { id: string; title: string; createdAt: string; scheduledAt?: string; groupId?: string; groupName?: string };
+type RoomGroup = { id: string; name: string; memberIds: string[] };
+type Participant = { id: string; name: string; avatarUrl?: string; isHost: boolean; cameraOn: boolean; micOn: boolean; sharing: boolean; handRaised: boolean };
 type ChatMessage = { id: string; from: string; name: string; text: string; sentAt: string };
 type ReactionBurst = { id: string; from: string; name: string; emoji: "👏" | "❤️"; sentAt: string };
 type SignalPayload = {
@@ -37,20 +38,112 @@ function readRooms(): SavedRoom[] {
   catch { return []; }
 }
 
+function localDateTimeValue(date: Date) {
+  const offset = date.getTimezoneOffset() * 60_000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+}
+
+function defaultMeetingDateTime() {
+  const date = new Date(Date.now() + 60 * 60_000);
+  date.setMinutes(Math.floor(date.getMinutes() / 5) * 5, 0, 0);
+  return localDateTimeValue(date);
+}
+
+const calendarMonths = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
+
+function MeetingDatePicker({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const selected = new Date(value);
+  const [open, setOpen] = useState(false);
+  const [viewDate, setViewDate] = useState(() => new Date(selected.getFullYear(), selected.getMonth(), 1));
+  const firstDay = (new Date(viewDate.getFullYear(), viewDate.getMonth(), 1).getDay() + 6) % 7;
+  const daysCount = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
+  const previousDaysCount = new Date(viewDate.getFullYear(), viewDate.getMonth(), 0).getDate();
+  const cells = Array.from({ length: 42 }, (_, index) => {
+    const dayOffset = index - firstDay + 1;
+    return dayOffset < 1
+      ? new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, previousDaysCount + dayOffset)
+      : new Date(viewDate.getFullYear(), viewDate.getMonth(), dayOffset);
+  });
+  const setDay = (date: Date) => {
+    const next = new Date(selected);
+    next.setFullYear(date.getFullYear(), date.getMonth(), date.getDate());
+    onChange(localDateTimeValue(next));
+  };
+  const setTime = (hours: number, minutes: number) => {
+    const next = new Date(selected);
+    next.setHours(hours, minutes, 0, 0);
+    onChange(localDateTimeValue(next));
+  };
+  const changeTime = (part: "hours" | "minutes", amount: number) => {
+    const hours = selected.getHours();
+    const minutes = selected.getMinutes();
+    setTime(part === "hours" ? (hours + amount + 24) % 24 : hours, part === "minutes" ? (minutes + amount + 60) % 60 : minutes);
+  };
+
+  return <div className="meetingDatePicker">
+    <button type="button" className={`meetingDateTrigger${open ? " active" : ""}`} aria-expanded={open} onClick={() => setOpen((current) => !current)}><span><b>{selected.toLocaleDateString("ru-RU", { day: "2-digit", month: "long", year: "numeric" })}</b><small>{selected.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}</small></span><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3.5" y="5.5" width="17" height="15" rx="3"/><path d="M8 3v5M16 3v5M3.5 10h17"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 17h.01M12 17h.01"/></svg></i></button>
+    {open && <div className="meetingCalendar"><header><button type="button" aria-label="Предыдущий месяц" onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))}>‹</button><b>{calendarMonths[viewDate.getMonth()]} {viewDate.getFullYear()}</b><button type="button" aria-label="Следующий месяц" onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1))}>›</button></header><div className="meetingCalendarWeek">{["ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС"].map((day) => <span key={day}>{day}</span>)}</div><div className="meetingCalendarDays">{cells.map((date) => { const sameMonth = date.getMonth() === viewDate.getMonth(); const isSelected = date.toDateString() === selected.toDateString(); const isPast = date < new Date(new Date().setHours(0, 0, 0, 0)); return <button type="button" key={date.toISOString()} className={`${sameMonth ? "" : "other"}${isSelected ? " selected" : ""}`} disabled={isPast} onClick={() => setDay(date)}>{date.getDate()}</button>; })}</div><footer><div className="meetingTimePicker"><span>Время</span><div><section><button type="button" aria-label="Увеличить часы" onClick={() => changeTime("hours", 1)}>⌃</button><b>{String(selected.getHours()).padStart(2, "0")}</b><button type="button" aria-label="Уменьшить часы" onClick={() => changeTime("hours", -1)}>⌄</button></section><i>:</i><section><button type="button" aria-label="Увеличить минуты" onClick={() => changeTime("minutes", 5)}>⌃</button><b>{String(selected.getMinutes()).padStart(2, "0")}</b><button type="button" aria-label="Уменьшить минуты" onClick={() => changeTime("minutes", -5)}>⌄</button></section></div></div><button type="button" onClick={() => setOpen(false)}>Готово</button></footer></div>}
+  </div>;
+}
+
 async function copyText(value: string) {
   await navigator.clipboard.writeText(value);
 }
 
 export function VideoRoomsPage() {
   const navigate = useNavigate();
+  const { session } = useAuth();
   const [creating, setCreating] = useState(false);
   const [title, setTitle] = useState("Разговорная практика");
+  const [groups, setGroups] = useState<RoomGroup[]>([]);
+  const [groupId, setGroupId] = useState("");
+  const [scheduledAt, setScheduledAt] = useState(defaultMeetingDateTime);
+  const [groupsLoading, setGroupsLoading] = useState(false);
+  const [groupsError, setGroupsError] = useState("");
   const [rooms, setRooms] = useState<SavedRoom[]>(readRooms);
   const [copied, setCopied] = useState("");
 
+  useEffect(() => {
+    if (!creating || groups.length || !session?.access_token) return;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      setGroupsLoading(true);
+      setGroupsError("");
+      void fetch("/api/groups", { headers: { Authorization: `Bearer ${session.access_token}` }, signal: controller.signal })
+        .then(async (response) => {
+          const contentType = response.headers.get("content-type") || "";
+          if (!contentType.includes("application/json")) throw new Error("API групп недоступен локально. Запустите проект через vercel dev.");
+          const payload = await response.json() as { groups?: RoomGroup[]; error?: string };
+          if (!response.ok) throw new Error(payload.error || "Не удалось загрузить группы");
+          const nextGroups = payload.groups || [];
+          setGroups(nextGroups);
+          setGroupId((current) => current || nextGroups[0]?.id || "");
+        })
+        .catch((caught) => {
+          if (caught instanceof DOMException && caught.name === "AbortError") return;
+          setGroupsError(caught instanceof Error ? caught.message : "Не удалось загрузить группы");
+        })
+        .finally(() => setGroupsLoading(false));
+    }, 0);
+    return () => { window.clearTimeout(timer); controller.abort(); };
+  }, [creating, groups.length, session?.access_token]);
+
   const createRoom = () => {
+    const group = groups.find((item) => item.id === groupId);
+    if (!group || !scheduledAt) return;
     const id = crypto.randomUUID().replaceAll("-", "");
-    const room = { id, title: title.trim() || "Онлайн-занятие", createdAt: new Date().toISOString() };
+    const room = { id, title: title.trim() || "Онлайн-занятие", createdAt: new Date().toISOString(), scheduledAt: new Date(scheduledAt).toISOString(), groupId: group.id, groupName: group.name };
+    const next = [room, ...rooms].slice(0, 12);
+    localStorage.setItem(ROOMS_STORAGE, JSON.stringify(next));
+    sessionStorage.setItem(`lingvaedu-room-owner:${id}`, "1");
+    sessionStorage.setItem(`lingvaedu-room-title:${id}`, room.title);
+    setRooms(next);
+    navigate(`${ROOM_PREFIX}${id}`);
+  };
+
+  const createInstantRoom = () => {
+    const id = crypto.randomUUID().replaceAll("-", "");
+    const room: SavedRoom = { id, title: "Мгновенная встреча", createdAt: new Date().toISOString() };
     const next = [room, ...rooms].slice(0, 12);
     localStorage.setItem(ROOMS_STORAGE, JSON.stringify(next));
     sessionStorage.setItem(`lingvaedu-room-owner:${id}`, "1");
@@ -66,28 +159,30 @@ export function VideoRoomsPage() {
   };
 
   return <main className="content fade videoRoomsPage">
-    <div className="pageTitle"><div><span>УПРАВЛЕНИЕ</span><h1>Видеокомнаты</h1><p>Проводите живые занятия без сторонних сервисов.</p></div><button className="btn primary" onClick={() => setCreating(true)}>＋ Создать комнату</button></div>
+    <div className="pageTitle"><div><span>УПРАВЛЕНИЕ</span><h1>Видеокомнаты</h1><p>Проводите живые занятия без сторонних сервисов.</p></div><button className="btn primary" onClick={() => setCreating(true)}>＋ Запланировать</button></div>
     <section className="callHero">
-      <div><span className="liveDot">● ГОТОВО К ЗВОНКУ</span><h2>Начните встречу<br/>в один клик</h2><p>Видео и звук, демонстрация экрана с системным аудио и чат во время занятия.</p><button className="startCall" onClick={() => setCreating(true)}><span>◇</span>Начать мгновенный звонок</button></div>
-      <div className="callVisual"><div className="personVideo one"><span>АК</span><b>Ученик</b></div><div className="personVideo two"><span>ВЫ</span><b>Вы</b></div><div className="callControls"><i>●</i><i>▣</i><i>□</i><i className="hang">×</i></div></div>
+      <div><span className="liveDot">● ГОТОВО К ЗВОНКУ</span><h2>Начните встречу<br/>в один клик</h2><p>Видео и звук, демонстрация экрана с системным аудио и чат во время занятия.</p><button className="startCall instantCallButton" onClick={createInstantRoom}><span><svg viewBox="0 0 24 24" fill="none"><path d="M8 6h7a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3Z"/><path d="m18 10 3-2v8l-3-2"/></svg></span>Начать встречу</button></div>
+      <div className="callRoomPreview"><header><div className="meetingBrand">Lingva<span>Edu</span></div></header><div className="callPreviewStage"><div className="callPreviewTile student"><span>АК</span><b>Алексей</b><i><MeetingControlIcon kind="mic" off/></i></div><div className="callPreviewTile host"><span>ВЫ</span><b>Вы</b></div></div><footer><button><MeetingControlIcon kind="mic"/></button><button><MeetingControlIcon kind="camera"/></button><button><MeetingControlIcon kind="screen"/></button><button><MeetingControlIcon kind="chat"/></button><button className="hang"><MeetingControlIcon kind="hangup"/></button></footer></div>
     </section>
     <div className="videoRoomsHeading"><div><h2>Ваши комнаты</h2><p>Участники смогут войти только по скопированной ссылке.</p></div></div>
     <section className="roomList">
       {rooms.length ? rooms.map((room) => <article className="roomRow" key={room.id}>
-        <div className="roomDate"><b>{new Date(room.createdAt).getDate()}</b><span>{new Intl.DateTimeFormat("ru-RU", { month: "short" }).format(new Date(room.createdAt)).toUpperCase()}</span></div>
-        <div><h3>{room.title}</h3><p>Создана {new Date(room.createdAt).toLocaleString("ru-RU", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}</p></div>
+        <div className="roomDate"><b>{new Date(room.scheduledAt || room.createdAt).getDate()}</b><span>{new Intl.DateTimeFormat("ru-RU", { month: "short" }).format(new Date(room.scheduledAt || room.createdAt)).toUpperCase()}</span></div>
+        <div><h3>{room.title}</h3><p>{room.scheduledAt ? `${new Date(room.scheduledAt).toLocaleString("ru-RU", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}${room.groupName ? ` · ${room.groupName}` : ""}` : `Создана ${new Date(room.createdAt).toLocaleString("ru-RU", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}`}</p></div>
         <div className="roomActions"><button className="btn ghost" onClick={() => void copy(room)}>{copied === room.id ? "✓ Скопировано" : "Копировать ссылку"}</button><button className="btn primary" onClick={() => { sessionStorage.setItem(`lingvaedu-room-owner:${room.id}`, "1"); sessionStorage.setItem(`lingvaedu-room-title:${room.id}`, room.title); navigate(`${ROOM_PREFIX}${room.id}`); }}>Войти</button></div>
       </article>) : <div className="roomsEmpty"><span>◇</span><h3>Комнат пока нет</h3><p>Создайте первую комнату и отправьте ученикам ссылку-приглашение.</p></div>}
     </section>
-    {creating && <div className="modalLayer"><button className="modalScrim" onClick={() => setCreating(false)}/><section className="modal"><div className="modalHead"><h2>Новая видеокомната</h2><button onClick={() => setCreating(false)}>×</button></div><label>Название встречи<input value={title} maxLength={100} autoFocus onChange={(event) => setTitle(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") createRoom(); }}/></label><p className="roomPrivacyNote">Случайная защищённая ссылка будет создана автоматически. Без неё ученики не увидят комнату.</p><button className="btn primary full" onClick={createRoom}>Создать и войти</button></section></div>}
+    {creating && <div className="modalLayer"><button className="modalScrim" aria-label="Закрыть" onClick={() => setCreating(false)}/><form className="modal videoRoomModal" onSubmit={(event) => { event.preventDefault(); createRoom(); }}><div className="modalHead"><div><small>НОВАЯ ВСТРЕЧА</small><h2>Запланировать видеовстречу</h2></div><button type="button" aria-label="Закрыть" onClick={() => setCreating(false)}>×</button></div><label>Название встречи<input value={title} required maxLength={100} autoFocus onChange={(event) => setTitle(event.target.value)} placeholder="Например: Разговорная практика"/></label><label>Учебная группа<select value={groupId} required disabled={groupsLoading || !groups.length} onChange={(event) => setGroupId(event.target.value)}><option value="">{groupsLoading ? "Загружаем группы…" : groups.length ? "Выберите группу" : "Нет доступных групп"}</option>{groups.map((group) => <option key={group.id} value={group.id}>{group.name} · {group.memberIds.length} участников</option>)}</select></label><div className="meetingDateField"><span>Дата и время</span><MeetingDatePicker value={scheduledAt} onChange={setScheduledAt}/></div>{groupsError && <p className="videoRoomFormError">{groupsError}</p>}<p className="roomPrivacyNote">Встречу увидят участники выбранной группы. Защищённая ссылка будет создана автоматически.</p><button className="btn primary full" disabled={groupsLoading || !groupId || !scheduledAt}>Создать и войти</button></form></div>}
   </main>;
 }
 
-function MediaTile({ stream, label, muted = false, isScreen = false, cameraOn = true, micOn = true, mirrored = false, handRaised = false, tileClassName = "" }: { stream: MediaStream; label: string; muted?: boolean; isScreen?: boolean; cameraOn?: boolean; micOn?: boolean; mirrored?: boolean; handRaised?: boolean; tileClassName?: string }) {
+function MediaTile({ stream, label, avatarUrl = "", muted = false, isScreen = false, cameraOn = true, micOn = true, mirrored = false, handRaised = false, tileClassName = "" }: { stream: MediaStream; label: string; avatarUrl?: string; muted?: boolean; isScreen?: boolean; cameraOn?: boolean; micOn?: boolean; mirrored?: boolean; handRaised?: boolean; tileClassName?: string }) {
+  const { avatarUrl: profileAvatarUrl } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
   useEffect(() => { if (videoRef.current) videoRef.current.srcObject = stream; }, [stream]);
   const initials = label.replace(/ ·.*$/, "").split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
-  return <div className={`meetingTile ${tileClassName} ${isScreen ? "screenTile" : ""} ${mirrored && !isScreen ? "mirrored" : ""} ${!cameraOn && !isScreen ? "cameraOff" : ""}`}><video ref={videoRef} autoPlay playsInline muted={muted}/>{!cameraOn && !isScreen && <div className="meetingAvatar" aria-label="Камера выключена">{initials}</div>}<span className="meetingTileName">{label}</span>{handRaised && <i className="meetingHandRaised" title="Поднята рука">✋</i>}{!cameraOn && !isScreen && <i className="meetingCameraOff" title="Камера выключена"><MeetingControlIcon kind="camera" off/></i>}{!micOn && <i className="meetingMicOff" title="Микрофон выключен"><MeetingControlIcon kind="mic" off/></i>}</div>;
+  const resolvedAvatarUrl = avatarUrl || (muted ? profileAvatarUrl : "");
+  return <div className={`meetingTile ${tileClassName} ${isScreen ? "screenTile" : ""} ${mirrored && !isScreen ? "mirrored" : ""} ${!cameraOn && !isScreen ? "cameraOff" : ""}`}><video ref={videoRef} autoPlay playsInline muted={muted}/>{!cameraOn && !isScreen && <div className={`meetingAvatar${resolvedAvatarUrl ? " hasImage" : ""}`} aria-label="Камера выключена">{resolvedAvatarUrl ? <img src={resolvedAvatarUrl} alt={label}/> : initials}</div>}<span className="meetingTileName">{label}</span>{handRaised && <i className="meetingHandRaised" title="Поднята рука">✋</i>}{!cameraOn && !isScreen && <i className="meetingCameraOff" title="Камера выключена"><MeetingControlIcon kind="camera" off/></i>}{!micOn && <i className="meetingMicOff" title="Микрофон выключен"><MeetingControlIcon kind="mic" off/></i>}</div>;
 }
 
 function MeetingControlIcon({ kind, off = false }: { kind: "mic" | "camera" | "screen" | "chat" | "reaction" | "hangup"; off?: boolean }) {
@@ -147,11 +242,11 @@ function VideoGrid({ count, mode, children }: { count: number; mode: "grid" | "m
 export function VideoRoomPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { displayName, canEditCourses } = useAuth();
+  const { displayName, avatarUrl, canEditCourses, session } = useAuth();
   const roomId = location.pathname.split("/").filter(Boolean).at(-1) || "";
   const isHost = canEditCourses && sessionStorage.getItem(`lingvaedu-room-owner:${roomId}`) === "1";
   const peerId = useMemo(() => crypto.randomUUID(), []);
-  const [name, setName] = useState(isHost ? displayName : "");
+  const [name, setName] = useState("");
   const [roomTitle, setRoomTitle] = useState(sessionStorage.getItem(`lingvaedu-room-title:${roomId}`) || "Видеокомната LingvaEdu");
   const [joined, setJoined] = useState(false);
   const [joining, setJoining] = useState(false);
@@ -177,7 +272,7 @@ export function VideoRoomPage() {
   const peersRef = useRef(new Map<string, RTCPeerConnection>());
   const audioContextRef = useRef<AudioContext | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const participantDisplayName = name.trim() || (isHost ? displayName : "");
+  const participantDisplayName = session ? displayName : name.trim();
 
   const showReaction = (reaction: ReactionBurst) => {
     setReactionBursts((current) => [...current.slice(-5), reaction]);
@@ -192,6 +287,24 @@ export function VideoRoomPage() {
     localStreamRef.current = stream;
     setLocalStream(new MediaStream(stream.getTracks()));
   };
+
+  useEffect(() => {
+    let active = true;
+    const timer = window.setTimeout(() => {
+      void navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((media) => {
+        if (!active) { media.getTracks().forEach((track) => track.stop()); return; }
+        cameraStreamRef.current = media;
+        localStreamRef.current = media;
+        setLocalStream(new MediaStream(media.getTracks()));
+      }).catch(() => {
+        if (!active) return;
+        setCameraOn(false);
+        setMicOn(false);
+        setError("Не удалось открыть камеру или микрофон. Проверьте разрешения браузера.");
+      });
+    }, 0);
+    return () => { active = false; window.clearTimeout(timer); };
+  }, []);
 
   const closePeer = (id: string) => {
     peersRef.current.get(id)?.close();
@@ -267,15 +380,14 @@ export function VideoRoomPage() {
     if (!participantDisplayName || !supabase) return;
     setJoining(true); setError("");
     try {
-      let media = new MediaStream();
-      try {
-        media = await navigator.mediaDevices.getUserMedia({ video: cameraOn, audio: micOn });
-      } catch {
-        setError("Камера или микрофон недоступны. Вы вошли без них — разрешения можно проверить в настройках браузера.");
+      let media = cameraStreamRef.current;
+      if (!media) {
+        try { media = await navigator.mediaDevices.getUserMedia({ video: cameraOn, audio: micOn }); }
+        catch { media = new MediaStream(); setError("Камера или микрофон недоступны. Вы вошли без них — разрешения можно проверить в настройках браузера."); }
       }
+      media.getVideoTracks().forEach((track) => { track.enabled = cameraOn; });
+      media.getAudioTracks().forEach((track) => { track.enabled = micOn; });
       cameraStreamRef.current = media;
-      setCameraOn(media.getVideoTracks().length > 0);
-      setMicOn(media.getAudioTracks().length > 0);
       updateLocalStream(media);
       const channel = supabase.channel(`video-room:${roomId}`, { config: { broadcast: { self: false }, presence: { key: peerId } } });
       channelRef.current = channel;
@@ -286,14 +398,14 @@ export function VideoRoomPage() {
       channel.on("broadcast", { event: "room-info-request" }, () => { if (isHost) void sendBroadcast("room-info", { title: roomTitle }); });
       channel.on("presence", { event: "sync" }, () => {
         const state = channel.presenceState<Participant>();
-        const active = Object.values(state).flat().map((entry) => ({ id: entry.id, name: entry.name, isHost: entry.isHost, cameraOn: entry.cameraOn ?? true, micOn: entry.micOn ?? true, sharing: entry.sharing ?? false, handRaised: entry.handRaised ?? false }));
+        const active = Object.values(state).flat().map((entry) => ({ id: entry.id, name: entry.name, avatarUrl: entry.avatarUrl || "", isHost: entry.isHost, cameraOn: entry.cameraOn ?? true, micOn: entry.micOn ?? true, sharing: entry.sharing ?? false, handRaised: entry.handRaised ?? false }));
         setParticipants(active);
         const activeIds = new Set(active.map((item) => item.id));
         peersRef.current.forEach((_peer, id) => { if (!activeIds.has(id)) closePeer(id); });
         active.filter((item) => item.id !== peerId && peerId < item.id && !peersRef.current.has(item.id)).forEach((item) => void makeOffer(item.id));
       });
       await new Promise<void>((resolve, reject) => channel.subscribe(async (status) => {
-        if (status === "SUBSCRIBED") { await channel.track({ id: peerId, name: participantDisplayName, isHost, cameraOn: media.getVideoTracks().length > 0, micOn: media.getAudioTracks().length > 0, sharing: false, handRaised: false }); resolve(); }
+        if (status === "SUBSCRIBED") { await channel.track({ id: peerId, name: participantDisplayName, avatarUrl, isHost, cameraOn: media.getVideoTracks().length > 0, micOn: media.getAudioTracks().length > 0, sharing: false, handRaised: false }); resolve(); }
         else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") reject(new Error("Не удалось подключиться к комнате"));
       }));
       setJoined(true);
@@ -386,7 +498,7 @@ export function VideoRoomPage() {
     void channelRef.current?.track({ id: peerId, name: participantDisplayName, isHost, cameraOn, micOn, sharing, handRaised: next });
   };
 
-  if (!joined) return <main className="meetingLobby"><section><div className="meetingBrand">Lingva<span>Edu</span></div><span className="meetingLock">🔒 Вход только по приглашению</span><h1>{roomTitle}</h1><p>{isHost ? "Вы создаёте и ведёте эту встречу" : "Представьтесь перед входом в видеокомнату"}</p><label>Ваше имя<input value={name || (isHost ? displayName : "")} autoFocus={!isHost} maxLength={60} placeholder="Имя и фамилия" onChange={(event) => setName(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void join(); }}/></label><div className="lobbyToggles"><button className={micOn ? "on" : ""} onClick={() => setMicOn(!micOn)}>🎙 {micOn ? "Микрофон включён" : "Микрофон выключен"}</button><button className={cameraOn ? "on" : ""} onClick={() => setCameraOn(!cameraOn)}>▣ {cameraOn ? "Камера включена" : "Камера выключена"}</button></div>{error && <p className="meetingError">{error}</p>}<button className="joinMeeting" disabled={!participantDisplayName || joining} onClick={() => void join()}>{joining ? "Подключаем…" : "Войти в комнату"}</button><small>Камера и микрофон включатся только после вашего разрешения.</small></section></main>;
+  if (!joined) return <main className="meetingLobby"><section className="meetingLobbyCard"><div className="meetingLobbyHead"><div className="meetingBrand">Lingva<span>Edu</span></div><span className="meetingLock">🔒 Вход только по приглашению</span><h1>{roomTitle}</h1><p>{isHost ? "Вы создаёте и ведёте эту встречу" : `Вы входите как ${participantDisplayName || "гость"}`}</p></div><div className="lobbyPreview"><MediaTile stream={localStream} label={participantDisplayName || "Вы"} muted cameraOn={cameraOn} micOn={micOn} mirrored/><div className="lobbyMediaControls"><button className={micOn ? "" : "off"} aria-label={micOn ? "Выключить микрофон" : "Включить микрофон"} onClick={toggleMic}><MeetingControlIcon kind="mic" off={!micOn}/></button><button className={cameraOn ? "" : "off"} aria-label={cameraOn ? "Выключить камеру" : "Включить камеру"} onClick={toggleCamera}><MeetingControlIcon kind="camera" off={!cameraOn}/></button></div></div>{!session && <label className="lobbyNameField">Ваше имя<input value={name} autoFocus maxLength={60} placeholder="Имя и фамилия" onChange={(event) => setName(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void join(); }}/></label>}{error && <p className="meetingError">{error}</p>}<button className="joinMeeting" disabled={!participantDisplayName || joining} onClick={() => void join()}>{joining ? "Подключаем…" : "Войти в комнату"}</button><small>Перед входом проверьте изображение и звук.</small></section></main>;
 
   const participantName = (id: string) => participants.find((item) => item.id === id)?.name || "Участник";
   const tileRecords = [
