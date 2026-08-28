@@ -1,4 +1,4 @@
-import { createClient, type User } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 
 type UserRole = "admin" | "staff" | "student";
 
@@ -48,6 +48,41 @@ function ids(value: unknown) {
   return Array.isArray(value)
     ? [...new Set(value.map(String).filter(Boolean))]
     : [];
+}
+
+async function syncGroupEnrollments(service: SupabaseClient<any>) {
+  const [members, assignments, enrollments] = await Promise.all([
+    service.from("learning_group_members").select("group_id,user_id"),
+    service.from("learning_group_courses").select("group_id,course_id"),
+    service.from("course_enrollments").select("user_id,course_id"),
+  ]);
+  const error = members.error || assignments.error || enrollments.error;
+  if (error) return error;
+
+  const usersByGroup = new Map<string, string[]>();
+  for (const row of members.data || []) {
+    usersByGroup.set(row.group_id, [...(usersByGroup.get(row.group_id) || []), row.user_id]);
+  }
+  const desired = new Set<string>();
+  for (const row of assignments.data || []) {
+    for (const userId of usersByGroup.get(row.group_id) || []) desired.add(`${userId}:${row.course_id}`);
+  }
+  const existing = new Set((enrollments.data || []).map((row) => `${row.user_id}:${row.course_id}`));
+  const missing = [...desired].filter((key) => !existing.has(key)).map((key) => {
+    const [user_id, course_id] = key.split(":");
+    return { user_id, course_id };
+  });
+  const obsolete = (enrollments.data || []).filter((row) => !desired.has(`${row.user_id}:${row.course_id}`));
+  for (const row of obsolete) {
+    const result = await service.from("course_enrollments").delete()
+      .eq("user_id", row.user_id).eq("course_id", row.course_id);
+    if (result.error) return result.error;
+  }
+  if (missing.length) {
+    const result = await service.from("course_enrollments").upsert(missing, { onConflict: "course_id,user_id" });
+    if (result.error) return result.error;
+  }
+  return null;
 }
 
 export default {
@@ -159,19 +194,19 @@ export default {
       if (courseIds.length) writes.push(service.from("learning_group_courses").insert(
         courseIds.map((courseId) => ({ group_id: groupId, course_id: courseId })),
       ));
-      if (memberIds.length && courseIds.length) writes.push(service.from("course_enrollments").upsert(
-        memberIds.flatMap((userId) => courseIds.map((courseId) => ({ user_id: userId, course_id: courseId }))),
-        { onConflict: "course_id,user_id", ignoreDuplicates: true },
-      ));
       const results = await Promise.all(writes);
       const writeError = results.find((result) => result.error)?.error;
       if (writeError) return json({ error: writeError.message }, 400);
+      const syncError = await syncGroupEnrollments(service);
+      if (syncError) return json({ error: syncError.message }, 400);
       return json({ ok: true });
     }
 
     if (request.method === "DELETE") {
       const result = await service.from("learning_groups").delete().eq("id", groupId);
       if (result.error) return json({ error: result.error.message }, 400);
+      const syncError = await syncGroupEnrollments(service);
+      if (syncError) return json({ error: syncError.message }, 400);
       return json({ ok: true });
     }
 
