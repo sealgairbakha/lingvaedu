@@ -12,8 +12,29 @@ export type BlockKind =
   | "match"
   | "true-false"
   | "assignment"
+  | "game-memory"
+  | "game-build-word"
+  | "game-listen-choice"
   | "html"
   | "file";
+
+export type MemoryGameConfig = {
+  type: "memory";
+  pairs: { id: string; left: string; right: string; leftImage?: string; rightImage?: string }[];
+};
+
+export type BuildWordGameConfig = {
+  type: "build-word";
+  items: { id: string; word: string; clue?: string; image?: string }[];
+};
+
+export type ListenChoiceGameConfig = {
+  type: "listen-choice";
+  language: string;
+  items: { id: string; phrase: string; audio?: string; answer: string; options: string[] }[];
+};
+
+export type GameConfig = MemoryGameConfig | BuildWordGameConfig | ListenChoiceGameConfig;
 
 export type LessonBlock = {
   id: string;
@@ -28,6 +49,7 @@ export type LessonBlock = {
   images?: string[];
   imageCaptions?: string[];
   imageLayout?: "grid" | "mosaic" | "filmstrip";
+  game?: GameConfig;
   textStyle?: {
     fontFamily?: "onest" | "serif" | "rounded" | "mono";
     fontSize?: 14 | 16 | 18 | 20 | 24;

@@ -5,6 +5,7 @@ import { useAuth } from "../../auth/AuthProvider";
 import { useCourses } from "./CourseProvider";
 import { BlockIcon } from "./BlockIcon";
 import { CourseAssignmentBlock } from "./CourseAssignmentBlock";
+import { GameBlockView } from "./GameBlockView";
 import type { LessonBlock } from "./types";
 import { sanitizeRichText } from "./richText";
 
@@ -23,6 +24,9 @@ const taskBlockKinds = new Set<LessonBlock["kind"]>([
   "true-false",
   "quiz",
   "assignment",
+  "game-memory",
+  "game-build-word",
+  "game-listen-choice",
 ]);
 
 type LessonRun = {
@@ -278,6 +282,8 @@ export function LessonBlockView({
       window.removeEventListener("keydown", closeOnEscape);
     };
   }, [blockImages.length, openedImage]);
+  if (block.kind === "game-memory" || block.kind === "game-build-word" || block.kind === "game-listen-choice")
+    return <GameBlockView block={block} onResult={(passed) => onTaskResult?.(block.id, passed)} />;
   if (block.kind === "assignment")
     return (
       <CourseAssignmentBlock

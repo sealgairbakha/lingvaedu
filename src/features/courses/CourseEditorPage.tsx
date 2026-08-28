@@ -14,6 +14,7 @@ import { LessonBlockView } from "./CoursePlayerPage";
 import { BlockIcon } from "./BlockIcon";
 import { RichTextEditor } from "./RichTextEditor";
 import { TaskBlockEditor } from "./TaskBlockEditor";
+import { GameBlockEditor } from "./GameBlockEditor";
 import {
   uid,
   type BlockKind,
@@ -48,7 +49,7 @@ const palette: {
   kind: BlockKind;
   title: string;
   hint: string;
-  group: "Контент" | "Медиа" | "Задания";
+  group: "Контент" | "Медиа" | "Задания" | "Игры";
 }[] = [
   {
     kind: "text",
@@ -128,6 +129,24 @@ const palette: {
     hint: "Текст, файл и ответ преподавателя",
     group: "Задания",
   },
+  {
+    kind: "game-memory",
+    title: "Найди пару",
+    hint: "Открывать карточки и находить совпадения",
+    group: "Игры",
+  },
+  {
+    kind: "game-build-word",
+    title: "Собери слово",
+    hint: "Составлять слова из перемешанных букв",
+    group: "Игры",
+  },
+  {
+    kind: "game-listen-choice",
+    title: "Послушай и выбери",
+    hint: "Слушать слово и выбирать правильный ответ",
+    group: "Игры",
+  },
 ];
 
 const taskKinds: BlockKind[] = [
@@ -139,6 +158,8 @@ const taskKinds: BlockKind[] = [
   "true-false",
 ];
 const isTaskKind = (kind: BlockKind) => taskKinds.includes(kind);
+const gameKinds: BlockKind[] = ["game-memory", "game-build-word", "game-listen-choice"];
+const isGameKind = (kind: BlockKind) => gameKinds.includes(kind);
 
 function UploadIcon() {
   return (
@@ -285,12 +306,19 @@ const taskTemplates: Partial<Record<BlockKind, string>> = {
     "The lesson has already started | true\nEnglish is written from right to left | false",
 };
 
-const makeBlock = (kind: BlockKind): LessonBlock => ({
-  id: uid(),
-  kind,
-  title: palette.find((x) => x.kind === kind)!.title,
-  content: taskTemplates[kind] || "",
-});
+const makeBlock = (kind: BlockKind): LessonBlock => {
+  const base: LessonBlock = { id: uid(), kind, title: palette.find((x) => x.kind === kind)!.title, content: taskTemplates[kind] || "" };
+  if (kind === "game-memory") return { ...base, game: { type: "memory", pairs: [
+    { id: uid(), left: "apple", right: "яблоко" }, { id: uid(), left: "dog", right: "собака" },
+  ] } };
+  if (kind === "game-build-word") return { ...base, game: { type: "build-word", items: [
+    { id: uid(), word: "apple", clue: "яблоко" },
+  ] } };
+  if (kind === "game-listen-choice") return { ...base, game: { type: "listen-choice", language: "en-US", items: [
+    { id: uid(), phrase: "apple", answer: "яблоко", options: ["яблоко", "груша", "банан"] },
+  ] } };
+  return base;
+};
 const getBlockImages = (block: LessonBlock) =>
   block.images?.length
     ? block.images
@@ -1776,7 +1804,7 @@ export function CourseEditorPage() {
                 </article>
                 {selected === b.id && (
                   <div
-                    className={`blockInspector inlineBlockInspector ${isTaskKind(b.kind) ? "taskBlockInspector" : ""} ${closingEditor === b.id ? "closing" : ""}`}
+                    className={`blockInspector inlineBlockInspector ${isTaskKind(b.kind) ? "taskBlockInspector" : ""} ${isGameKind(b.kind) ? "gameBlockInspector" : ""} ${closingEditor === b.id ? "closing" : ""}`}
                     onClick={(event) => event.stopPropagation()}
                   >
                     <div className="inlineBlockInspectorHead">
@@ -1838,6 +1866,11 @@ export function CourseEditorPage() {
                       <TaskBlockEditor
                         block={b}
                         onChange={(content) => updateBlock(b.id, { content })}
+                      />
+                    ) : isGameKind(b.kind) ? (
+                      <GameBlockEditor
+                        block={b}
+                        onChange={(game) => updateBlock(b.id, { game })}
                       />
                     ) : b.kind === "text" ? (
                       <RichTextEditor

@@ -12,6 +12,7 @@ const taskKinds: BlockKind[] = [
 export function BlockIcon({ kind }: { kind: BlockKind }) {
   const normalized = kind === "media" ? "video" : kind;
   const isTask = taskKinds.includes(normalized);
+  const isGame = normalized.startsWith("game-");
 
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -40,6 +41,12 @@ export function BlockIcon({ kind }: { kind: BlockKind }) {
         <>
           <path d="m5 12 4 4L19 6" />
           <path d="M5 5h5M14 19h5" />
+        </>
+      )}
+      {isGame && (
+        <>
+          <path d="M7.5 8.5h9a4.5 4.5 0 0 1 4.2 6.1l-1.1 3a2.2 2.2 0 0 1-3.7.8L14.5 17h-5l-1.4 1.4a2.2 2.2 0 0 1-3.7-.8l-1.1-3a4.5 4.5 0 0 1 4.2-6.1Z" />
+          <path d="M8 11.5v4M6 13.5h4M16.5 12.5h.01M18.5 14.5h.01" />
         </>
       )}
       {normalized === "assignment" && (
