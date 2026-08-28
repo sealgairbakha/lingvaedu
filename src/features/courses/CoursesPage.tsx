@@ -20,9 +20,11 @@ function getCourseProgress(course: Course, progress: CourseLessonProgress[]) {
 }
 
 function CourseCover({ course }: { course: Course }) {
+  const showNewRibbon = course.showNewRibbon ?? course.code === "NEW";
   return <span className={`courseCoverArt ${course.color} cover-${course.coverStyle || "orbit"} ${course.coverImage ? "has-image" : ""}`} style={course.coverImage ? { "--cover-image": `url(${course.coverImage})` } as CSSProperties : undefined} aria-hidden="true">
     {!course.coverImage && <><i /><i /><i /></>}
-    <small>{course.language.toUpperCase()}</small><b>{course.code || course.title.slice(0, 2).toUpperCase()}</b>
+    {showNewRibbon && <span className="courseNewRibbon">NEW</span>}
+    <small>{course.language.toUpperCase()}</small>
   </span>;
 }
 

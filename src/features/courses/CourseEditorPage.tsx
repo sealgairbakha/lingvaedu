@@ -2235,6 +2235,18 @@ export function CourseEditorPage() {
                 <option value="archived">Архив</option>
               </select>
             </label>
+            <label className="courseNewRibbonSetting">
+              <span>Лента NEW</span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={course.showNewRibbon ?? course.code === "NEW"}
+                className={(course.showNewRibbon ?? course.code === "NEW") ? "active" : ""}
+                onClick={() => mutate((value) => ({ ...value, showNewRibbon: !(value.showNewRibbon ?? value.code === "NEW") }))}
+              >
+                <i /><b>{(course.showNewRibbon ?? course.code === "NEW") ? "Показывать" : "Скрыта"}</b>
+              </button>
+            </label>
             <div className="courseCoverDesigner">
               <label>
                 <span>Стиль обложки</span>
@@ -2262,8 +2274,8 @@ export function CourseEditorPage() {
                   style={course.coverImage ? { "--cover-image": `url(${course.coverImage})` } as CSSProperties : undefined}
                 >
                   {!course.coverImage && <><i /><i /><i /></>}
+                  {(course.showNewRibbon ?? course.code === "NEW") && <span className="courseNewRibbon">NEW</span>}
                   <small>{course.language.toUpperCase()}</small>
-                  <b>{course.code || course.title.slice(0, 2).toUpperCase()}</b>
                 </div>
                 <div className="courseStylePreviewBody">
                   <em

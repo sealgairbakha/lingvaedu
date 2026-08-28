@@ -1288,6 +1288,7 @@ html[data-theme="dark"] .taskBlockInspector .taskRowNumber {
     grid-template-columns: 320px minmax(0, 1fr);
     gap: 8px;
     padding: 16px;
+    transition: padding-top .34s cubic-bezier(.22, 1, .36, 1);
   }
 
   .coursePlayer .playerTree {
@@ -1304,6 +1305,18 @@ html[data-theme="dark"] .taskBlockInspector .taskRowNumber {
     border: 1px solid #e1e5ed;
     border-radius: 18px;
     box-shadow: 0 8px 26px rgba(24, 35, 58, 0.07);
+    transition: top .34s cubic-bezier(.22, 1, .36, 1),height .34s cubic-bezier(.22, 1, .36, 1),max-height .34s cubic-bezier(.22, 1, .36, 1),border-radius .34s ease;
+  }
+
+  .coursePlayer.courseHeaderHidden .playerLayout {
+    padding-top: 0;
+  }
+
+  .coursePlayer.courseHeaderHidden .playerTree {
+    top: 68px;
+    height: calc(100vh - 84px);
+    max-height: calc(100vh - 84px);
+    border-radius: 0 0 18px 18px;
   }
 
   .coursePlayer .playerTreeContent {
@@ -1963,6 +1976,11 @@ html[data-theme="dark"] .dashboardReal .ring::before {
 .gapSentenceList button {
   color: #8a94a6;
   font-size:var(--font-size-ui);
+}
+
+.fillBlankLearning .gapSentenceList input {
+  min-width: 88px;
+  max-width: 168px;
 }
 
 .gapSentenceList .correct,
@@ -2915,6 +2933,32 @@ html[data-theme="dark"] .matchGrid button.wrong {
 .calendarPage .pageTitle{margin-bottom:24px}.calendarError{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:-6px 0 16px;padding:13px 16px;border:1px solid #ffc7ca;border-radius:12px;background:#fff0f1;color:#c63d45;font-weight:700}.calendarError button{border:0;background:none;color:inherit;font-weight:800}.calendar{text-transform:none;overflow:hidden}.calendarHead h2{text-transform:capitalize;min-width:150px}.calendarHead>button{transition:background .2s ease,border-color .2s ease,transform .2s ease}.calendarHead>button:hover{border-color:#b7abff;background:#f4f1ff;transform:translateY(-1px)}.calendarGrid.weekView>div{height:430px}.calendarGrid>div{min-width:0;cursor:pointer;transition:background .18s ease,box-shadow .18s ease}.calendarGrid>div:hover{background:#faf9ff}.calendarGrid>div.selected{box-shadow:inset 0 0 0 2px #7560f6;background:#faf9ff}.calendarGrid .other{opacity:.55}.calendarGrid .calEvent{width:100%;border:0;text-align:left;color:inherit;font-weight:750;line-height:1.25;cursor:pointer;transition:transform .18s ease,filter .18s ease}.calendarGrid .calEvent:hover{transform:translateX(2px);filter:saturate(1.15)}.calEvent time{font-variant-numeric:tabular-nums}.moreEvents{display:block;margin-top:4px;color:#777f90;font-size:10px}.agenda{overflow:hidden}.agendaTimeline{min-height:210px;max-height:520px;overflow:auto;padding:6px 18px 10px}.agendaEvent{display:grid;width:100%;grid-template-columns:66px 1fr;gap:12px;align-items:center;border:0;border-bottom:1px solid var(--line);background:transparent;padding:14px 0;text-align:left}.agendaEvent:hover>span:last-child b{color:var(--purple)}.agendaEventTime{display:grid;place-items:center;border-radius:10px;padding:8px 6px}.agendaEventTime b{font-size:13px}.agendaEventTime small{margin-top:2px;font-size:9px;text-transform:uppercase}.agendaEvent>span:last-child b,.agendaEvent>span:last-child small{display:block}.agendaEvent>span:last-child b{font-size:13px;transition:color .18s}.agendaEvent>span:last-child small{color:var(--muted);font-size:11px;margin-top:5px}.agendaEmpty{min-height:210px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--muted)}.agendaEmpty>span{display:grid;place-items:center;width:45px;height:45px;border-radius:14px;background:#f0edff;color:var(--purple);font-size:20px}.agendaEmpty>b{color:var(--ink);margin-top:12px}.agendaEmpty>p{max-width:220px;font-size:12px;line-height:1.5}.calendarForm textarea{display:block;width:100%;min-height:88px;margin-top:6px;padding:11px;border:1px solid var(--line);border-radius:8px;resize:vertical;background:var(--card);color:var(--ink);font:inherit}.calendarColors{display:flex;align-items:center;gap:10px;margin:2px 0 18px;padding:0;border:0}.calendarColors legend{margin-bottom:9px;font-size:12px;font-weight:800}.calendarColors label{margin:0}.calendarColors input{position:absolute;opacity:0;pointer-events:none}.calendarColors i{display:block;width:30px;height:30px;border-radius:9px;border:3px solid var(--card);box-shadow:0 0 0 1px var(--line);transition:transform .18s ease,box-shadow .18s ease}.calendarColors input:checked+i{transform:scale(1.1);box-shadow:0 0 0 2px var(--purple)}.calendarFormActions{display:flex;justify-content:flex-end;gap:10px}.btn.danger{margin-right:auto;background:#fff0f1;color:#d7444c}.calendarFormActions .btn.primary{min-width:160px}
 
 html[data-theme="dark"] .calendarError{background:#321d25;border-color:#71313b;color:#ff9299}html[data-theme="dark"] .calendarHead>button:hover,html[data-theme="dark"] .calendarGrid>div:hover,html[data-theme="dark"] .calendarGrid>div.selected{background:#1d2639}html[data-theme="dark"] .agendaEventTime.violet,html[data-theme="dark"] .agendaEventTime.blue,html[data-theme="dark"] .agendaEventTime.green,html[data-theme="dark"] .agendaEventTime.orange,html[data-theme="dark"] .agendaEventTime.pink{color:#fff}html[data-theme="dark"] .calendarForm textarea{border-color:#344057}
+html[data-theme="dark"] .calendarHead>button{border-color:var(--line);background:#20293b;color:#d7ddeb}
+html[data-theme="dark"] .calendarHead>button:disabled{background:#171e2c;color:#667287;opacity:.72}
+html[data-theme="dark"] .calendarHead>button:hover:not(:disabled){border-color:#7161c9;background:#292442;color:#d8d0ff}
+html[data-theme="dark"] .calendarHead>div{border:1px solid #30394a;background:#111825}
+html[data-theme="dark"] .calendarHead>div button{color:#8f9aae}
+html[data-theme="dark"] .calendarHead>div button.active{background:#292442;color:#d5ccff;box-shadow:inset 0 0 0 1px #514680}
+html[data-theme="dark"] .weekdays{background:#141c2b}
+html[data-theme="dark"] .calendarGrid>div{background:#171f30;color:#dce2ee}
+html[data-theme="dark"] .calendarGrid .other{background:#111824;color:#667286;opacity:1}
+html[data-theme="dark"] .calendarGrid>div:hover{background:#202a3e}
+html[data-theme="dark"] .calendarGrid>div.selected{background:#242d43;box-shadow:inset 0 0 0 2px #8068f4}
+html[data-theme="dark"] .agendaEmpty>span{background:#292442;color:#c9bdff}
+html[data-theme="dark"] .agenda .btn.ghost{border-color:var(--line);background:#111825;color:#d6dce8}
+html[data-theme="dark"] .agenda .btn.ghost:hover{border-color:#6455b3;background:#24203b;color:#d4caff}
+html[data-theme="dark"] .roleList>button{border-top-color:var(--line);background:#171e2c;color:#dbe1ec}
+html[data-theme="dark"] .roleList>button:hover{background:#20293a}
+html[data-theme="dark"] .roleList>button.active{background:#292442;color:#e5e0ff;box-shadow:inset 3px 0 #8068f4}
+html[data-theme="dark"] .roleList>button small{color:#8f9aaf}
+html[data-theme="dark"] .roleList .violet{background:#30294d!important;color:#b9a9ff!important}
+html[data-theme="dark"] .roleList .green{background:#18362e!important;color:#78d5b1!important}
+html[data-theme="dark"] .roleList .pink{background:#3b2330!important;color:#ef92b4!important}
+html[data-theme="dark"] .permissionSection label i{background:#394356}
+html[data-theme="dark"] .permissionSection label i:after{background:#aeb8c8;box-shadow:0 1px 4px rgba(0,0,0,.38)}
+html[data-theme="dark"] .permissionSection input:checked+i{background:#6950e8}
+html[data-theme="dark"] .permissionSection input:checked+i:after{background:#fff}
+html[data-theme="dark"] .permissions .permissionSave.btn.ghost,html[data-theme="dark"] .permissionHead .btn.ghost{border-color:var(--line);background:#111825;color:#d6dce8}
 
 @media(max-width:1100px){.calendarLayout{grid-template-columns:1fr}.calendarLayout .agenda{display:block}.agendaTimeline{max-height:360px}}
 @media(max-width:700px){.calendarPage .pageTitle .titleActions{width:100%}.calendarPage .pageTitle .btn{width:100%}.calendarHead{height:auto;min-width:0!important;flex-wrap:wrap;padding:12px}.calendarHead h2{flex:1;min-width:120px}.calendarHead>div{order:2;width:100%;display:grid;grid-template-columns:1fr 1fr}.calendarHead>div button{font-size:11px}.calendar .weekdays,.calendar .calendarGrid{min-width:0}.weekdays span{padding:9px 2px;font-size:9px}.calendarGrid>div{height:88px;padding:5px 3px}.calendarGrid.weekView>div{height:300px}.calendarGrid .calEvent{padding:4px;font-size:0}.calendarGrid .calEvent time{font-size:9px}.calendarGrid .calEvent time:after{content:" ·"}.moreEvents{font-size:8px}.modalGrid{grid-template-columns:1fr}.calendarFormActions{flex-wrap:wrap}.calendarFormActions .btn{flex:1;min-width:120px}}
@@ -3490,6 +3534,7 @@ html:not([data-theme="dark"]) .coursePlayer {
 .courseCoverArt small { position:absolute;left:20px;bottom:18px;z-index:2;font-size:9px;font-weight:900;letter-spacing:1.2px; }.courseCoverArt b { position:relative;z-index:2;display:grid;place-items:center;width:48px;height:48px;border-radius:14px;background:#ffffffdf;color:#28314a;font-size:13px;box-shadow:0 8px 18px #20284a22; }
 .courseCoverArt>i { position:absolute;display:block;border:2px solid #fff4;border-radius:50%; }.courseCoverArt>i:nth-child(1){width:190px;height:190px;right:-45px;top:-72px}.courseCoverArt>i:nth-child(2){width:110px;height:110px;right:10px;top:-25px}.courseCoverArt>i:nth-child(3){width:16px;height:16px;right:35px;bottom:28px;background:var(--lime);border:0}
 .courseCoverArt.cover-grid { background-image:linear-gradient(#fff2 1px,transparent 1px),linear-gradient(90deg,#fff2 1px,transparent 1px),linear-gradient(135deg,#6953e8,#9b88ff);background-size:28px 28px; }.courseCoverArt.cover-waves>i { width:220px!important;height:80px!important;right:-30px!important;top:auto!important;bottom:-38px!important;border-radius:50%!important; }.courseCoverArt.cover-waves>i:nth-child(2){bottom:-18px!important;opacity:.6}.courseCoverArt.cover-waves>i:nth-child(3){display:none}
+.courseNewRibbon { position:absolute;z-index:4;top:13px;right:-31px;display:block;width:112px;padding:7px 0;background:linear-gradient(90deg,#b7ec38,#d4fb70);color:#17220c;font-size:10px;font-weight:950;letter-spacing:1.4px;text-align:center;box-shadow:0 5px 16px rgba(23,34,12,.18);transform:rotate(45deg);transform-origin:center; }
 .courseCard>.courseCoverButton .courseCoverArt { min-height:125px; }
 .courseSkeletonGrid { display:grid;grid-template-columns:repeat(3,1fr);gap:18px; }.courseSkeletonGrid i { min-height:310px;border-radius:20px;background:linear-gradient(90deg,#eceef3 25%,#f7f8fb 45%,#eceef3 65%);background-size:240% 100%;animation:courseSkeleton 1.4s infinite; }@keyframes courseSkeleton{to{background-position:-240% 0}}
 .playerSkeletonHeader{height:74px;background:#131b2e}.playerSkeletonLayout{display:grid;grid-template-columns:300px minmax(0,760px);justify-content:center;gap:44px;padding:34px}.playerSkeletonLayout aside,.playerSkeletonLayout article{display:grid;align-content:start;gap:14px}.playerSkeletonLayout i{display:block;height:58px;border-radius:13px;background:linear-gradient(90deg,#e9ebf0 25%,#f7f8fb 45%,#e9ebf0 65%);background-size:240% 100%;animation:courseSkeleton 1.4s infinite}.playerSkeletonLayout article i:first-child{height:110px}.playerSkeletonLayout article i:not(:first-child){height:180px}
@@ -3515,6 +3560,20 @@ html:not([data-theme="dark"]) .coursePlayer {
 .palettePanelEdgeToggle.collapsed svg { transform:rotate(180deg); }
 @media(min-width:1101px){.courseEditor .editorLayout.treeCollapsed{grid-template-columns:0 0 minmax(420px,1fr) 8px var(--palette-width,360px)}.courseEditor .editorLayout.paletteCollapsed{grid-template-columns:var(--tree-width,250px) 8px minmax(420px,1fr) 0 0}.courseEditor .editorLayout.treeCollapsed.paletteCollapsed{grid-template-columns:0 0 minmax(420px,1fr) 0 0}.courseEditor .lessonTree,.courseEditor .blockPalette,.courseEditor .paletteResizer{transition:opacity .24s ease,transform .42s cubic-bezier(.2,.8,.2,1),visibility 0s}.courseEditor .editorLayout.treeCollapsed .lessonTree,.courseEditor .editorLayout.treeCollapsed .treeResizer,.courseEditor .editorLayout.paletteCollapsed .blockPalette,.courseEditor .editorLayout.paletteCollapsed>.paletteResizer:not(.treeResizer){visibility:hidden;overflow:hidden;opacity:0;pointer-events:none;transition:opacity .2s ease,transform .42s cubic-bezier(.2,.8,.2,1),visibility 0s .42s}.courseEditor .editorLayout.treeCollapsed .lessonTree{transform:translateX(-18px)}.courseEditor .editorLayout.paletteCollapsed .blockPalette{transform:translateX(18px)}}
 .saveState i.error { background:#df515a; }
+.peopleSummary>div>span svg { width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round; }
+.courseNewRibbonSetting>button { display:flex;align-items:center;gap:9px;width:100%;height:46px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--muted);text-align:left; }
+.courseNewRibbonSetting>button>i { position:relative;width:34px;height:20px;flex:0 0 34px;border-radius:99px;background:#cfd4dd;transition:background .2s; }
+.courseNewRibbonSetting>button>i:after { content:"";position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(20,28,45,.25);transition:transform .2s; }
+.courseNewRibbonSetting>button.active { color:var(--ink);border-color:color-mix(in srgb,var(--purple) 36%,var(--line)); }
+.courseNewRibbonSetting>button.active>i { background:var(--purple); }
+.courseNewRibbonSetting>button.active>i:after { transform:translateX(14px); }
+.courseNewRibbonSetting>button>b { font-size:13px; }
+html[data-theme="dark"] .openCourseBtn { border:1px solid var(--line);background:#20283a;color:#c9bcff;box-shadow:none;transition:border-color .25s ease,background-color .25s ease,color .25s ease,box-shadow .25s ease,transform .2s ease; }
+html[data-theme="dark"] .openCourseBtn:hover,html[data-theme="dark"] .openCourseBtn:focus-visible,html[data-theme="dark"] .openCourseBtn:active { border-color:#8d78ff;background:#3a3064;color:#fff;box-shadow:0 0 0 2px rgba(128,100,242,.16),0 7px 18px rgba(38,27,88,.28); }
+html[data-theme="dark"] .openCourseBtn:active { transform:translateY(0) scale(.985); }
+html[data-theme="dark"] .courseStats { border-bottom-color:transparent; }
+.courseActions { border-top-color:var(--line); }
+html[data-theme="dark"] .courseNewRibbonSetting>button { background:#111825;border-color:var(--line); }
 .lessonSettingsSidebar .lessonGoalField { display:block!important;height:auto!important;min-height:118px;padding:12px!important; }
 .lessonSettingsSidebar .lessonGoalField .lessonSettingCopy { display:block!important;margin-bottom:8px; }
 .lessonSettingsSidebar .lessonGoalField textarea { display:block;width:100%;min-height:72px;padding:10px 11px;border:1px solid var(--line);border-radius:9px;resize:vertical;background:var(--card);color:var(--ink);font:inherit;line-height:1.4;outline:0; }
@@ -3589,8 +3648,8 @@ html[data-theme="dark"] .assignmentLearning{background:linear-gradient(180deg,#1
 html[data-theme="dark"] .coursePlayer .imageLearning .lessonImageButton { background:#111825;border-color:var(--line);box-shadow:none; }
 
 /* Auto-hide the course context bar while reading down the page. */
-.coursePlayer .playerHeader { transition:opacity .22s ease,transform .34s cubic-bezier(.22,1,.36,1);will-change:transform,opacity; }
-.coursePlayer .playerHeader.playerHeaderHidden { opacity:0;transform:translateY(-110%);pointer-events:none; }
+.coursePlayer .playerHeader { box-sizing:border-box;max-height:72px;overflow:clip;transition:height .34s cubic-bezier(.22,1,.36,1),max-height .34s cubic-bezier(.22,1,.36,1),padding-block .34s cubic-bezier(.22,1,.36,1),border-width .26s ease,box-shadow .26s ease,opacity .22s ease,transform .34s cubic-bezier(.22,1,.36,1);will-change:height,max-height,transform,opacity; }
+.coursePlayer .playerHeader.playerHeaderHidden { height:0;max-height:0;padding-block:0;border-bottom-width:0;box-shadow:none;opacity:0;transform:translateY(-110%);pointer-events:none; }
 html[data-theme="dark"] .lessonAudioPlayer{border-color:#364158;background:linear-gradient(135deg,#211c37,#171e2c 58%,#182238)}html[data-theme="dark"] .lessonAudioInfo small,html[data-theme="dark"] .lessonAudioInfo time{color:#9aa5b8}html[data-theme="dark"] .lessonAudioControls button:hover{background:#292442;color:#c9bfff}
 @media(max-width:620px){.lessonAudioPlayer{grid-template-columns:48px minmax(0,1fr);gap:12px;padding:13px}.lessonAudioPlay{width:46px;height:46px;border-radius:14px}.lessonAudioControls{grid-column:2;justify-self:end;margin-top:-4px}.lessonAudioInfo{align-items:start;flex-direction:column;gap:4px}.lessonAudioInfo time{font-size:9px}}
 

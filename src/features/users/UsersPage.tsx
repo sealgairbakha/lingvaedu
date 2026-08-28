@@ -58,6 +58,15 @@ function csvCell(value: string | number) {
   return `"${String(value).replaceAll('"', '""')}"`;
 }
 
+function SummaryIcon({ kind }: { kind: "users" | "activity" | "staff" | "groups" }) {
+  return <svg viewBox="0 0 24 24" aria-hidden="true">
+    {kind === "users" && <><path d="M8.5 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" /><path d="M2.8 20a5.7 5.7 0 0 1 11.4 0M16 10a3 3 0 1 0 0-6M16.5 14a5 5 0 0 1 4.7 5" /></>}
+    {kind === "activity" && <><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z" /><path d="M12 7v5l3 2" /></>}
+    {kind === "staff" && <><rect x="4" y="6" width="16" height="14" rx="3" /><path d="M9 6V4h6v2M4 11h16M10 11v2h4v-2" /></>}
+    {kind === "groups" && <><path d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM16 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" /><path d="M2.5 20a5.5 5.5 0 0 1 11 0M10.5 20a5.5 5.5 0 0 1 11 0" /></>}
+  </svg>;
+}
+
 export function UsersPage() {
   const { session } = useAuth();
   const [searchParams] = useSearchParams();
@@ -289,26 +298,26 @@ export function UsersPage() {
 
       <section className="peopleSummary">
         <div>
-          <span className="violet">♙</span>
+          <span className="violet"><SummaryIcon kind="users" /></span>
           <p>
             Всего пользователей<b>{users.length}</b>
           </p>
         </div>
         <div>
-          <span className="green">●</span>
+          <span className="green"><SummaryIcon kind="activity" /></span>
           <p>
             Активны за 30 дней<b>{activeLastMonth}</b>
           </p>
         </div>
         <div>
-          <span className="orange">◎</span>
+          <span className="orange"><SummaryIcon kind="staff" /></span>
           <p>
             Сотрудники
             <b>{users.filter((user) => user.role === "staff").length}</b>
           </p>
         </div>
         <div>
-          <span className="blue">◉</span>
+          <span className="blue"><SummaryIcon kind="groups" /></span>
           <p>
             Группы<b>{groups.length}</b>
           </p>

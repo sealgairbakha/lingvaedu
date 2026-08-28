@@ -495,6 +495,7 @@ export function LessonBlockView({
                   <input
                     value={value}
                     aria-label={`Ответ ${index + 1}`}
+                    style={{ width: `${Math.max(5, Math.min([...parsed.answer].length + 1, 14))}ch` }}
                     className={
                       taskChecked && value
                         ? normalizeTaskAnswer(value) === normalizeTaskAnswer(parsed.answer)
@@ -1213,7 +1214,7 @@ export function CoursePlayerPage() {
     ? Math.round((completed.length / lessons.length) * 100)
     : 0;
   return (
-    <main className="coursePlayer fade">
+    <main className={`coursePlayer fade ${headerHidden ? "courseHeaderHidden" : ""}`}>
       <header className={`playerHeader ${headerHidden ? "playerHeaderHidden" : ""}`}>
         <button
           className="playerCoursesBack"

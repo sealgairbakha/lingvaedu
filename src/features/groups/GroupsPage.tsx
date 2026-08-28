@@ -54,6 +54,14 @@ function Avatar({ user, small = false }: { user: GroupUser; small?: boolean }) {
   );
 }
 
+function GroupIcon({ kind }: { kind: "groups" | "members" | "courses" }) {
+  return <svg viewBox="0 0 24 24" aria-hidden="true">
+    {kind === "groups" && <><path d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM16 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" /><path d="M2.5 20a5.5 5.5 0 0 1 11 0M10.5 20a5.5 5.5 0 0 1 11 0" /></>}
+    {kind === "members" && <><circle cx="12" cy="8" r="4" /><path d="M5 21a7 7 0 0 1 14 0" /><path d="M18.5 5.5h3M20 4v3" /></>}
+    {kind === "courses" && <><path d="M5 4.5h11a3 3 0 0 1 3 3V20H8a3 3 0 0 1-3-3V4.5Z" /><path d="M8 20a3 3 0 0 1 0-6h11M9 8h6" /></>}
+  </svg>;
+}
+
 export function GroupsPage() {
   const { session } = useAuth();
   const [groups, setGroups] = useState<LearningGroup[]>([]);
@@ -197,9 +205,9 @@ export function GroupsPage() {
       {notice && <div className="groupsAlert success"><span>{notice}</span><button onClick={() => setNotice("")}>×</button></div>}
 
       <div className="groupsSummary">
-        <div><span className="groupsMetricIcon violet">◫</span><p>Всего групп<b>{groups.length}</b></p></div>
-        <div><span className="groupsMetricIcon green">♙</span><p>Участников в группах<b>{new Set(groups.flatMap((group) => group.memberIds)).size}</b></p></div>
-        <div><span className="groupsMetricIcon blue">▤</span><p>Назначено курсов<b>{groups.reduce((sum, group) => sum + group.courseIds.length, 0)}</b></p></div>
+        <div><span className="groupsMetricIcon violet"><GroupIcon kind="groups" /></span><p>Всего групп<b>{groups.length}</b></p></div>
+        <div><span className="groupsMetricIcon green"><GroupIcon kind="members" /></span><p>Участников в группах<b>{new Set(groups.flatMap((group) => group.memberIds)).size}</b></p></div>
+        <div><span className="groupsMetricIcon blue"><GroupIcon kind="courses" /></span><p>Назначено курсов<b>{groups.reduce((sum, group) => sum + group.courseIds.length, 0)}</b></p></div>
       </div>
 
       <div className="groupsWorkspace">
@@ -215,7 +223,7 @@ export function GroupsPage() {
         </section>
 
         <section className="groupEditor panel">
-          {!selected ? <div className="groupEditorPlaceholder"><span>◫</span><h2>Выберите группу</h2><p>Здесь появятся участники, наставник и доступные курсы.</p></div> : <>
+          {!selected ? <div className="groupEditorPlaceholder"><span><GroupIcon kind="groups" /></span><h2>Выберите группу</h2><p>Здесь появятся участники, наставник и доступные курсы.</p></div> : <>
             <header className="groupEditorHead"><div><span className="groupListMark large">{initials(selected.name)}</span><div><small>НАСТРОЙКА ГРУППЫ</small><h2>{selected.name}</h2></div></div><button className="groupsDelete" onClick={() => void deleteGroup()} disabled={busy} aria-label="Удалить группу">Удалить</button></header>
             <div className="groupEditorBody">
               <section className="groupFormSection">
@@ -240,7 +248,7 @@ export function GroupsPage() {
                 <div className="groupSectionHead"><div><span>3</span><h3>Доступные курсы</h3><em>{draft.courseIds.length}</em></div><p>Участники получат доступ сразу после сохранения</p></div>
                 <div className="groupPickerList courses">{publishedCourses.length ? publishedCourses.map((course) => {
                   const checked = draft.courseIds.includes(course.id);
-                  return <label key={course.id} className={checked ? "checked" : ""}><input type="checkbox" checked={checked} onChange={() => toggleId("courseIds", course.id)} /><span className="groupCourseGlyph">▤</span><span><b>{course.title}</b><small>{course.language || "Язык не указан"}</small></span><i>{checked ? "✓" : "＋"}</i></label>;
+                  return <label key={course.id} className={checked ? "checked" : ""}><input type="checkbox" checked={checked} onChange={() => toggleId("courseIds", course.id)} /><span className="groupCourseGlyph"><GroupIcon kind="courses" /></span><span><b>{course.title}</b><small>{course.language || "Язык не указан"}</small></span><i>{checked ? "✓" : "＋"}</i></label>;
                 }) : <div className="groupPickerEmpty">Сначала опубликуйте хотя бы один курс.</div>}</div>
               </section>
             </div>
