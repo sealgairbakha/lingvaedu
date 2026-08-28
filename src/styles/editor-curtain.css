@@ -3502,16 +3502,16 @@ html:not([data-theme="dark"]) .coursePlayer {
 .coursePlayer .playerTree button:focus-visible,.studentContinueButton:focus-visible,.studentCoverButton:focus-visible,.courseCoverButton:focus-visible { outline:3px solid color-mix(in srgb,var(--purple) 40%,transparent);outline-offset:3px; }
 
 .courseEditor .editorLayout { position:relative;transition:grid-template-columns .42s cubic-bezier(.2,.8,.2,1); }
-.editorPanelEdgeToggle { position:absolute;z-index:16;top:16px;display:grid;place-items:center;width:24px;height:42px;padding:0;border:1px solid color-mix(in srgb,var(--line) 82%,var(--purple));border-radius:8px;background:color-mix(in srgb,var(--card) 92%,transparent);color:#8b84b3;box-shadow:0 5px 16px rgba(26,34,53,.09);backdrop-filter:blur(10px);transition:left .42s cubic-bezier(.2,.8,.2,1),right .42s cubic-bezier(.2,.8,.2,1),color .2s ease,background .2s ease,border-color .2s ease,box-shadow .2s ease,transform .18s ease; }
-.editorPanelEdgeToggle:hover { border-color:#b9aff8;background:var(--card);color:var(--purple);box-shadow:0 8px 20px rgba(45,38,97,.15); }
-.editorPanelEdgeToggle:active { transform:translateX(-50%) scale(.92); }
-.editorPanelEdgeToggle svg { width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:transform .42s cubic-bezier(.2,.8,.2,1); }
-.treePanelEdgeToggle { left:calc(var(--tree-width,250px) + 8px);transform:translateX(-50%); }
-.treePanelEdgeToggle.collapsed { left:12px; }
+.editorPanelEdgeToggle { position:absolute;z-index:16;top:17px;display:grid;place-items:center;width:18px;height:36px;padding:0;border:1px solid color-mix(in srgb,var(--line) 88%,var(--purple));background:color-mix(in srgb,var(--card) 88%,transparent);color:#918aaa;box-shadow:0 3px 10px rgba(26,34,53,.06);backdrop-filter:blur(8px);opacity:.82;transition:left .42s cubic-bezier(.2,.8,.2,1),right .42s cubic-bezier(.2,.8,.2,1),color .2s ease,background .2s ease,border-color .2s ease,box-shadow .2s ease,opacity .2s ease,transform .18s ease; }
+.editorPanelEdgeToggle:hover { border-color:#c4bdf2;background:var(--card);color:var(--purple);box-shadow:0 4px 12px rgba(45,38,97,.1);opacity:1; }
+.editorPanelEdgeToggle:focus-visible { outline:2px solid color-mix(in srgb,var(--purple) 45%,transparent);outline-offset:2px; }
+.editorPanelEdgeToggle:active { transform:scale(.9); }
+.editorPanelEdgeToggle svg { width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round;transition:transform .42s cubic-bezier(.2,.8,.2,1); }
+.treePanelEdgeToggle { left:var(--tree-width,250px);border-left:0;border-radius:0 7px 7px 0;transform-origin:left center; }
+.treePanelEdgeToggle.collapsed { left:0; }
 .treePanelEdgeToggle.collapsed svg { transform:rotate(180deg); }
-.palettePanelEdgeToggle { right:calc(var(--palette-width,360px) + 8px);transform:translateX(50%); }
-.palettePanelEdgeToggle:active { transform:translateX(50%) scale(.92); }
-.palettePanelEdgeToggle.collapsed { right:12px; }
+.palettePanelEdgeToggle { right:var(--palette-width,360px);border-right:0;border-radius:7px 0 0 7px;transform-origin:right center; }
+.palettePanelEdgeToggle.collapsed { right:0; }
 .palettePanelEdgeToggle.collapsed svg { transform:rotate(180deg); }
 @media(min-width:1101px){.courseEditor .editorLayout.treeCollapsed{grid-template-columns:0 0 minmax(420px,1fr) 8px var(--palette-width,360px)}.courseEditor .editorLayout.paletteCollapsed{grid-template-columns:var(--tree-width,250px) 8px minmax(420px,1fr) 0 0}.courseEditor .editorLayout.treeCollapsed.paletteCollapsed{grid-template-columns:0 0 minmax(420px,1fr) 0 0}.courseEditor .lessonTree,.courseEditor .blockPalette,.courseEditor .paletteResizer{transition:opacity .24s ease,transform .42s cubic-bezier(.2,.8,.2,1),visibility 0s}.courseEditor .editorLayout.treeCollapsed .lessonTree,.courseEditor .editorLayout.treeCollapsed .treeResizer,.courseEditor .editorLayout.paletteCollapsed .blockPalette,.courseEditor .editorLayout.paletteCollapsed>.paletteResizer:not(.treeResizer){visibility:hidden;overflow:hidden;opacity:0;pointer-events:none;transition:opacity .2s ease,transform .42s cubic-bezier(.2,.8,.2,1),visibility 0s .42s}.courseEditor .editorLayout.treeCollapsed .lessonTree{transform:translateX(-18px)}.courseEditor .editorLayout.paletteCollapsed .blockPalette{transform:translateX(18px)}}
 .saveState i.error { background:#df515a; }
@@ -4010,7 +4010,7 @@ html[data-theme="dark"] .coursePlayer .playerTree button.active {
   box-shadow: 0 5px 16px rgba(101, 75, 246, .12);
 }
 
-.lessonTabEditorItem > button:not(.lessonTabRemove),
+.lessonTabEditorItem > .lessonTabTitle,
 .lessonTabEditorItem > input {
   width: 126px;
   min-width: 76px;
@@ -4024,6 +4024,12 @@ html[data-theme="dark"] .coursePlayer .playerTree button.active {
   font-weight: 750;
   text-align: left;
   white-space: nowrap;
+}
+
+.lessonTabTitle {
+  cursor: default;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .lessonTabEditorItem > input {
@@ -4216,12 +4222,10 @@ html[data-theme="dark"] .lessonTabRemove:hover {
   }
 
   .lessonTabsEditor.hasTabs {
-    align-items: stretch;
-    flex-direction: column;
+    align-items: center;
   }
 
   .lessonTabsEditor.hasTabs .addLessonTab {
-    align-self: flex-start;
     height: 36px;
   }
 

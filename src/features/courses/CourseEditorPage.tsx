@@ -320,12 +320,14 @@ export function CourseEditorPage() {
   const colorPickerRef = useRef<HTMLDetailsElement>(null);
   const blockPaletteRef = useRef<HTMLElement>(null);
   const lessonDescriptionRef = useRef<HTMLTextAreaElement>(null);
+  const lessonTabsListRef = useRef<HTMLDivElement>(null);
   const [course, setCourse] = useState<Course | null>(source || null);
   const [moduleId, setModuleId] = useState(source?.modules[0]?.id || "");
   const [lessonId, setLessonId] = useState(
     source?.modules[0]?.lessons[0]?.id || "",
   );
   const [activeLessonTabId, setActiveLessonTabId] = useState("");
+  const [editingLessonTabId, setEditingLessonTabId] = useState("");
   const [selected, setSelected] = useState("");
   const [closingEditor, setClosingEditor] = useState("");
   const closeEditorTimerRef = useRef<number | null>(null);
@@ -551,6 +553,11 @@ export function CourseEditorPage() {
     : [];
   const addLessonTab = () => {
     if (!lesson) return;
+    const scrollToNewTab = () =>
+      window.requestAnimationFrame(() => {
+        const list = lessonTabsListRef.current;
+        list?.scrollTo({ left: list.scrollWidth, behavior: "smooth" });
+      });
     if (!lessonTabs.length) {
       const mainTab: LessonTab = { id: uid(), title: "Основное" };
       const newTab: LessonTab = { id: uid(), title: "Вкладка 2" };
@@ -560,6 +567,7 @@ export function CourseEditorPage() {
       });
       setActiveLessonTabId(newTab.id);
       setSelected("");
+      scrollToNewTab();
       return;
     }
     const nextTab: LessonTab = {
@@ -569,6 +577,7 @@ export function CourseEditorPage() {
     updateLesson({ tabs: [...lessonTabs, nextTab] });
     setActiveLessonTabId(nextTab.id);
     setSelected("");
+    scrollToNewTab();
   };
   const renameLessonTab = (id: string, title: string) =>
     updateLesson({
@@ -1501,9 +1510,10 @@ export function CourseEditorPage() {
           </div>
           <div className={`lessonTabsEditor ${lessonTabs.length ? "hasTabs" : ""}`}>
             {lessonTabs.length > 0 && (
-              <div className="lessonTabsEditorList" role="tablist" aria-label="Вкладки урока">
+              <div ref={lessonTabsListRef} className="lessonTabsEditorList" role="tablist" aria-label="Вкладки урока">
                 {lessonTabs.map((tab, index) => {
                   const isActive = tab.id === activeTabId;
+                  const isEditing = tab.id === editingLessonTabId;
                   return (
                     <div
                       className={`lessonTabEditorItem ${isActive ? "active" : ""}`}
@@ -1511,24 +1521,45 @@ export function CourseEditorPage() {
                       role="tab"
                       aria-selected={isActive}
                     >
-                      <input
-                        type="text"
-                        aria-label={`Название вкладки ${index + 1}`}
-                        title="Нажмите, чтобы переименовать вкладку"
-                        value={tab.title}
-                        placeholder={`Вкладка ${index + 1}`}
-                        maxLength={40}
-                        onFocus={() => {
-                          if (!isActive) {
+                      {isEditing ? (
+                        <input
+                          autoFocus
+                          type="text"
+                          aria-label={`Название вкладки ${index + 1}`}
+                          value={tab.title}
+                          placeholder={`Вкладка ${index + 1}`}
+                          maxLength={40}
+                          onClick={(event) => event.stopPropagation()}
+                          onFocus={(event) => event.currentTarget.select()}
+                          onBlur={() => setEditingLessonTabId("")}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === "Escape")
+                              event.currentTarget.blur();
+                          }}
+                          onChange={(event) =>
+                            renameLessonTab(tab.id, event.target.value)
+                          }
+                        />
+                      ) : (
+                        <button
+                          type="button"
+                          className="lessonTabTitle"
+                          title="Дважды нажмите, чтобы переименовать вкладку"
+                          onClick={() => {
+                            if (!isActive) {
+                              setActiveLessonTabId(tab.id);
+                              setSelected("");
+                            }
+                          }}
+                          onDoubleClick={() => {
                             setActiveLessonTabId(tab.id);
                             setSelected("");
-                          }
-                        }}
-                        onClick={(event) => event.stopPropagation()}
-                        onChange={(event) =>
-                          renameLessonTab(tab.id, event.target.value)
-                        }
-                      />
+                            setEditingLessonTabId(tab.id);
+                          }}
+                        >
+                          {tab.title || `Вкладка ${index + 1}`}
+                        </button>
+                      )}
                       <button
                         type="button"
                         className="lessonTabRemove"
@@ -1541,16 +1572,26 @@ export function CourseEditorPage() {
                     </div>
                   );
                 })}
+                <button
+                  type="button"
+                  className="addLessonTab"
+                  onClick={addLessonTab}
+                >
+                  <AddBlockIcon />
+                  <span>Вкладка</span>
+                </button>
               </div>
             )}
-            <button
-              type="button"
-              className="addLessonTab"
-              onClick={addLessonTab}
-            >
-              <AddBlockIcon />
-              <span>Вкладка</span>
-            </button>
+            {lessonTabs.length === 0 && (
+              <button
+                type="button"
+                className="addLessonTab"
+                onClick={addLessonTab}
+              >
+                <AddBlockIcon />
+                <span>Вкладка</span>
+              </button>
+            )}
           </div>
           <div
             className={`blockCanvas ${paletteDropActive ? "paletteDropActive" : ""}`}

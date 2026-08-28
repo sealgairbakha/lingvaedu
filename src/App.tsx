@@ -46,6 +46,117 @@ function AccountMenuIcon({ kind }: { kind: "profile" | "settings" | "sun" | "moo
   return <svg viewBox="0 0 24 24" aria-hidden="true">{paths[kind]}</svg>;
 }
 
+type HeaderNotification = {
+  id: string;
+  kind: "assignment" | "reply" | "meeting";
+  title: string;
+  description: string;
+  createdAt: string;
+  path: string;
+};
+
+type NotificationSubmission = {
+  id: string;
+  userId: string;
+  studentName: string;
+  courseId: string;
+  lessonId: string;
+  updatedAt: string;
+};
+
+type NotificationReply = {
+  id: string;
+  submissionId: string;
+  staffName: string;
+  updatedAt: string;
+};
+
+type NotificationRoom = {
+  id: string;
+  title: string;
+  createdAt: string;
+  scheduledAt?: string;
+  groupName?: string;
+};
+
+type DismissedNotification = {
+  id: string;
+  dismissedAt: string;
+};
+
+const ASSIGNMENT_NOTIFICATIONS_KEY = "lingvaedu-assignment-submissions-v1";
+const VIDEO_ROOM_NOTIFICATIONS_KEY = "lingvaedu-video-rooms";
+const NOTIFICATIONS_CHANGED_EVENT = "lingvaedu:notifications-changed";
+
+function BellIcon() {
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Z"/><path d="M10 21h4"/></svg>;
+}
+
+function NotificationKindIcon({ kind }: { kind: HeaderNotification["kind"] }) {
+  const paths = {
+    assignment: <><path d="M7 3.5h7l4 4V20a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 20V5a1.5 1.5 0 0 1 1-1.5Z"/><path d="M14 3.5V8h4M9 14l2 2 4-4"/></>,
+    reply: <><path d="M5 4h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-8l-5 4v-4H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/><path d="m9 10 2 2 4-4"/></>,
+    meeting: <><rect x="3" y="6" width="13" height="12" rx="3"/><path d="m16 10 5-3v10l-5-3z"/></>,
+  } as const;
+  return <svg viewBox="0 0 24 24" aria-hidden="true">{paths[kind]}</svg>;
+}
+
+type MetricIconKind = "users" | "courses" | "materials" | "groups" | "completed" | "progress" | "score" | "time" | "return";
+
+function DashboardMetricIcon({ kind }: { kind: MetricIconKind }) {
+  const paths = {
+    users: <><path d="M16 20v-1.5a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4V20"/><circle cx="9.5" cy="7.5" r="3.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 6.7M18 14.7a4 4 0 0 1 3 3.8V20"/></>,
+    courses: <><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5Z"/><path d="M4 5.5v16M8 7h8M8 11h8"/></>,
+    materials: <><path d="m12 3 8 4-8 4-8-4 8-4Z"/><path d="m4 12 8 4 8-4M4 17l8 4 8-4"/></>,
+    groups: <><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3.5 20v-1.5A4.5 4.5 0 0 1 8 14h2a4.5 4.5 0 0 1 4.5 4.5V20M15 14.5a4 4 0 0 1 5.5 3.7V20"/></>,
+    completed: <><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></>,
+    progress: <><path d="M12 3a9 9 0 1 0 9 9h-9V3Z"/><path d="M16 3.9A9 9 0 0 1 20.1 8H16V3.9Z"/></>,
+    score: <path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z"/>,
+    time: <><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></>,
+    return: <><path d="M4 8V3m0 0h5M4 3l4 4"/><path d="M5.5 13a7.5 7.5 0 1 0 2-5"/></>,
+  } as const;
+  return <svg viewBox="0 0 24 24" aria-hidden="true">{paths[kind]}</svg>;
+}
+
+function AddIcon() {
+  return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4v12M4 10h12"/></svg>;
+}
+
+function NotificationCloseIcon() {
+  return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m6 6 8 8M14 6l-8 8"/></svg>;
+}
+
+function TrashIcon() {
+  return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 6h12M8 3h4l1 3H7l1-3ZM6 6l.7 11h6.6L14 6M8.5 9v5M11.5 9v5"/></svg>;
+}
+
+function RestoreIcon() {
+  return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5.5 7H2V3.5M2.5 7A7 7 0 1 1 3 14"/></svg>;
+}
+
+function readNotificationSources() {
+  try {
+    const assignments = JSON.parse(localStorage.getItem(ASSIGNMENT_NOTIFICATIONS_KEY) || "{}");
+    const rooms = JSON.parse(localStorage.getItem(VIDEO_ROOM_NOTIFICATIONS_KEY) || "[]");
+    return {
+      submissions: (Array.isArray(assignments.submissions) ? assignments.submissions : []) as NotificationSubmission[],
+      replies: (Array.isArray(assignments.replies) ? assignments.replies : []) as NotificationReply[],
+      rooms: (Array.isArray(rooms) ? rooms : []) as NotificationRoom[],
+    };
+  } catch {
+    return { submissions: [], replies: [], rooms: [] };
+  }
+}
+
+function notificationDate(value: string) {
+  const date = new Date(value);
+  const today = new Date();
+  const sameDay = date.toDateString() === today.toDateString();
+  return sameDay
+    ? date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
+    : date.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
+}
+
 const nav: {
   section?: string;
   items: { id: Page; icon: string; label: string }[];
@@ -277,6 +388,24 @@ function Header({ title, toggleNav }: { title: string; toggleNav: () => void }) 
   const { initials, displayName, avatarUrl, user, session, isAdmin, canEditCourses, signOut } = useAuth();
   const { courses } = useCourses();
   const [accountMenu, setAccountMenu] = useState(false);
+  const [notificationMenu, setNotificationMenu] = useState(false);
+  const [notificationFilter, setNotificationFilter] = useState<"all" | "assignments" | "trash">("all");
+  const [notificationItems, setNotificationItems] = useState<HeaderNotification[]>([]);
+  const [notificationLoading, setNotificationLoading] = useState(true);
+  const notificationReadKey = `lingvaedu-read-notifications:${user?.id || "guest"}`;
+  const notificationDismissedKey = `lingvaedu-dismissed-notifications:${user?.id || "guest"}`;
+  const [readNotificationIds, setReadNotificationIds] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem(`lingvaedu-read-notifications:${user?.id || "guest"}`) || "[]"); }
+    catch { return []; }
+  });
+  const [dismissedNotifications, setDismissedNotifications] = useState<DismissedNotification[]>(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(`lingvaedu-dismissed-notifications:${user?.id || "guest"}`) || "[]");
+      const now = new Date().toISOString();
+      return Array.isArray(saved) ? saved.map((item) => typeof item === "string" ? { id: item, dismissedAt: now } : item) : [];
+    }
+    catch { return []; }
+  });
   const [accountDialog, setAccountDialog] = useState<"settings" | "logout" | null>(null);
   const [notifications, setNotifications] = useState(() => localStorage.getItem("lingvaedu-notifications") !== "false");
   const [darkTheme, setDarkTheme] = useState(() => document.documentElement.dataset.theme === "dark");
@@ -291,6 +420,177 @@ function Header({ title, toggleNav }: { title: string; toggleNav: () => void }) 
     document.documentElement.dataset.theme = next ? "dark" : "light";
     document.documentElement.style.colorScheme = next ? "dark" : "light";
     localStorage.setItem("lingvaedu-theme", next ? "dark" : "light");
+  };
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(notificationReadKey) || "[]");
+      setReadNotificationIds(Array.isArray(saved) ? saved : []);
+    } catch {
+      setReadNotificationIds([]);
+    }
+  }, [notificationReadKey]);
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(notificationDismissedKey) || "[]");
+      const now = Date.now();
+      const normalized = (Array.isArray(saved) ? saved : [])
+        .map((item) => typeof item === "string" ? { id: item, dismissedAt: new Date().toISOString() } : item as DismissedNotification)
+        .filter((item) => item?.id && now - new Date(item.dismissedAt).getTime() < 24 * 60 * 60 * 1000);
+      setDismissedNotifications(normalized);
+      localStorage.setItem(notificationDismissedKey, JSON.stringify(normalized));
+    } catch {
+      setDismissedNotifications([]);
+    }
+  }, [notificationDismissedKey]);
+  useEffect(() => {
+    let active = true;
+    const loadNotifications = async () => {
+      const local = readNotificationSources();
+      let submissions = local.submissions;
+      let replies = local.replies;
+      if (supabase && user) {
+        let submissionQuery = supabase
+          .from("course_assignment_submissions")
+          .select("id,user_id,student_name,course_id,lesson_id,updated_at")
+          .order("updated_at", { ascending: false })
+          .limit(40);
+        if (!canEditCourses) submissionQuery = submissionQuery.eq("user_id", user.id);
+        const { data: submissionRows, error: submissionError } = await submissionQuery;
+        if (!submissionError) {
+          submissions = (submissionRows || []).map((row) => ({
+            id: row.id,
+            userId: row.user_id,
+            studentName: row.student_name,
+            courseId: row.course_id,
+            lessonId: row.lesson_id,
+            updatedAt: row.updated_at,
+          }));
+          const submissionIds = submissions.map((item) => item.id);
+          if (submissionIds.length) {
+            const { data: replyRows, error: replyError } = await supabase
+              .from("course_assignment_replies")
+              .select("id,submission_id,staff_name,updated_at")
+              .in("submission_id", submissionIds)
+              .order("updated_at", { ascending: false });
+            if (!replyError) replies = (replyRows || []).map((row) => ({
+              id: row.id,
+              submissionId: row.submission_id,
+              staffName: row.staff_name,
+              updatedAt: row.updated_at,
+            }));
+          } else replies = [];
+        }
+      }
+      const findContext = (submission: NotificationSubmission) => {
+        const course = courses.find((item) => item.id === submission.courseId);
+        const lesson = course?.modules.flatMap((item) => item.lessons).find((item) => item.id === submission.lessonId);
+        return {
+          courseTitle: course?.title || "Курс",
+          lessonTitle: lesson?.title || "Урок",
+          path: `/courses/learn?course=${submission.courseId}`,
+        };
+      };
+      const assignmentItems: HeaderNotification[] = canEditCourses
+        ? submissions.map((submission) => {
+            const context = findContext(submission);
+            return {
+              id: `submission:${submission.id}:${submission.updatedAt}`,
+              kind: "assignment",
+              title: `${submission.studentName} отправил(а) задание`,
+              description: `${context.courseTitle} · ${context.lessonTitle}`,
+              createdAt: submission.updatedAt,
+              path: context.path,
+            };
+          })
+        : replies.flatMap((reply) => {
+            const submission = submissions.find((item) => item.id === reply.submissionId && item.userId === user?.id);
+            if (!submission) return [];
+            const context = findContext(submission);
+            return [{
+              id: `reply:${reply.id}:${reply.updatedAt}`,
+              kind: "reply" as const,
+              title: `${reply.staffName} проверил(а) задание`,
+              description: `${context.courseTitle} · ${context.lessonTitle}`,
+              createdAt: reply.updatedAt,
+              path: context.path,
+            }];
+          });
+      const meetingItems: HeaderNotification[] = local.rooms.map((room) => ({
+        id: `meeting:${room.id}:${room.scheduledAt || room.createdAt}`,
+        kind: "meeting",
+        title: room.scheduledAt ? "Запланирована видеовстреча" : "Создана видеокомната",
+        description: `${room.title}${room.groupName ? ` · ${room.groupName}` : ""}${room.scheduledAt ? ` · ${new Date(room.scheduledAt).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}` : ""}`,
+        createdAt: room.createdAt,
+        path: "/video-rooms",
+      }));
+      if (active) {
+        setNotificationItems([...assignmentItems, ...meetingItems]
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+          .slice(0, 30));
+        setNotificationLoading(false);
+      }
+    };
+    const reload = () => void loadNotifications();
+    void loadNotifications();
+    window.addEventListener("storage", reload);
+    window.addEventListener(NOTIFICATIONS_CHANGED_EVENT, reload);
+    const timer = window.setInterval(reload, 45_000);
+    const channel = supabase && user
+      ? supabase.channel(`header-notifications-${user.id}`)
+          .on("postgres_changes", { event: "*", schema: "public", table: "course_assignment_submissions" }, reload)
+          .on("postgres_changes", { event: "*", schema: "public", table: "course_assignment_replies" }, reload)
+          .subscribe()
+      : null;
+    return () => {
+      active = false;
+      window.removeEventListener("storage", reload);
+      window.removeEventListener(NOTIFICATIONS_CHANGED_EVENT, reload);
+      window.clearInterval(timer);
+      if (channel && supabase) void supabase.removeChannel(channel);
+    };
+  }, [canEditCourses, courses, user]);
+  const activeDismissedNotifications = dismissedNotifications.filter((item) => Date.now() - new Date(item.dismissedAt).getTime() < 24 * 60 * 60 * 1000);
+  const dismissedNotificationIds = activeDismissedNotifications.map((item) => item.id);
+  const availableNotificationItems = notificationItems.filter((item) => !dismissedNotificationIds.includes(item.id));
+  const trashedNotificationItems = notificationItems.filter((item) => dismissedNotificationIds.includes(item.id));
+  const unreadNotificationCount = notifications
+    ? availableNotificationItems.filter((item) => !readNotificationIds.includes(item.id)).length
+    : 0;
+  const assignmentNotificationCount = availableNotificationItems.filter((item) => item.kind === "assignment" || item.kind === "reply").length;
+  const visibleNotificationItems = notificationFilter === "trash"
+    ? trashedNotificationItems
+    : notificationFilter === "assignments"
+      ? availableNotificationItems.filter((item) => item.kind === "assignment" || item.kind === "reply")
+      : availableNotificationItems;
+  const saveReadNotifications = (ids: string[]) => {
+    const next = Array.from(new Set(ids)).slice(-200);
+    setReadNotificationIds(next);
+    localStorage.setItem(notificationReadKey, JSON.stringify(next));
+  };
+  const saveDismissedNotifications = (items: DismissedNotification[]) => {
+    const unique = new Map(items.map((item) => [item.id, item]));
+    const next = Array.from(unique.values())
+      .filter((item) => Date.now() - new Date(item.dismissedAt).getTime() < 24 * 60 * 60 * 1000)
+      .slice(-500);
+    setDismissedNotifications(next);
+    localStorage.setItem(notificationDismissedKey, JSON.stringify(next));
+  };
+  const dismissNotification = (id: string) =>
+    saveDismissedNotifications([...activeDismissedNotifications, { id, dismissedAt: new Date().toISOString() }]);
+  const restoreNotification = (id: string) =>
+    saveDismissedNotifications(activeDismissedNotifications.filter((item) => item.id !== id));
+  const clearNotifications = () => {
+    const dismissedAt = new Date().toISOString();
+    saveDismissedNotifications([
+      ...activeDismissedNotifications,
+      ...availableNotificationItems.map((item) => ({ id: item.id, dismissedAt })),
+    ]);
+  };
+  const openNotification = (item: HeaderNotification) => {
+    saveReadNotifications([...readNotificationIds, item.id]);
+    dismissNotification(item.id);
+    setNotificationMenu(false);
+    navigate(item.path);
   };
   useEffect(() => {
     const focusSearch = (event: KeyboardEvent) => {
@@ -411,8 +711,49 @@ function Header({ title, toggleNav }: { title: string; toggleNav: () => void }) 
           </div>
         )}
       </div>
+      <div className="notificationMenuWrap">
+        <button
+          type="button"
+          className={`topIcon notificationButton ${notificationMenu ? "active" : ""}`}
+          onClick={() => { setAccountMenu(false); setNotificationMenu((value) => !value); }}
+          aria-label={unreadNotificationCount ? `Уведомления: ${unreadNotificationCount} непрочитанных` : "Уведомления"}
+          aria-expanded={notificationMenu}
+          title="Уведомления"
+        >
+          <BellIcon />
+          {unreadNotificationCount > 0 && <span>{unreadNotificationCount > 99 ? "99+" : unreadNotificationCount}</span>}
+        </button>
+        {notificationMenu && <>
+          <button className="notificationScrim" aria-label="Закрыть уведомления" onClick={() => setNotificationMenu(false)} />
+          <section className="notificationPanel" aria-label="Центр уведомлений">
+            <header><div><b>Уведомления</b><small>{notificationFilter === "trash" ? "Срок хранения в корзине 24 часа" : unreadNotificationCount ? `${unreadNotificationCount} непрочитанных` : "Всё просмотрено"}</small></div><div className="notificationHeaderActions">{notificationFilter !== "trash" && unreadNotificationCount > 0 && <button type="button" onClick={() => saveReadNotifications([...readNotificationIds, ...availableNotificationItems.map((item) => item.id)])}>Прочитать все</button>}{notificationFilter !== "trash" && availableNotificationItems.length > 0 && <button type="button" className="notificationDeleteAll" onClick={clearNotifications} title="Очистить уведомления" aria-label="Очистить уведомления"><TrashIcon/><span>Очистить</span></button>}</div></header>
+            <nav className="notificationFilters" role="tablist" aria-label="Фильтр уведомлений">
+              <button type="button" role="tab" aria-selected={notificationFilter === "all"} className={notificationFilter === "all" ? "active" : ""} onClick={() => setNotificationFilter("all")}>Все уведомления<span>{availableNotificationItems.length}</span></button>
+              <button type="button" role="tab" aria-selected={notificationFilter === "assignments"} className={notificationFilter === "assignments" ? "active" : ""} onClick={() => setNotificationFilter("assignments")}>Задания<span>{assignmentNotificationCount}</span></button>
+              <button type="button" role="tab" aria-selected={notificationFilter === "trash"} className={notificationFilter === "trash" ? "active" : ""} onClick={() => setNotificationFilter("trash")}><TrashIcon/>Корзина<span>{trashedNotificationItems.length}</span></button>
+            </nav>
+            <div className="notificationList">
+              {notificationLoading ? <p className="notificationEmpty">Загружаем уведомления…</p> : visibleNotificationItems.length ? visibleNotificationItems.map((item) => {
+                const inTrash = notificationFilter === "trash";
+                const unread = !inTrash && !readNotificationIds.includes(item.id) && notifications;
+                return <article className={`notificationItem ${unread ? "unread" : ""} ${inTrash ? "trashed" : ""}`} key={item.id}>
+                  <button type="button" className="notificationItemMain" onClick={() => { if (inTrash) { setNotificationMenu(false); navigate(item.path); } else openNotification(item); }}>
+                    <span className={`notificationKind ${item.kind}`} aria-hidden="true"><NotificationKindIcon kind={item.kind} /></span>
+                    <div><b>{item.title}</b><p>{item.description}</p><time>{notificationDate(item.createdAt)}</time></div>
+                    {unread && <i aria-label="Непрочитано" />}
+                  </button>
+                  {inTrash
+                    ? <button type="button" className="notificationDismiss notificationRestore" onClick={() => restoreNotification(item.id)} aria-label={`Восстановить уведомление: ${item.title}`} title="Восстановить"><RestoreIcon/></button>
+                    : <button type="button" className="notificationDismiss" onClick={() => dismissNotification(item.id)} aria-label={`Убрать уведомление: ${item.title}`} title="Убрать уведомление"><NotificationCloseIcon/></button>}
+                </article>;
+              }) : <p className="notificationEmpty">{notificationFilter === "trash" ? "Корзина пуста." : notificationFilter === "assignments" ? "Уведомлений о заданиях пока нет." : "Новых событий пока нет."}</p>}
+            </div>
+            {!notifications && <footer>Уведомления отключены в настройках аккаунта.</footer>}
+          </section>
+        </>}
+      </div>
       <div className="accountMenuWrap">
-        <button className={`topAvatar ${accountMenu ? "active" : ""}`} onClick={() => setAccountMenu((value) => !value)} aria-expanded={accountMenu} aria-label="Меню аккаунта" title={displayName}>{avatarUrl ? <img src={avatarUrl} alt={displayName}/> : initials}</button>
+        <button className={`topAvatar ${accountMenu ? "active" : ""}`} onClick={() => { setNotificationMenu(false); setAccountMenu((value) => !value); }} aria-expanded={accountMenu} aria-label="Меню аккаунта" title={displayName}>{avatarUrl ? <img src={avatarUrl} alt={displayName}/> : initials}</button>
         {accountMenu && <><button className="accountMenuScrim" aria-label="Закрыть меню аккаунта" onClick={() => setAccountMenu(false)} /><div className="accountDropdown"><div className="accountSummary"><span>{avatarUrl ? <img src={avatarUrl} alt={displayName}/> : initials}</span><div><b>{displayName}</b><small>{user?.email}</small></div></div><button onClick={() => { setAccountMenu(false); navigate("/profile"); }}><span className="accountMenuIcon"><AccountMenuIcon kind="profile" /></span>Мой профиль</button><button onClick={() => openDialog("settings")}><span className="accountMenuIcon"><AccountMenuIcon kind="settings" /></span>Настройки</button><button onClick={toggleTheme}><span className="accountMenuIcon"><AccountMenuIcon kind={darkTheme ? "sun" : "moon"} /></span>{darkTheme ? "Светлая тема" : "Тёмная тема"}<i className={`themeState ${darkTheme ? "on" : ""}`} /></button><hr/><button className="accountLogout" onClick={() => openDialog("logout")}><span className="accountMenuIcon"><AccountMenuIcon kind="logout" /></span>Выйти</button></div></>}
       </div>
       {accountDialog === "settings" && <Modal title="Настройки" close={() => setAccountDialog(null)}><div className="accountSettings"><label><div><b>Уведомления</b><small>Показывать новости курсов и напоминания</small></div><input type="checkbox" checked={notifications} onChange={(e) => setNotifications(e.target.checked)}/><i/></label><button className="btn primary full" onClick={() => { localStorage.setItem("lingvaedu-notifications", String(notifications)); setAccountDialog(null); }}>Сохранить настройки</button></div></Modal>}
@@ -579,19 +920,19 @@ function Overview({ go }: { go: (p: Page) => void }) {
         eyebrow={currentDate}
         title={`${greeting}, ${firstName}`}
         text={canEditCourses ? "Актуальное состояние учебной платформы." : "Ваш прогресс и назначенные курсы."}
-        action={canEditCourses ? <button className="btn primary" onClick={create}>＋ Создать курс</button> : undefined}
+        action={canEditCourses ? <button className="btn primary dashboardCreateButton" onClick={create}><AddIcon />Создать курс</button> : undefined}
       />
       <section className="metricGrid">
         {canEditCourses ? <>
-          <Metric icon="♙" label={organization ? "Ученики" : "Назначения ученикам"} value={loading ? "…" : String(organization?.studentCount ?? assignmentCount)} delta="" note={organization ? `${organization.activeUsers30d} активны за 30 дней` : "по всем курсам"} tone="violet" />
-          <Metric icon="▤" label="Опубликовано курсов" value={loading ? "…" : String(published)} delta="" note={`из ${courses.length} курсов`} tone="blue" />
-          <Metric icon="◎" label="Учебные материалы" value={loading ? "…" : String(totalBlocks)} delta="" note={`${totalLessons} уроков`} tone="green" />
-          <Metric icon="◉" label="Учебные группы" value={organization ? String(organization.groupCount) : "—"} delta="" note={organization ? `${assignmentCount} назначений` : "доступно через сервер API"} tone="orange" />
+          <Metric icon="users" label={organization ? "Ученики" : "Назначения ученикам"} value={loading ? "…" : String(organization?.studentCount ?? assignmentCount)} delta="" note={organization ? `${organization.activeUsers30d} активны за 30 дней` : "по всем курсам"} tone="violet" />
+          <Metric icon="courses" label="Опубликовано курсов" value={loading ? "…" : String(published)} delta="" note={`из ${courses.length} курсов`} tone="blue" />
+          <Metric icon="materials" label="Учебные материалы" value={loading ? "…" : String(totalBlocks)} delta="" note={`${totalLessons} уроков`} tone="green" />
+          <Metric icon="groups" label="Учебные группы" value={organization ? String(organization.groupCount) : "—"} delta="" note={organization ? `${assignmentCount} назначений` : "доступно через сервер API"} tone="orange" />
         </> : <>
-          <Metric icon="▤" label="Назначено курсов" value={loading ? "…" : String(availableCourses.length)} delta="" note={`${completedCourses} завершено`} tone="violet" />
-          <Metric icon="✓" label="Пройдено уроков" value={String(completedLessons)} delta="" note={`из ${totalLessons} уроков`} tone="blue" />
-          <Metric icon="◎" label="Общий прогресс" value={`${averageProgress}%`} delta="" note="по назначенным курсам" tone="green" />
-          <Metric icon="▦" label="Учебные материалы" value={String(totalBlocks)} delta="" note="доступно в курсах" tone="orange" />
+          <Metric icon="courses" label="Назначено курсов" value={loading ? "…" : String(availableCourses.length)} delta="" note={`${completedCourses} завершено`} tone="violet" />
+          <Metric icon="completed" label="Пройдено уроков" value={String(completedLessons)} delta="" note={`из ${totalLessons} уроков`} tone="blue" />
+          <Metric icon="progress" label="Общий прогресс" value={`${averageProgress}%`} delta="" note="по назначенным курсам" tone="green" />
+          <Metric icon="materials" label="Учебные материалы" value={String(totalBlocks)} delta="" note="доступно в курсах" tone="orange" />
         </>}
       </section>
       <div className="overviewGrid">
@@ -601,7 +942,6 @@ function Overview({ go }: { go: (p: Page) => void }) {
             <div className="yLabels"><span>{chartMax}</span><span>{Math.round(chartMax / 2)}</span><span>0</span></div>
             <div className="bars">{chartCourses.map((course, index) => <div className="barCol" key={course.id} title={`${course.title}: ${chartValues[index]} блоков`}>
               <div className="barTrack"><i style={{ height: `${Math.max(4, (chartValues[index] / chartMax) * 100)}%` }} className={index === chartCourses.length - 1 ? "hot" : ""} /></div>
-              <span>{course.code.slice(0, 6)}</span>
             </div>)}</div>
           </div> : <div className="dashboardEmpty">Курсы появятся здесь после создания.</div>}
         </section>
@@ -639,7 +979,7 @@ function Metric({
   note,
   tone,
 }: {
-  icon: string;
+  icon: MetricIconKind;
   label: string;
   value: string;
   delta: string;
@@ -648,7 +988,7 @@ function Metric({
 }) {
   return (
     <article className="metric">
-      <div className={`metricIcon ${tone}`}>{icon}</div>
+      <div className={`metricIcon ${tone}`}><DashboardMetricIcon kind={icon} /></div>
       <span>{label}</span>
       <strong>{value}</strong>
       <p>
@@ -1154,7 +1494,7 @@ function Reports() {
       </div>
       <section className="metricGrid reportMetrics">
         <Metric
-          icon="◎"
+          icon="progress"
           label="Завершаемость"
           value="78,6%"
           delta="+4,2%"
@@ -1162,7 +1502,7 @@ function Reports() {
           tone="violet"
         />
         <Metric
-          icon="★"
+          icon="score"
           label="Средний балл"
           value="8,4 / 10"
           delta="+0,6"
@@ -1170,7 +1510,7 @@ function Reports() {
           tone="orange"
         />
         <Metric
-          icon="◷"
+          icon="time"
           label="Время обучения"
           value="6,2 ч"
           delta="+11%"
@@ -1178,7 +1518,7 @@ function Reports() {
           tone="blue"
         />
         <Metric
-          icon="↻"
+          icon="return"
           label="Возврат к обучению"
           value="84%"
           delta="+2,8%"

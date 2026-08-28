@@ -89,8 +89,13 @@ const readLocalStore = (): LocalAssignmentStore => {
   }
 };
 
-const writeLocalStore = (value: LocalAssignmentStore) =>
+const notifyAssignmentChange = () =>
+  window.dispatchEvent(new Event("lingvaedu:notifications-changed"));
+
+const writeLocalStore = (value: LocalAssignmentStore) => {
   localStorage.setItem(LOCAL_KEY, JSON.stringify(value));
+  notifyAssignmentChange();
+};
 
 const mapSubmission = (row: SubmissionRow): AssignmentSubmission => ({
   id: row.id,
@@ -350,6 +355,7 @@ export function CourseAssignmentBlock({
       }
       setPendingFile(null);
       onSubmitted?.(true);
+      notifyAssignmentChange();
     } catch (submitError) {
       const message = submitError instanceof Error ? submitError.message : "Не удалось отправить задание.";
       setError(/bucket not found/i.test(message) ? "Хранилище ответов ещё не создано. Выполните миграцию 012." : message);
@@ -400,6 +406,7 @@ export function CourseAssignmentBlock({
         setReplies((current) => [next, ...current.filter((item) => item.submissionId !== next.submissionId)]);
       }
       setReplyDrafts((current) => ({ ...current, [submission.id]: "" }));
+      notifyAssignmentChange();
     } catch (replyError) {
       setError(replyError instanceof Error ? replyError.message : "Не удалось сохранить ответ.");
     } finally {

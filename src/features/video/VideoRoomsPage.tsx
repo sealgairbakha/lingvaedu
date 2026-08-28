@@ -135,6 +135,7 @@ export function VideoRoomsPage() {
     const room = { id, title: title.trim() || "Онлайн-занятие", createdAt: new Date().toISOString(), scheduledAt: new Date(scheduledAt).toISOString(), groupId: group.id, groupName: group.name };
     const next = [room, ...rooms].slice(0, 12);
     localStorage.setItem(ROOMS_STORAGE, JSON.stringify(next));
+    window.dispatchEvent(new Event("lingvaedu:notifications-changed"));
     sessionStorage.setItem(`lingvaedu-room-owner:${id}`, "1");
     sessionStorage.setItem(`lingvaedu-room-title:${id}`, room.title);
     setRooms(next);
@@ -146,6 +147,7 @@ export function VideoRoomsPage() {
     const room: SavedRoom = { id, title: "Мгновенная встреча", createdAt: new Date().toISOString() };
     const next = [room, ...rooms].slice(0, 12);
     localStorage.setItem(ROOMS_STORAGE, JSON.stringify(next));
+    window.dispatchEvent(new Event("lingvaedu:notifications-changed"));
     sessionStorage.setItem(`lingvaedu-room-owner:${id}`, "1");
     sessionStorage.setItem(`lingvaedu-room-title:${id}`, room.title);
     setRooms(next);
