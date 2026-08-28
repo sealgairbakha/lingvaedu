@@ -1,3 +1,5 @@
+import type { TrueFalseLanguage } from "./taskLanguages";
+
 export type CourseStatus = "published" | "draft" | "archived";
 export type BlockKind =
   | "text"
@@ -65,6 +67,7 @@ export type LessonBlock = {
   imageCaptions?: string[];
   imageLayout?: "grid" | "mosaic" | "filmstrip";
   game?: GameConfig;
+  trueFalseLanguage?: TrueFalseLanguage;
   textStyle?: {
     fontFamily?: "onest" | "serif" | "rounded" | "mono";
     fontSize?: 14 | 16 | 18 | 20 | 24;

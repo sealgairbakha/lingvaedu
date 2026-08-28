@@ -7,6 +7,7 @@ import { BlockIcon } from "./BlockIcon";
 import { CourseAssignmentBlock } from "./CourseAssignmentBlock";
 import { GameBlockView } from "./GameBlockView";
 import type { LessonBlock } from "./types";
+import { getTrueFalseLabels } from "./taskLanguages";
 import { sanitizeRichText } from "./richText";
 
 const lessonFontFamilies = {
@@ -253,6 +254,8 @@ export function LessonBlockView({
   const [taskAnswers, setTaskAnswers] = useState<Record<string, string>>({});
   const [activeWord, setActiveWord] = useState("");
   const [activeMatch, setActiveMatch] = useState("");
+  const [matchAttempts, setMatchAttempts] = useState<Record<string, boolean[]>>({});
+  const [matchResolvedOrder, setMatchResolvedOrder] = useState<string[]>([]);
   const [taskChecked, setTaskChecked] = useState(false);
   const [openedImage, setOpenedImage] = useState<number | null>(null);
   const invalidateTask = () => {
@@ -547,85 +550,122 @@ export function LessonBlockView({
       const [left, ...right] = line.split("=");
       return { id: String(index), left: left?.trim(), right: right.join("=").trim() };
     });
-    const rightItems = [...pairs].reverse();
-    const answered = pairs.filter((pair) => taskAnswers[pair.id]).length;
+    const resolvedIds = pairs
+      .filter(
+        (pair) =>
+          taskAnswers[pair.id] === pair.id ||
+          taskAnswers[pair.id] === `failed:${pair.id}`,
+      )
+      .map((pair) => pair.id);
+    const unresolvedPairs = pairs.filter((pair) => !resolvedIds.includes(pair.id));
+    const rightItems = [...pairs]
+      .reverse()
+      .filter((pair) => !resolvedIds.includes(pair.id));
+    const resolvedPairs = matchResolvedOrder
+      .map((id) => pairs.find((pair) => pair.id === id))
+      .filter((pair): pair is (typeof pairs)[number] => Boolean(pair));
+    const answered = resolvedIds.length;
     const correct = pairs.filter((pair) => taskAnswers[pair.id] === pair.id).length;
+    const chooseMatch = (rightId: string) => {
+      if (!activeMatch || resolvedIds.includes(activeMatch)) return;
+      const previousAttempts = matchAttempts[activeMatch] || [];
+      if (previousAttempts.length >= 4) return;
+      const isCorrect = activeMatch === rightId;
+      const nextAttempts = [...previousAttempts, isCorrect];
+      setMatchAttempts((current) => ({ ...current, [activeMatch]: nextAttempts }));
+
+      if (!isCorrect && nextAttempts.length < 4) {
+        invalidateTask();
+        return;
+      }
+
+      const resolvedId = activeMatch;
+      const nextAnswers = {
+        ...taskAnswers,
+        [resolvedId]: isCorrect ? resolvedId : `failed:${resolvedId}`,
+      };
+      setTaskAnswers(nextAnswers);
+      setMatchResolvedOrder((current) =>
+        current.includes(resolvedId) ? current : [...current, resolvedId],
+      );
+      setActiveMatch("");
+
+      const nextResolved = pairs.filter(
+        (pair) =>
+          nextAnswers[pair.id] === pair.id ||
+          nextAnswers[pair.id] === `failed:${pair.id}`,
+      ).length;
+      if (nextResolved === pairs.length) {
+        const nextCorrect = pairs.filter(
+          (pair) => nextAnswers[pair.id] === pair.id,
+        ).length;
+        setTaskChecked(true);
+        onTaskResult?.(block.id, nextCorrect === pairs.length);
+      } else {
+        invalidateTask();
+      }
+    };
     return (
       <section className="learningBlock taskLearning matchLearning">
         <h3>{block.title}</h3>
         <div className="matchGrid">
           <div>
-            {pairs.map((pair) => (
+            {unresolvedPairs.map((pair) => (
               <button
                 type="button"
                 key={pair.id}
-                className={
-                  activeMatch === pair.id
-                    ? "active"
-                    : taskChecked && taskAnswers[pair.id]
-                      ? taskAnswers[pair.id] === pair.id
-                        ? "correct"
-                        : "wrong"
-                      : taskAnswers[pair.id]
-                        ? "paired"
-                        : ""
-                }
+                className={activeMatch === pair.id ? "active" : ""}
                 onClick={() => {
                   setActiveMatch(pair.id);
                   invalidateTask();
                 }}
               >
-                {pair.left}
+                <span>{pair.left}</span>
+                <i className="matchAttemptBars" aria-label={`${(matchAttempts[pair.id] || []).length} из 4 попыток использовано`}>
+                  {Array.from({ length: 4 }, (_, index) => {
+                    const result = matchAttempts[pair.id]?.[index];
+                    return <em key={index} className={result === true ? "correct" : result === false ? "wrong" : ""} />;
+                  })}
+                </i>
               </button>
             ))}
           </div>
           <div>
-            {rightItems.map((item) => {
-              const pairedId = Object.keys(taskAnswers).find(
-                (key) => taskAnswers[key] === item.id,
-              );
+            {rightItems.map((item) => (
+              <button
+                type="button"
+                key={item.id}
+                disabled={!activeMatch}
+                onClick={() => chooseMatch(item.id)}
+              >
+                {item.right}
+              </button>
+            ))}
+          </div>
+        </div>
+        {resolvedPairs.length > 0 && (
+          <div className="matchResolvedList" aria-label="Соединённые пары">
+            {resolvedPairs.map((pair) => {
+              const failed = taskAnswers[pair.id] === `failed:${pair.id}`;
               return (
-                <button
-                  type="button"
-                  key={item.id}
-                  className={
-                    taskChecked && pairedId
-                      ? pairedId === item.id
-                        ? "correct"
-                        : "wrong"
-                      : pairedId
-                        ? "paired"
-                      : ""
-                  }
-                  onClick={() => {
-                    if (!activeMatch) {
-                      if (pairedId) {
-                        setTaskAnswers((current) => {
-                          const next = { ...current };
-                          delete next[pairedId];
-                          return next;
-                        });
-                        setActiveMatch(pairedId);
-                        invalidateTask();
-                      }
-                      return;
-                    }
-                    setTaskAnswers((current) => ({
-                      ...Object.fromEntries(
-                        Object.entries(current).filter(([, value]) => value !== item.id),
-                      ),
-                      [activeMatch]: item.id,
-                    }));
-                    setActiveMatch("");
-                    invalidateTask();
-                  }}
-                >
-                  {item.right}
-                </button>
+                <div key={pair.id} className={failed ? "failed" : "correct"}>
+                  <span className="matchResolvedWord">
+                    <strong>{pair.left}</strong>
+                    <i className="matchAttemptBars" aria-label={`${(matchAttempts[pair.id] || []).length} из 4 попыток использовано`}>
+                      {Array.from({ length: 4 }, (_, index) => {
+                        const result = matchAttempts[pair.id]?.[index];
+                        return <em key={index} className={result === true ? "correct" : result === false ? "wrong" : ""} />;
+                      })}
+                    </i>
+                  </span>
+                  <i className="matchResolvedConnector" aria-hidden="true" />
+                  <span>{pair.right}</span>
+                  <b>{failed ? "4 попытки" : "Верно"}</b>
+                </div>
               );
             })}
           </div>
-        </div>
+        )}
         <TaskActions
           checked={taskChecked}
           answered={answered}
@@ -635,6 +675,8 @@ export function LessonBlockView({
           onReset={() => {
             setTaskAnswers({});
             setActiveMatch("");
+            setMatchAttempts({});
+            setMatchResolvedOrder([]);
             invalidateTask();
           }}
           onContinue={onContinue}
@@ -644,6 +686,7 @@ export function LessonBlockView({
     );
   }
   if (block.kind === "true-false") {
+    const labels = getTrueFalseLabels(block.trueFalseLanguage);
     const items = lines.map((line, index) => {
       const [statement, expectedRaw] = line.split("|");
       return {
@@ -678,7 +721,7 @@ export function LessonBlockView({
                       invalidateTask();
                     }}
                   >
-                    {value === "true" ? "Верно" : "Неверно"}
+                    {value === "true" ? labels.trueLabel : labels.falseLabel}
                   </button>
                 ))}
               </div>

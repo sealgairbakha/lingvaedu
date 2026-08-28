@@ -1,9 +1,11 @@
 import { useState } from "react";
 import type { LessonBlock } from "./types";
+import { getTrueFalseLabels, TRUE_FALSE_LANGUAGE_OPTIONS } from "./taskLanguages";
 
 type Props = {
   block: LessonBlock;
   onChange: (content: string) => void;
+  onPatch: (patch: Partial<LessonBlock>) => void;
 };
 
 const splitLines = (content: string) => content.split("\n").filter(Boolean);
@@ -157,7 +159,7 @@ function SelectWordsEditor({ block, onChange }: Props) {
   });
   const rows = parsed.length
     ? parsed
-    : [{ sentence: "___", options: ["", ""] }];
+    : [{ sentence: "", options: ["", ""] }];
   const update = (next: typeof rows) =>
     onChange(
       next
@@ -256,7 +258,7 @@ function SelectWordsEditor({ block, onChange }: Props) {
       <button
         type="button"
         className="taskBuilderAdd"
-        onClick={() => update([...rows, { sentence: "___", options: ["", ""] }])}
+        onClick={() => update([...rows, { sentence: "", options: ["", ""] }])}
       >
         <span>＋</span> Добавить предложение
       </button>
@@ -339,7 +341,7 @@ function QuizEditor({ block, onChange }: Props) {
           onClick={() =>
             update(question, [
               ...options,
-              { text: `Вариант ${options.length + 1}`, correct: false },
+              { text: "", correct: false },
             ])
           }
         >
@@ -404,7 +406,7 @@ function MatchEditor({ block, onChange }: Props) {
   );
 }
 
-function TrueFalseEditor({ block, onChange }: Props) {
+function TrueFalseEditor({ block, onChange, onPatch }: Props) {
   const parsed = splitLines(block.content).map((line) => {
     const [statement, value] = line.split("|");
     return { statement: statement?.trim() || "", value: value?.trim() === "true" };
@@ -412,9 +414,25 @@ function TrueFalseEditor({ block, onChange }: Props) {
   const rows = parsed.length ? parsed : [{ statement: "", value: true }];
   const update = (next: typeof rows) =>
     onChange(next.map((row) => `${row.statement} | ${row.value ? "true" : "false"}`).join("\n"));
+  const labels = getTrueFalseLabels(block.trueFalseLanguage);
   return (
     <div className="taskBuilder">
       <EditorHeader title="Утверждения" hint="Для каждого утверждения отметьте правильный ответ." />
+      <div className="trueFalseColumnsHead">
+        <span aria-hidden="true" />
+        <label>
+          <span>Язык кнопок</span>
+          <select
+            aria-label="Язык кнопок верно или неверно"
+            value={block.trueFalseLanguage || "ru"}
+            onChange={(event) => onPatch({ trueFalseLanguage: event.target.value as LessonBlock["trueFalseLanguage"] })}
+          >
+            {TRUE_FALSE_LANGUAGE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>{option.code} · {option.label}</option>
+            ))}
+          </select>
+        </label>
+      </div>
       <div className="taskBuilderRows">
         {rows.map((row, index) => (
           <div className="taskBuilderRow trueFalseBuilderRow" key={index}>
@@ -437,10 +455,10 @@ function TrueFalseEditor({ block, onChange }: Props) {
             <div className="trueFalseToggle" role="group" aria-label="Правильный ответ">
               <button type="button" className={row.value ? "active true" : ""} onClick={() => {
                 const next = [...rows]; next[index] = { ...row, value: true }; update(next);
-              }}>Верно</button>
+              }}>{labels.trueLabel}</button>
               <button type="button" className={!row.value ? "active false" : ""} onClick={() => {
                 const next = [...rows]; next[index] = { ...row, value: false }; update(next);
-              }}>Неверно</button>
+              }}>{labels.falseLabel}</button>
             </div>
             <RowActions canRemove={rows.length > 1} onRemove={() => update(rows.filter((_, item) => item !== index))} />
           </div>

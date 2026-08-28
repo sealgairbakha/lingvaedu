@@ -314,7 +314,7 @@ const taskTemplates: Partial<Record<BlockKind, string>> = {
 };
 
 const makeBlock = (kind: BlockKind): LessonBlock => {
-  const base: LessonBlock = { id: uid(), kind, title: palette.find((x) => x.kind === kind)!.title, content: taskTemplates[kind] || "" };
+  const base: LessonBlock = { id: uid(), kind, title: palette.find((x) => x.kind === kind)!.title, content: "" };
   if (kind === "game-memory") return { ...base, game: { type: "memory", pairs: [
     { id: uid(), left: "apple", right: "яблоко" }, { id: uid(), left: "dog", right: "собака" },
   ] } };
@@ -387,6 +387,9 @@ export function CourseEditorPage() {
   const [saved, setSaved] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(
+    () => localStorage.getItem("lingvaedu-editor-autosave") !== "false",
+  );
   const changeVersionRef = useRef(0);
   const [treeCollapsed, setTreeCollapsed] = useState(() => localStorage.getItem("lingvaedu-editor-tree-collapsed") === "true");
   const [paletteCollapsed, setPaletteCollapsed] = useState(() => localStorage.getItem("lingvaedu-editor-palette-collapsed") === "true");
@@ -1173,7 +1176,7 @@ export function CourseEditorPage() {
     }
   };
   useEffect(() => {
-    if (!course || saved || saving) return;
+    if (!autoSaveEnabled || !course || saved || saving) return;
     const snapshot = structuredClone(course);
     const version = changeVersionRef.current;
     const timer = window.setTimeout(async () => {
@@ -1190,7 +1193,7 @@ export function CourseEditorPage() {
       }
     }, 800);
     return () => window.clearTimeout(timer);
-  }, [course, saved, saving, store]);
+  }, [autoSaveEnabled, course, saved, saving, store]);
   const cancelChanges = () => {
     const snapshot = savedCourseRef.current;
     if (!snapshot || saving) return;
@@ -1298,8 +1301,26 @@ export function CourseEditorPage() {
             ? "Сохраняем изменения…"
             : saved
               ? "Все изменения сохранены"
-              : "Ожидает сохранения")}
+              : autoSaveEnabled
+                ? "Ожидает сохранения"
+                : "Ожидает ручного сохранения")}
         </div>
+        <label
+          className={`editorAutoSave ${autoSaveEnabled ? "enabled" : ""}`}
+          title={autoSaveEnabled ? "Выключить автосохранение" : "Включить автосохранение"}
+        >
+          <input
+            type="checkbox"
+            checked={autoSaveEnabled}
+            onChange={(event) => {
+              const enabled = event.target.checked;
+              setAutoSaveEnabled(enabled);
+              localStorage.setItem("lingvaedu-editor-autosave", String(enabled));
+            }}
+          />
+          <span aria-hidden="true"><i /></span>
+          <b>Автосохранение</b>
+        </label>
         <button
           className={`btn previewUndoButton ${saved ? "previewMode" : "undoMode"}`}
           disabled={saving}
@@ -1880,6 +1901,7 @@ export function CourseEditorPage() {
                       <TaskBlockEditor
                         block={b}
                         onChange={(content) => updateBlock(b.id, { content })}
+                        onPatch={(patch) => updateBlock(b.id, patch)}
                       />
                     ) : isGameKind(b.kind) ? (
                       <GameBlockEditor
