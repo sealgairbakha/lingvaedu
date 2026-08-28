@@ -147,6 +147,13 @@ const palette: {
     hint: "Слушать слово и выбирать правильный ответ",
     group: "Игры",
   },
+  { kind: "game-missing", title: "Что исчезло?", hint: "Запоминать набор и находить исчезнувший предмет", group: "Игры" },
+  { kind: "game-odd-one-out", title: "Лишнее слово", hint: "Находить слово, которое не подходит к группе", group: "Игры" },
+  { kind: "game-speed", title: "Слово на скорость", hint: "Выбирать перевод до окончания таймера", group: "Игры" },
+  { kind: "game-truth", title: "Правда или ошибка?", hint: "Определять, верно ли утверждение", group: "Игры" },
+  { kind: "game-categories", title: "Разложи по коробкам", hint: "Распределять слова по категориям", group: "Игры" },
+  { kind: "game-sentence", title: "Составь предложение", hint: "Собирать предложение из перемешанных слов", group: "Игры" },
+  { kind: "game-adventure", title: "Приключение героя", hint: "Проходить этапы истории, отвечая на вопросы", group: "Игры" },
 ];
 
 const taskKinds: BlockKind[] = [
@@ -158,7 +165,7 @@ const taskKinds: BlockKind[] = [
   "true-false",
 ];
 const isTaskKind = (kind: BlockKind) => taskKinds.includes(kind);
-const gameKinds: BlockKind[] = ["game-memory", "game-build-word", "game-listen-choice"];
+const gameKinds: BlockKind[] = ["game-memory", "game-build-word", "game-listen-choice", "game-missing", "game-odd-one-out", "game-speed", "game-truth", "game-categories", "game-sentence", "game-adventure"];
 const isGameKind = (kind: BlockKind) => gameKinds.includes(kind);
 
 function UploadIcon() {
@@ -317,6 +324,13 @@ const makeBlock = (kind: BlockKind): LessonBlock => {
   if (kind === "game-listen-choice") return { ...base, game: { type: "listen-choice", language: "en-US", items: [
     { id: uid(), phrase: "apple", answer: "яблоко", options: ["яблоко", "груша", "банан"] },
   ] } };
+  if (kind === "game-missing") return { ...base, game: { type: "missing", revealSeconds: 4, rounds: [{ id: uid(), items: ["apple", "banana", "orange", "pear"], missing: "pear" }] } };
+  if (kind === "game-odd-one-out") return { ...base, game: { type: "odd-one-out", rounds: [{ id: uid(), options: ["apple", "banana", "car", "orange"], answer: "car", explanation: "Car — не фрукт." }] } };
+  if (kind === "game-speed") return { ...base, game: { type: "speed", seconds: 10, rounds: [{ id: uid(), prompt: "apple", answer: "яблоко", options: ["яблоко", "груша", "апельсин"] }] } };
+  if (kind === "game-truth") return { ...base, game: { type: "truth", rounds: [{ id: uid(), prompt: "Перевод слова apple", statement: "Apple означает яблоко", correct: true }] } };
+  if (kind === "game-categories") { const fruit = uid(); const transport = uid(); return { ...base, game: { type: "categories", categories: [{ id: fruit, name: "Фрукты" }, { id: transport, name: "Транспорт" }], items: [{ id: uid(), text: "apple", categoryId: fruit }, { id: uid(), text: "car", categoryId: transport }] } }; }
+  if (kind === "game-sentence") return { ...base, game: { type: "sentence", items: [{ id: uid(), sentence: "I like learning English", clue: "Я люблю учить английский" }] } };
+  if (kind === "game-adventure") return { ...base, game: { type: "adventure", heroName: "Лингвик", stages: [{ id: uid(), prompt: "Помоги герою открыть ворота: выбери перевод слова key", answer: "ключ", options: ["ключ", "дверь", "замок"] }] } };
   return base;
 };
 const getBlockImages = (block: LessonBlock) =>

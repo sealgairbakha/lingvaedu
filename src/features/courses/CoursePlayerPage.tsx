@@ -27,6 +27,13 @@ const taskBlockKinds = new Set<LessonBlock["kind"]>([
   "game-memory",
   "game-build-word",
   "game-listen-choice",
+  "game-missing",
+  "game-odd-one-out",
+  "game-speed",
+  "game-truth",
+  "game-categories",
+  "game-sentence",
+  "game-adventure",
 ]);
 
 type LessonRun = {
@@ -282,7 +289,7 @@ export function LessonBlockView({
       window.removeEventListener("keydown", closeOnEscape);
     };
   }, [blockImages.length, openedImage]);
-  if (block.kind === "game-memory" || block.kind === "game-build-word" || block.kind === "game-listen-choice")
+  if (block.kind.startsWith("game-"))
     return <GameBlockView block={block} onResult={(passed) => onTaskResult?.(block.id, passed)} />;
   if (block.kind === "assignment")
     return (

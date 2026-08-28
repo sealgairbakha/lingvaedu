@@ -63,9 +63,63 @@ function ListenEditor({ game, onChange }: { game: Extract<GameConfig, { type: "l
   </div>;
 }
 
+const csv = (value: string) => value.split(",").map((item) => item.trim()).filter(Boolean);
+
+function RoundsEditor({ game, onChange }: { game: Extract<GameConfig, { type: "missing" | "odd-one-out" | "speed" | "truth" | "adventure" }>; onChange: Props["onChange"] }) {
+  const rounds = game.type === "adventure" ? game.stages : game.rounds;
+  const update = (next: typeof rounds) => game.type === "adventure" ? onChange({ ...game, stages: next as typeof game.stages }) : onChange({ ...game, rounds: next as never });
+  const patchRound = (id: string, patch: Record<string, unknown>) => update(rounds.map((round) => round.id === id ? { ...round, ...patch } : round) as typeof rounds);
+  const makeRound = () => {
+    if (game.type === "missing") return { id: uid(), items: ["apple", "pear", "banana"], missing: "banana" };
+    if (game.type === "odd-one-out") return { id: uid(), options: ["apple", "pear", "car"], answer: "car", explanation: "" };
+    if (game.type === "speed") return { id: uid(), prompt: "apple", answer: "яблоко", options: ["яблоко", "груша"] };
+    if (game.type === "truth") return { id: uid(), prompt: "", statement: "Apple означает яблоко", correct: true };
+    return { id: uid(), prompt: "Новый этап", answer: "ответ", options: ["ответ", "другой вариант"] };
+  };
+  return <div className="gameBlockEditor">
+    {game.type === "missing" && <div className="gameEditorSettings"><label>Секунд на запоминание<input type="number" min="2" max="30" value={game.revealSeconds} onChange={(e) => onChange({ ...game, revealSeconds: Number(e.target.value) || 4 })} /></label></div>}
+    {game.type === "speed" && <div className="gameEditorSettings"><label>Секунд на ответ<input type="number" min="3" max="60" value={game.seconds} onChange={(e) => onChange({ ...game, seconds: Number(e.target.value) || 10 })} /></label></div>}
+    {game.type === "adventure" && <div className="gameEditorSettings"><label>Имя героя<input value={game.heroName} onChange={(e) => onChange({ ...game, heroName: e.target.value })} /></label></div>}
+    <p className="gameEditorHint">Варианты перечисляйте через запятую. Правильный ответ должен присутствовать среди вариантов.</p>
+    {rounds.map((round, index) => { const entry = round as { id: string; items: string[]; missing: string; prompt: string; statement: string; correct: boolean; options: string[]; answer: string; explanation?: string }; return <div className="gameEditorCard universalGameEditorRow" key={entry.id}>
+      <span className="gameEditorNumber">{index + 1}</span>
+      {game.type === "missing" ? <>
+        <label>Предметы<input value={entry.items.join(", ")} onChange={(e) => patchRound(entry.id, { items: csv(e.target.value) })} /></label>
+        <label>Что исчезнет<input value={entry.missing} onChange={(e) => patchRound(entry.id, { missing: e.target.value })} /></label>
+      </> : game.type === "truth" ? <>
+        <label>Контекст<input value={entry.prompt} onChange={(e) => patchRound(entry.id, { prompt: e.target.value })} /></label>
+        <label>Утверждение<input value={entry.statement} onChange={(e) => patchRound(entry.id, { statement: e.target.value })} /></label>
+        <label>Правильный ответ<select value={entry.correct ? "true" : "false"} onChange={(e) => patchRound(entry.id, { correct: e.target.value === "true" })}><option value="true">Правда</option><option value="false">Ошибка</option></select></label>
+      </> : <>
+        {game.type !== "odd-one-out" && <label>Вопрос / подсказка<input value={entry.prompt || ""} onChange={(e) => patchRound(entry.id, { prompt: e.target.value })} /></label>}
+        <label>Варианты<input value={entry.options.join(", ")} onChange={(e) => patchRound(entry.id, { options: csv(e.target.value) })} /></label>
+        <label>Правильный ответ<input value={entry.answer} onChange={(e) => patchRound(entry.id, { answer: e.target.value })} /></label>
+        {game.type === "odd-one-out" && <label>Объяснение<input value={entry.explanation || ""} onChange={(e) => patchRound(entry.id, { explanation: e.target.value })} /></label>}
+      </>}
+      <RemoveButton disabled={rounds.length <= 1} onClick={() => update(rounds.filter((item) => item.id !== entry.id) as typeof rounds)} />
+    </div>; })}
+    <button type="button" className="gameEditorAdd" onClick={() => update([...rounds, makeRound()] as typeof rounds)}>＋ Добавить раунд</button>
+  </div>;
+}
+
+function CategoriesEditor({ game, onChange }: { game: Extract<GameConfig, { type: "categories" }>; onChange: Props["onChange"] }) {
+  return <div className="gameBlockEditor"><p className="gameEditorHint">Создайте коробки, затем назначьте каждому слову правильную коробку.</p>
+    <div className="gameEditorCard categoryNamesEditor">{game.categories.map((category) => <label key={category.id}>Название коробки<input value={category.name} onChange={(e) => onChange({ ...game, categories: game.categories.map((item) => item.id === category.id ? { ...item, name: e.target.value } : item) })} /></label>)}<button type="button" className="gameEditorAdd" onClick={() => onChange({ ...game, categories: [...game.categories, { id: uid(), name: "Новая категория" }] })}>＋ Коробка</button></div>
+    {game.items.map((item, index) => <div className="gameEditorCard categoryItemEditor" key={item.id}><span className="gameEditorNumber">{index + 1}</span><label>Слово<input value={item.text} onChange={(e) => onChange({ ...game, items: game.items.map((entry) => entry.id === item.id ? { ...entry, text: e.target.value } : entry) })} /></label><label>Коробка<select value={item.categoryId} onChange={(e) => onChange({ ...game, items: game.items.map((entry) => entry.id === item.id ? { ...entry, categoryId: e.target.value } : entry) })}>{game.categories.map((category) => <option value={category.id} key={category.id}>{category.name}</option>)}</select></label><RemoveButton disabled={game.items.length <= 1} onClick={() => onChange({ ...game, items: game.items.filter((entry) => entry.id !== item.id) })} /></div>)}
+    <button type="button" className="gameEditorAdd" onClick={() => onChange({ ...game, items: [...game.items, { id: uid(), text: "", categoryId: game.categories[0]?.id || "" }] })}>＋ Добавить слово</button>
+  </div>;
+}
+
+function SentenceEditor({ game, onChange }: { game: Extract<GameConfig, { type: "sentence" }>; onChange: Props["onChange"] }) {
+  return <div className="gameBlockEditor"><p className="gameEditorHint">Слова предложения будут автоматически перемешаны.</p>{game.items.map((item, index) => <div className="gameEditorCard sentenceEditorRow" key={item.id}><span className="gameEditorNumber">{index + 1}</span><label>Предложение<input value={item.sentence} onChange={(e) => onChange({ ...game, items: game.items.map((entry) => entry.id === item.id ? { ...entry, sentence: e.target.value } : entry) })} /></label><label>Подсказка<input value={item.clue || ""} onChange={(e) => onChange({ ...game, items: game.items.map((entry) => entry.id === item.id ? { ...entry, clue: e.target.value } : entry) })} /></label><RemoveButton disabled={game.items.length <= 1} onClick={() => onChange({ ...game, items: game.items.filter((entry) => entry.id !== item.id) })} /></div>)}<button type="button" className="gameEditorAdd" onClick={() => onChange({ ...game, items: [...game.items, { id: uid(), sentence: "", clue: "" }] })}>＋ Добавить предложение</button></div>;
+}
+
 export function GameBlockEditor({ block, onChange }: Props) {
   if (!block.game) return null;
   if (block.game.type === "memory") return <MemoryEditor game={block.game} onChange={onChange} />;
   if (block.game.type === "build-word") return <BuildWordEditor game={block.game} onChange={onChange} />;
-  return <ListenEditor game={block.game} onChange={onChange} />;
+  if (block.game.type === "listen-choice") return <ListenEditor game={block.game} onChange={onChange} />;
+  if (block.game.type === "categories") return <CategoriesEditor game={block.game} onChange={onChange} />;
+  if (block.game.type === "sentence") return <SentenceEditor game={block.game} onChange={onChange} />;
+  return <RoundsEditor game={block.game} onChange={onChange} />;
 }

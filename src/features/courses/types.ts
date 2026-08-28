@@ -15,6 +15,13 @@ export type BlockKind =
   | "game-memory"
   | "game-build-word"
   | "game-listen-choice"
+  | "game-missing"
+  | "game-odd-one-out"
+  | "game-speed"
+  | "game-truth"
+  | "game-categories"
+  | "game-sentence"
+  | "game-adventure"
   | "html"
   | "file";
 
@@ -34,7 +41,15 @@ export type ListenChoiceGameConfig = {
   items: { id: string; phrase: string; audio?: string; answer: string; options: string[] }[];
 };
 
-export type GameConfig = MemoryGameConfig | BuildWordGameConfig | ListenChoiceGameConfig;
+export type MissingGameConfig = { type: "missing"; revealSeconds: number; rounds: { id: string; items: string[]; missing: string }[] };
+export type OddOneOutGameConfig = { type: "odd-one-out"; rounds: { id: string; options: string[]; answer: string; explanation?: string }[] };
+export type SpeedGameConfig = { type: "speed"; seconds: number; rounds: { id: string; prompt: string; answer: string; options: string[]; image?: string }[] };
+export type TruthGameConfig = { type: "truth"; rounds: { id: string; prompt: string; statement: string; correct: boolean; image?: string }[] };
+export type CategoriesGameConfig = { type: "categories"; categories: { id: string; name: string }[]; items: { id: string; text: string; categoryId: string }[] };
+export type SentenceGameConfig = { type: "sentence"; items: { id: string; sentence: string; clue?: string }[] };
+export type AdventureGameConfig = { type: "adventure"; heroName: string; stages: { id: string; prompt: string; answer: string; options: string[] }[] };
+
+export type GameConfig = MemoryGameConfig | BuildWordGameConfig | ListenChoiceGameConfig | MissingGameConfig | OddOneOutGameConfig | SpeedGameConfig | TruthGameConfig | CategoriesGameConfig | SentenceGameConfig | AdventureGameConfig;
 
 export type LessonBlock = {
   id: string;

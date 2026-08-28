@@ -3489,6 +3489,185 @@ html[data-theme="dark"] .coursePlayer .imageLearning .lessonImageButton {
   }
 }
 
+/* Extended course games */
+.blockGlyph[class*="game-"],
+.blockPalette i[class*="game-"] {
+  background: #fff0d8;
+  color: #dd7c18;
+}
+
+.universalGameEditorRow,
+.sentenceEditorRow,
+.categoryItemEditor {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.gameEditorCard select {
+  width: 100%;
+  height: 39px;
+  padding: 0 11px;
+  border: 1px solid #dfe3ea;
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--ink);
+}
+
+.categoryNamesEditor {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.choiceGameBoard,
+.missingBoard,
+.categoriesBoard,
+.sentenceBoard {
+  display: flex;
+  min-height: 280px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 24px;
+}
+
+.speedTimer {
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: #e9f7f0;
+  color: #18835b;
+  font-weight: 850;
+}
+
+.speedTimer.urgent {
+  background: #fff0f0;
+  color: #c84646;
+  animation: gamePulse .7s infinite alternate;
+}
+
+.gameExplanation {
+  margin: 15px 0 0;
+  color: #6d7789;
+  font-size: 13px;
+}
+
+.adventureTrail {
+  position: relative;
+  display: flex;
+  width: min(420px, 100%);
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+  padding: 13px 16px;
+  border-radius: 14px;
+  background: #f1efff;
+  color: #4f3bc9;
+}
+
+.adventureTrail i {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  background: var(--purple);
+  transition: width .3s;
+}
+
+.missingItems,
+.categoryTokens,
+.sentenceWords {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.missingItems span,
+.categoryTokens button,
+.sentenceWords button {
+  padding: 12px 17px;
+  border: 1px solid #ded9fb;
+  border-radius: 11px;
+  background: #f8f7ff;
+  color: #352775;
+  font-weight: 800;
+}
+
+.categoryTokens button.selected {
+  border-color: var(--purple);
+  box-shadow: 0 0 0 2px #7760ef30;
+}
+
+.categoryBoxes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  width: 100%;
+}
+
+.categoryBoxes > button {
+  display: flex;
+  min-height: 130px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 15px;
+  border: 2px dashed #cbc4f4;
+  border-radius: 14px;
+  background: #fbfaff;
+  color: var(--ink);
+}
+
+.categoryBoxes span {
+  padding: 7px;
+  border-radius: 8px;
+  background: #eeeaff;
+}
+
+.sentenceAnswer {
+  width: min(560px, 100%);
+  min-height: 58px;
+  margin-bottom: 18px;
+  padding: 17px;
+  border: 2px solid #ded9fb;
+  border-radius: 12px;
+  text-align: center;
+  color: #6e7789;
+  font-weight: 750;
+}
+
+.sentenceAnswer.wrong {
+  border-color: #e36767;
+  background: #fff0f0;
+  animation: gameShake .25s;
+}
+
+html[data-theme="dark"] .gameEditorCard select,
+html[data-theme="dark"] .missingItems span,
+html[data-theme="dark"] .categoryTokens button,
+html[data-theme="dark"] .sentenceWords button,
+html[data-theme="dark"] .categoryBoxes > button {
+  border-color: var(--line);
+  background: #111825;
+  color: var(--ink);
+}
+
+html[data-theme="dark"] .categoryBoxes span,
+html[data-theme="dark"] .adventureTrail {
+  background: #25213c;
+  color: #cfc6ff;
+}
+
+@keyframes gamePulse {
+  to { transform: scale(1.05); }
+}
+
+@media (max-width: 760px) {
+  .universalGameEditorRow,
+  .sentenceEditorRow,
+  .categoryItemEditor {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Premium learning experience */
 html:not([data-theme="dark"]),
 html:not([data-theme="dark"]) body,

@@ -28,6 +28,10 @@ function CourseCover({ course }: { course: Course }) {
   </span>;
 }
 
+function MentorVerifiedIcon() {
+  return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m10 2.5 2 1.3 2.4.2 1 2.2 1.8 1.6-.6 2.4.6 2.4-1.8 1.6-1 2.2-2.4.2-2 1.3-2-1.3-2.4-.2-1-2.2-1.8-1.6.6-2.4-.6-2.4 1.8-1.6 1-2.2 2.4-.2 2-1.3Z"/><path d="m7 10 2 2 4-4"/></svg>;
+}
+
 function StudentCourses({ courses, progress, loading }: { courses: Course[]; progress: CourseLessonProgress[]; loading: boolean }) {
   const navigate = useNavigate();
   const stats = courses.map((course) => ({ course, ...getCourseProgress(course, progress) }));
@@ -77,8 +81,26 @@ function AdminCourses() {
     <div className="tabs">{(["all", "published", "draft", "archived"] as const).map((item) => <button key={item} className={tab === item ? "active" : ""} onClick={() => setTab(item)}>{labels[item]} <span>{courses.filter((course) => item === "all" || course.status === item).length}</span></button>)}</div>
     <div className="toolbar"><label><span>⌕</span><input value={q} onChange={(event) => setQ(event.target.value)} placeholder="Поиск по курсам" /></label><select className="filter" value={language} onChange={(event) => setLanguage(event.target.value)}><option>Все</option>{languages.map((item) => <option key={item}>{item}</option>)}</select><select className="filter" value={author} onChange={(event) => setAuthor(event.target.value)}><option>Все</option>{authors.map((item) => <option key={item}>{item}</option>)}</select></div>
     {loading ? <div className="courseSkeletonGrid"><i /><i /><i /></div> : rows.length === 0 ? <div className="courseEmpty"><h2>{courses.length ? "Ничего не найдено" : "Здесь пока нет курсов"}</h2><p>Создайте первый курс и добавьте в него уроки.</p>{!courses.length && <button className="btn primary" onClick={create}>Создать курс</button>}</div> : <div className="courseGrid">{rows.map((course) => {
-      const isCurrentAuthor = course.authorId === user?.id || (!course.authorId && course.author === displayName); const mentorName = isCurrentAuthor ? displayName : course.mentor; const mentorAvatar = isCurrentAuthor ? avatarUrl : course.mentorAvatar;
-      return <article className="courseCard" key={course.id}><button className="courseCoverButton" onClick={() => navigate(`/courses/learn?course=${course.id}`)}><CourseCover course={course} /></button><div className="courseInfo"><div className="statusRow"><span className={course.status === "published" ? "published" : "draft"}>● {statusLabel[course.status]}</span><small>{new Date(course.updatedAt).toLocaleDateString("ru-RU")}</small></div><h3>{course.title}</h3><p>{course.description}</p><div className="courseStats"><span>▤ {courseLessons(course).length} уроков</span><span>♙ {course.students} учеников</span></div><button className="openCourseBtn" onClick={() => navigate(`/courses/learn?course=${course.id}`)}>Открыть курс</button><div className="courseExtras"><div className="mentor"><span>{mentorAvatar ? <img src={mentorAvatar} alt={mentorName} /> : mentorName.slice(0, 2).toUpperCase()}</span><div><small>НАСТАВНИК</small><b>{mentorName}</b></div></div><div className="courseActions"><button onClick={() => duplicateCourse(course.id)}>Дублировать</button><button onClick={() => saveCourse({ ...course, status: course.status === "archived" ? "draft" : "archived" })}>{course.status === "archived" ? "Вернуть" : "В архив"}</button><button className="editCourseAction" onClick={() => edit(course.id)}>Редактировать</button><button className="dangerText" onClick={() => confirm(`Удалить курс «${course.title}»?`) && removeCourse(course.id)}>Удалить</button></div></div></div></article>;
+      const isCurrentAuthor = course.authorId === user?.id || (!course.authorId && course.author === displayName);
+      const mentorName = isCurrentAuthor ? displayName : course.mentor;
+      const mentorAvatar = isCurrentAuthor ? avatarUrl : course.mentorAvatar;
+      return <article className="courseCard" key={course.id}>
+        <button className="courseCoverButton" onClick={() => navigate(`/courses/learn?course=${course.id}`)}><CourseCover course={course} /></button>
+        <div className="courseInfo">
+          <div className="statusRow"><span className={course.status === "published" ? "published" : "draft"}>● {statusLabel[course.status]}</span><small>{new Date(course.updatedAt).toLocaleDateString("ru-RU")}</small></div>
+          <h3>{course.title}</h3><p>{course.description}</p>
+          <div className="courseStats"><span>▤ {courseLessons(course).length} уроков</span><span>♙ {course.students} учеников</span></div>
+          <button className="openCourseBtn" onClick={() => navigate(`/courses/learn?course=${course.id}`)}>Открыть курс</button>
+          <div className="courseExtras">
+            <div className="courseMentorCard">
+              <span className="courseMentorAvatar">{mentorAvatar ? <img src={mentorAvatar} alt={mentorName} /> : mentorName.slice(0, 2).toUpperCase()}<i aria-hidden="true" /></span>
+              <div><small>НАСТАВНИК КУРСА</small><b>{mentorName}</b></div>
+              <span className="courseMentorVerified" title="Наставник курса"><MentorVerifiedIcon /></span>
+            </div>
+            <div className="courseActions"><button onClick={() => duplicateCourse(course.id)}>Дублировать</button><button onClick={() => saveCourse({ ...course, status: course.status === "archived" ? "draft" : "archived" })}>{course.status === "archived" ? "Вернуть" : "В архив"}</button><button className="editCourseAction" onClick={() => edit(course.id)}>Редактировать</button><button className="dangerText" onClick={() => confirm(`Удалить курс «${course.title}»?`) && removeCourse(course.id)}>Удалить</button></div>
+          </div>
+        </div>
+      </article>;
     })}</div>}
   </main>;
 }
