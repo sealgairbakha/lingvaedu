@@ -90,6 +90,16 @@ async function copyText(value: string) {
   await navigator.clipboard.writeText(value);
 }
 
+function MeetingGroupPicker({ groups, value, loading, onChange }: { groups: RoomGroup[]; value: string; loading: boolean; onChange: (id: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const selected = groups.find((group) => group.id === value);
+  const disabled = loading || !groups.length;
+  return <div className={`meetingGroupPicker${open ? " open" : ""}`}>
+    <button type="button" className="meetingGroupTrigger" disabled={disabled} aria-expanded={open} onClick={() => setOpen((current) => !current)}><span>{loading ? "Загружаем группы…" : selected ? `${selected.name} · ${selected.memberIds.length} участников` : groups.length ? "Выберите группу" : "Нет доступных групп"}</span><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m5 7.5 5 5 5-5"/></svg></button>
+    {open && <div className="meetingGroupMenu">{groups.map((group) => <button type="button" className={group.id === value ? "selected" : ""} key={group.id} onClick={() => { onChange(group.id); setOpen(false); }}><span><b>{group.name}</b><small>{group.memberIds.length} участников</small></span>{group.id === value && <i>✓</i>}</button>)}</div>}
+  </div>;
+}
+
 export function VideoRoomsPage() {
   const navigate = useNavigate();
   const { session } = useAuth();
@@ -174,7 +184,7 @@ export function VideoRoomsPage() {
         <div className="roomActions"><button className="btn ghost" onClick={() => void copy(room)}>{copied === room.id ? "✓ Скопировано" : "Копировать ссылку"}</button><button className="btn primary" onClick={() => { sessionStorage.setItem(`lingvaedu-room-owner:${room.id}`, "1"); sessionStorage.setItem(`lingvaedu-room-title:${room.id}`, room.title); navigate(`${ROOM_PREFIX}${room.id}`); }}>Войти</button></div>
       </article>) : <div className="roomsEmpty"><span>◇</span><h3>Комнат пока нет</h3><p>Создайте первую комнату и отправьте ученикам ссылку-приглашение.</p></div>}
     </section>
-    {creating && <div className="modalLayer"><button className="modalScrim" aria-label="Закрыть" onClick={() => setCreating(false)}/><form className="modal videoRoomModal" onSubmit={(event) => { event.preventDefault(); createRoom(); }}><div className="modalHead"><div><small>НОВАЯ ВСТРЕЧА</small><h2>Запланировать видеовстречу</h2></div><button type="button" aria-label="Закрыть" onClick={() => setCreating(false)}>×</button></div><label>Название встречи<input value={title} required maxLength={100} autoFocus onChange={(event) => setTitle(event.target.value)} placeholder="Например: Разговорная практика"/></label><label>Учебная группа<select value={groupId} required disabled={groupsLoading || !groups.length} onChange={(event) => setGroupId(event.target.value)}><option value="">{groupsLoading ? "Загружаем группы…" : groups.length ? "Выберите группу" : "Нет доступных групп"}</option>{groups.map((group) => <option key={group.id} value={group.id}>{group.name} · {group.memberIds.length} участников</option>)}</select></label><div className="meetingDateField"><span>Дата и время</span><MeetingDatePicker value={scheduledAt} onChange={setScheduledAt}/></div>{groupsError && <p className="videoRoomFormError">{groupsError}</p>}<p className="roomPrivacyNote">Встречу увидят участники выбранной группы. Защищённая ссылка будет создана автоматически.</p><button className="btn primary full" disabled={groupsLoading || !groupId || !scheduledAt}>Создать и войти</button></form></div>}
+    {creating && <div className="modalLayer"><button className="modalScrim" aria-label="Закрыть" onClick={() => setCreating(false)}/><form className="modal videoRoomModal" onSubmit={(event) => { event.preventDefault(); createRoom(); }}><div className="modalHead"><div><small>НОВАЯ ВСТРЕЧА</small><h2>Запланировать видеовстречу</h2></div><button type="button" aria-label="Закрыть" onClick={() => setCreating(false)}>×</button></div><label>Название встречи<input value={title} required maxLength={100} autoFocus onChange={(event) => setTitle(event.target.value)} placeholder="Например: Разговорная практика"/></label><div className="meetingGroupField"><span>Учебная группа</span><MeetingGroupPicker groups={groups} value={groupId} loading={groupsLoading} onChange={setGroupId}/></div><div className="meetingDateField"><span>Дата и время</span><MeetingDatePicker value={scheduledAt} onChange={setScheduledAt}/></div>{groupsError && <p className="videoRoomFormError">{groupsError}</p>}<p className="roomPrivacyNote">Встречу увидят участники выбранной группы. Защищённая ссылка будет создана автоматически.</p><button className="btn primary full" disabled={groupsLoading || !groupId || !scheduledAt}>Создать и войти</button></form></div>}
   </main>;
 }
 
