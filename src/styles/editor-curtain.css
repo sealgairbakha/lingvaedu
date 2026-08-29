@@ -2814,10 +2814,68 @@ html[data-theme="dark"] .matchGrid button.paired {
 
 .treeLessonRow {
   position: relative;
+  transition: opacity .18s ease, transform .18s ease;
 }
 
 .treeLessonRow .treeLesson {
   padding-right: 58px;
+}
+
+.treeLessonRow[draggable="true"] .treeLesson i {
+  cursor: grab;
+  transition: color .18s ease, background .18s ease, transform .18s ease;
+}
+
+.treeLessonRow[draggable="true"]:hover .treeLesson i {
+  color: var(--purple);
+  transform: scale(1.06);
+}
+
+.treeLessonRow.lessonDragging {
+  opacity: .34;
+  transform: scale(.98);
+}
+
+.treeLessonRow.lessonDragging .treeLesson i {
+  cursor: grabbing;
+}
+
+.treeLessonRow.lessonDropBefore::before,
+.treeLessonRow.lessonDropAfter::after {
+  content: "";
+  position: absolute;
+  z-index: 4;
+  right: 14px;
+  left: 14px;
+  height: 3px;
+  border-radius: 99px;
+  background: var(--purple);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--purple) 13%, transparent);
+  pointer-events: none;
+}
+
+.treeLessonRow.lessonDropBefore::before { top: -2px; }
+.treeLessonRow.lessonDropAfter::after { bottom: -2px; }
+
+.lessonModuleDropZone {
+  display: grid;
+  place-items: center;
+  min-height: 34px;
+  margin: 4px 14px 8px;
+  border: 1px dashed color-mix(in srgb, var(--purple) 30%, var(--line));
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--purple) 4%, transparent);
+  color: #8b849e;
+  font-size: 10px;
+  font-weight: 750;
+  transition: border-color .18s ease, background .18s ease, color .18s ease, transform .18s ease;
+}
+
+.lessonModuleDropZone.active {
+  border-color: var(--purple);
+  background: color-mix(in srgb, var(--purple) 12%, var(--card));
+  color: var(--purple);
+  transform: scale(.98);
 }
 
 .treeLessonDelete {
@@ -2845,6 +2903,18 @@ html[data-theme="dark"] .matchGrid button.paired {
 html[data-theme="dark"] .moduleEdit .moduleDelete,
 html[data-theme="dark"] .treeLessonDelete {
   color: #8490a5;
+}
+
+html[data-theme="dark"] .lessonModuleDropZone {
+  border-color: #4b426e;
+  background: rgba(101, 75, 246, .06);
+  color: #9289ad;
+}
+
+html[data-theme="dark"] .lessonModuleDropZone.active {
+  border-color: #806df8;
+  background: #292442;
+  color: #c8bdff;
 }
 
 html[data-theme="dark"] .moduleEdit .moduleDelete:hover,

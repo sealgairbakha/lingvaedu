@@ -384,6 +384,15 @@ export function CourseEditorPage() {
     id: string;
     edge: "before" | "after";
   } | null>(null);
+  const [lessonDragging, setLessonDragging] = useState<{
+    moduleId: string;
+    lessonId: string;
+  } | null>(null);
+  const [lessonDropTarget, setLessonDropTarget] = useState<{
+    moduleId: string;
+    lessonId?: string;
+    edge: "before" | "after" | "end";
+  } | null>(null);
   const [saved, setSaved] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
@@ -807,6 +816,44 @@ export function CourseEditorPage() {
           : m,
       ),
     }));
+  };
+  const moveLesson = (
+    sourceModuleId: string,
+    sourceLessonId: string,
+    targetModuleId: string,
+    targetLessonId?: string,
+    edge: "before" | "after" | "end" = "end",
+  ) => {
+    if (
+      sourceModuleId === targetModuleId &&
+      sourceLessonId === targetLessonId
+    ) return;
+    mutate((current) => {
+      const sourceModule = current.modules.find((item) => item.id === sourceModuleId);
+      const movedLesson = sourceModule?.lessons.find((item) => item.id === sourceLessonId);
+      if (!movedLesson) return current;
+
+      const modulesWithoutLesson = current.modules.map((item) =>
+        item.id === sourceModuleId
+          ? { ...item, lessons: item.lessons.filter((entry) => entry.id !== sourceLessonId) }
+          : item,
+      );
+      const nextModules = modulesWithoutLesson.map((item) => {
+        if (item.id !== targetModuleId) return item;
+        const lessons = [...item.lessons];
+        if (edge === "end" || !targetLessonId) lessons.push(movedLesson);
+        else {
+          const targetIndex = lessons.findIndex((entry) => entry.id === targetLessonId);
+          const insertAt = targetIndex < 0
+            ? lessons.length
+            : targetIndex + (edge === "after" ? 1 : 0);
+          lessons.splice(insertAt, 0, movedLesson);
+        }
+        return { ...item, lessons };
+      });
+      return { ...current, modules: nextModules };
+    });
+    if (lessonId === sourceLessonId) setModuleId(targetModuleId);
   };
   const removeLesson = (
     targetModuleId: string,
@@ -1431,7 +1478,42 @@ export function CourseEditorPage() {
                 </button>
               </div>
               {m.lessons.map((l, li) => (
-                <div className="treeLessonRow" key={l.id}>
+                <div
+                  className={`treeLessonRow ${lessonDragging?.lessonId === l.id ? "lessonDragging" : ""} ${lessonDropTarget?.lessonId === l.id ? `lessonDrop${lessonDropTarget.edge === "before" ? "Before" : "After"}` : ""}`}
+                  key={l.id}
+                  draggable
+                  onDragStart={(event) => {
+                    event.dataTransfer.effectAllowed = "move";
+                    event.dataTransfer.setData("application/x-lingva-lesson-id", l.id);
+                    event.dataTransfer.setData("application/x-lingva-module-id", m.id);
+                    setLessonDragging({ moduleId: m.id, lessonId: l.id });
+                    setLessonDropTarget(null);
+                  }}
+                  onDragOver={(event) => {
+                    if (!lessonDragging || lessonDragging.lessonId === l.id) return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    event.dataTransfer.dropEffect = "move";
+                    const bounds = event.currentTarget.getBoundingClientRect();
+                    const edge = event.clientY < bounds.top + bounds.height / 2 ? "before" : "after";
+                    setLessonDropTarget({ moduleId: m.id, lessonId: l.id, edge });
+                  }}
+                  onDrop={(event) => {
+                    if (!lessonDragging) return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const edge = lessonDropTarget?.lessonId === l.id
+                      ? lessonDropTarget.edge as "before" | "after"
+                      : "after";
+                    moveLesson(lessonDragging.moduleId, lessonDragging.lessonId, m.id, l.id, edge);
+                    setLessonDragging(null);
+                    setLessonDropTarget(null);
+                  }}
+                  onDragEnd={() => {
+                    setLessonDragging(null);
+                    setLessonDropTarget(null);
+                  }}
+                >
                   <button
                     className={`treeLesson ${lesson?.id === l.id ? "active" : ""}`}
                     onClick={() => {
@@ -1441,7 +1523,7 @@ export function CourseEditorPage() {
                       setMobilePanel(null);
                     }}
                   >
-                    <i>{li + 1}</i>
+                    <i title="Перетащите, чтобы изменить порядок">{li + 1}</i>
                     <span>
                       {l.title}
                       <small>{l.blocks.length} блоков</small>
@@ -1458,6 +1540,26 @@ export function CourseEditorPage() {
                   </button>
                 </div>
               ))}
+              {lessonDragging && (
+                <div
+                  className={`lessonModuleDropZone ${lessonDropTarget?.moduleId === m.id && lessonDropTarget.edge === "end" ? "active" : ""}`}
+                  onDragOver={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    event.dataTransfer.dropEffect = "move";
+                    setLessonDropTarget({ moduleId: m.id, edge: "end" });
+                  }}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    moveLesson(lessonDragging.moduleId, lessonDragging.lessonId, m.id);
+                    setLessonDragging(null);
+                    setLessonDropTarget(null);
+                  }}
+                >
+                  Переместить в конец модуля
+                </div>
+              )}
               <button
                 className="moduleAddLesson"
                 aria-label={`Добавить урок в модуль «${m.title}»`}
