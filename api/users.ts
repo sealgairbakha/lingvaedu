@@ -26,6 +26,14 @@ function readStatus(user: User): UserStatus {
   return user.email_confirmed_at ? "active" : "invited";
 }
 
+function readUsername(value: unknown) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function validUsername(value: string) {
+  return /^[a-z0-9._-]{3,32}$/.test(value);
+}
+
 function bearerToken(request: Request) {
   const authorization = request.headers.get("authorization") || "";
   return authorization.startsWith("Bearer ") ? authorization.slice(7) : "";
@@ -80,7 +88,11 @@ export default {
 
       const users = data.users.map((user) => ({
         id: user.id,
-        email: user.email || "",
+        email: String(
+          user.user_metadata?.contact_email ||
+            (user.email?.endsWith("@no-email.lingvaedu.invalid") ? "" : user.email || ""),
+        ),
+        username: String(user.user_metadata?.username || user.email?.split("@")[0] || ""),
         fullName: String(
           user.user_metadata?.full_name ||
             user.email?.split("@")[0] ||
@@ -104,27 +116,27 @@ export default {
         .trim()
         .toLowerCase();
       const fullName = String(body?.fullName || "").trim();
+      const username = readUsername(body?.username);
+      const password = String(body?.password || "");
       const group = String(body?.group || "").trim();
       const role = readRole(body?.role);
-      if (!email || !fullName)
-        return json({ error: "Укажите имя и электронную почту" }, 400);
+      if (!fullName || !username || !password)
+        return json({ error: "Укажите имя, имя пользователя и пароль" }, 400);
+      if (!validUsername(username))
+        return json({ error: "Имя пользователя: 3–32 латинских символа, цифры, точка, дефис или подчёркивание" }, 400);
+      if (password.length < 8)
+        return json({ error: "Пароль должен содержать не менее 8 символов" }, 400);
 
-      const redirectTo = `${new URL(request.url).origin}/`;
-      const { data, error } = await service.auth.admin.inviteUserByEmail(
-        email,
-        {
-          redirectTo,
-          data: { full_name: fullName, group_name: group },
-        },
-      );
+      const authEmail = email || `${crypto.randomUUID()}@no-email.lingvaedu.invalid`;
+      const { data, error } = await service.auth.admin.createUser({
+        email: authEmail,
+        password,
+        email_confirm: true,
+        user_metadata: { full_name: fullName, username, contact_email: email, group_name: group },
+        app_metadata: { role },
+      });
       if (error) return json({ error: error.message }, 400);
-      if (data.user && role !== "student") {
-        const update = await service.auth.admin.updateUserById(data.user.id, {
-          app_metadata: { ...data.user.app_metadata, role },
-        });
-        if (update.error) return json({ error: update.error.message }, 400);
-      }
-      return json({ ok: true }, 201);
+      return json({ ok: true, userId: data.user?.id }, 201);
     }
 
     if (request.method === "PATCH") {
@@ -146,6 +158,8 @@ export default {
       const fullName = String(
         body?.fullName ?? existing.user_metadata?.full_name ?? "",
       ).trim();
+      const username = readUsername(body?.username ?? existing.user_metadata?.username);
+      if (!validUsername(username)) return json({ error: "Некорректное имя пользователя" }, 400);
       const group = String(
         body?.group ?? existing.user_metadata?.group_name ?? "",
       ).trim();
@@ -153,6 +167,7 @@ export default {
         user_metadata: {
           ...existing.user_metadata,
           full_name: fullName,
+          username,
           group_name: group,
         },
         app_metadata: { ...existing.app_metadata, role },

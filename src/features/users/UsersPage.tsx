@@ -8,6 +8,7 @@ type UserStatus = "active" | "invited" | "blocked";
 type ManagedUser = {
   id: string;
   email: string;
+  username: string;
   fullName: string;
   avatarUrl: string;
   group: string;
@@ -83,7 +84,9 @@ export function UsersPage() {
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({
     fullName: "",
+    username: "",
     email: "",
+    password: "",
     role: "student" as UserRole,
     group: "",
     status: "active" as UserStatus,
@@ -147,7 +150,7 @@ export function UsersPage() {
     return users.filter(
       (user) =>
         (!normalized ||
-          `${user.fullName} ${user.email}`
+          `${user.fullName} ${user.username} ${user.email}`
             .toLowerCase()
             .includes(normalized)) &&
         (roleFilter === "all" || user.role === roleFilter) &&
@@ -166,7 +169,9 @@ export function UsersPage() {
   const openInvite = () => {
     setForm({
       fullName: "",
+      username: "",
       email: "",
+      password: "",
       role: "student",
       group: "",
       status: "invited",
@@ -178,7 +183,9 @@ export function UsersPage() {
   const openEdit = (user: ManagedUser) => {
     setForm({
       fullName: user.fullName,
+      username: user.username,
       email: user.email,
+      password: "",
       role: user.role,
       group: user.group,
       status: user.status,
@@ -194,7 +201,7 @@ export function UsersPage() {
     try {
       await request("POST", form);
       setInviteOpen(false);
-      setMessage(`Приглашение отправлено на ${form.email}`);
+      setMessage(`Пользователь @${form.username} создан`);
       await loadUsers();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Ошибка приглашения");
@@ -283,7 +290,7 @@ export function UsersPage() {
             Пригласить по ссылке
           </button>
           <button className="btn primary" onClick={openInvite}>
-            + Добавить пользователя
+            + Создать пользователя
           </button>
         </div>
       </div>
@@ -330,7 +337,7 @@ export function UsersPage() {
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Имя или электронная почта"
+            placeholder="Имя пользователя, имя или почта"
           />
         </label>
         <select
@@ -406,7 +413,7 @@ export function UsersPage() {
                   <b>
                     {user.fullName} {user.isCurrent && <em>Вы</em>}
                   </b>
-                  <small>{user.email}</small>
+                  <small>@{user.username}{user.email ? ` · ${user.email}` : ""}</small>
                 </div>
               </div>
               <span>
@@ -440,7 +447,7 @@ export function UsersPage() {
 
       {inviteOpen && (
         <UserModal
-          title="Добавить пользователя"
+          title="Создать пользователя"
           close={() => setInviteOpen(false)}
         >
           <form onSubmit={submitInvite}>
@@ -451,7 +458,7 @@ export function UsersPage() {
               groups={groups}
             />
             <button className="btn primary full" disabled={busy}>
-              {busy ? "Отправляем…" : "Добавить и отправить приглашение"}
+              {busy ? "Создаём…" : "Создать пользователя"}
             </button>
           </form>
         </UserModal>
@@ -492,7 +499,9 @@ function UserFields({
 }: {
   form: {
     fullName: string;
+    username: string;
     email: string;
+    password: string;
     role: UserRole;
     group: string;
     status: UserStatus;
@@ -514,17 +523,44 @@ function UserFields({
           placeholder="Например, Алия Касымова"
         />
       </label>
+      <label>
+        Имя пользователя
+        <input
+          required
+          minLength={3}
+          maxLength={32}
+          pattern="[a-zA-Z0-9._-]+"
+          autoComplete="username"
+          value={form.username}
+          onChange={(event) => setForm((current) => ({ ...current, username: event.target.value.toLowerCase() }))}
+          placeholder="aliya.k"
+        />
+        <small>Только строчные латинские буквы, цифры, точка, дефис и подчёркивание.</small>
+      </label>
       {includeEmail && (
         <label>
-          Электронная почта
+          Электронная почта <span className="muted">(необязательно)</span>
           <input
-            required
             type="email"
             value={form.email}
             onChange={(event) =>
               setForm((current) => ({ ...current, email: event.target.value }))
             }
             placeholder="name@company.kz"
+          />
+        </label>
+      )}
+      {includeEmail && (
+        <label>
+          Временный пароль
+          <input
+            required
+            minLength={8}
+            type="password"
+            autoComplete="new-password"
+            value={form.password}
+            onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
+            placeholder="Минимум 8 символов"
           />
         </label>
       )}
