@@ -10,6 +10,7 @@ const shuffle = <T,>(values: T[]) => {
   return result;
 };
 const normalize = (value: string) => value.trim().toLocaleLowerCase().replace(/\s+/g, " ");
+const isImageUrl = (value?: string) => Boolean(value && /^(https?:\/\/|data:image\/|blob:)/i.test(value));
 
 type Props = { block: LessonBlock; onResult?: (passed: boolean) => void };
 
@@ -60,7 +61,7 @@ function MemoryGame({ block, game, onResult }: { block: LessonBlock; game: Extra
       <div className="memoryGrid">{deck.map((card) => {
         const visible = opened.includes(card.key) || matched.includes(card.pairId);
         return <button type="button" key={card.key} className={`${visible ? "visible" : ""} ${matched.includes(card.pairId) ? "matched" : ""}`} onClick={() => choose(card.key)} aria-label={visible ? card.text : "Открыть карточку"}>
-          <span className="memoryBack">?</span><span className="memoryFace">{card.image && <img src={card.image} alt="" />}{card.text}</span>
+          <span className="memoryBack">?</span><span className="memoryFace">{card.image && (isImageUrl(card.image) ? <img src={card.image} alt="" /> : <span className="gameCardEmoji" aria-hidden="true">{card.image}</span>)}{card.text}</span>
         </button>;
       })}</div>}
   </section>;
@@ -90,7 +91,7 @@ function BuildWordGame({ block, game, onResult }: { block: LessonBlock; game: Ex
   return <section className="learningBlock gameLearning buildWordGame">
     <GameHeader title={block.title} current={round + 1} total={items.length} score={score} />
     {!items.length ? <p className="gameEmpty">Добавьте хотя бы одно слово.</p> : complete ? <GameComplete score={score} total={items.length} onRestart={restart} /> : item && <div className="buildWordBoard">
-      {item.image && <img className="gamePromptImage" src={item.image} alt="" />}
+      {item.image && (isImageUrl(item.image) ? <img className="gamePromptImage" src={item.image} alt="" /> : <span className="gamePromptEmoji" aria-hidden="true">{item.image}</span>)}
       <p className="gameClue">{item.clue || "Соберите слово"}</p>
       <div className={`wordSlots ${feedback}`}>{[...item.word].map((_, index) => <button type="button" key={index} onClick={() => setChosen((value) => value.filter((__, chosenIndex) => chosenIndex !== index))}>{answer[index] || ""}</button>)}</div>
       <div className="letterBank">{letters.map((entry, index) => <button type="button" key={`${entry.index}-${index}`} disabled={chosen.includes(index)} onClick={() => setChosen((value) => [...value, index])}>{entry.letter}</button>)}</div>

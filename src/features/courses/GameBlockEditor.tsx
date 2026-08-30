@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import type { GameConfig, LessonBlock } from "./types";
 import { uid } from "./types";
 
@@ -10,6 +11,44 @@ function RemoveButton({ onClick, disabled }: { onClick: () => void; disabled: bo
   return <button type="button" className="gameEditorRemove" onClick={onClick} disabled={disabled} aria-label="Удалить строку">×</button>;
 }
 
+const emojiOptions = [
+  ["🍎", "яблоко apple фрукт"], ["🍐", "груша pear фрукт"], ["🍊", "апельсин orange фрукт"], ["🍋", "лимон lemon фрукт"],
+  ["🍌", "банан banana фрукт"], ["🍉", "арбуз watermelon"], ["🍇", "виноград grapes"], ["🍓", "клубника strawberry"],
+  ["🍒", "вишня cherry"], ["🍑", "персик peach"], ["🥕", "морковь carrot"], ["🍅", "помидор tomato"],
+  ["🍞", "хлеб bread"], ["🧀", "сыр cheese"], ["🥛", "молоко milk"], ["☕", "кофе coffee"],
+  ["🐶", "собака dog животное"], ["🐱", "кошка cat животное"], ["🐭", "мышь mouse животное"], ["🐰", "кролик rabbit животное"],
+  ["🦊", "лиса fox животное"], ["🐻", "медведь bear животное"], ["🐼", "панда panda животное"], ["🐸", "лягушка frog животное"],
+  ["🐵", "обезьяна monkey"], ["🦁", "лев lion"], ["🐯", "тигр tiger"], ["🐮", "корова cow"],
+  ["🚗", "машина car транспорт"], ["🚌", "автобус bus"], ["🚲", "велосипед bicycle"], ["✈️", "самолёт plane"],
+  ["🚂", "поезд train"], ["🚢", "корабль ship"], ["🏠", "дом house"], ["🏫", "школа school"],
+  ["📚", "книги books учеба"], ["✏️", "карандаш pencil"], ["🖊️", "ручка pen"], ["🎒", "рюкзак backpack"],
+  ["⚽", "футбол football мяч"], ["🏀", "баскетбол basketball"], ["🎾", "теннис tennis"], ["🏆", "кубок trophy"],
+  ["☀️", "солнце sun погода"], ["🌙", "луна moon"], ["⭐", "звезда star"], ["☁️", "облако cloud"],
+  ["🌧️", "дождь rain"], ["❄️", "снег snow"], ["🔥", "огонь fire"], ["💧", "вода water"],
+  ["❤️", "сердце heart любовь"], ["😊", "улыбка smile happy"], ["😢", "грусть sad"], ["👍", "палец вверх yes good"],
+] as const;
+
+function EmojiPicker({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const options = useMemo(() => {
+    const normalized = query.trim().toLocaleLowerCase();
+    return normalized ? emojiOptions.filter(([emoji, keywords]) => `${emoji} ${keywords}`.includes(normalized)) : emojiOptions;
+  }, [query]);
+  const legacyImage = /^(https?:\/\/|data:image\/|blob:)/i.test(value);
+  return <div className="emojiPicker">
+    <button type="button" className={`emojiPickerTrigger ${value ? "selected" : ""}`} onClick={() => setOpen((current) => !current)} aria-expanded={open}>
+      <span>{legacyImage ? "🖼️" : value || "🙂"}</span><b>{legacyImage ? "Заменить картинку на эмодзи" : value ? "Изменить эмодзи" : "Выбрать эмодзи"}</b><i>⌄</i>
+    </button>
+    {open && <div className="emojiPickerPopover">
+      <div className="emojiPickerSearch"><span>⌕</span><input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Поиск: яблоко, собака…" /></div>
+      <div className="emojiPickerGrid">{options.map(([emoji, keywords]) => <button type="button" key={emoji} title={keywords.split(" ")[0]} className={value === emoji ? "active" : ""} onClick={() => { onChange(emoji); setOpen(false); setQuery(""); }}>{emoji}</button>)}</div>
+      {!options.length && <p>Эмодзи не найден</p>}
+      {value && <button type="button" className="emojiPickerClear" onClick={() => { onChange(""); setOpen(false); }}>Убрать эмодзи</button>}
+    </div>}
+  </div>;
+}
+
 function MemoryEditor({ game, onChange }: { game: Extract<GameConfig, { type: "memory" }>; onChange: Props["onChange"] }) {
   const update = (pairs: typeof game.pairs) => onChange({ ...game, pairs });
   return <div className="gameBlockEditor">
@@ -18,12 +57,12 @@ function MemoryEditor({ game, onChange }: { game: Extract<GameConfig, { type: "m
       <span className="gameEditorNumber">{index + 1}</span>
       <div className="gameEditorSide">
         <label>Первая карточка<input value={pair.left} placeholder="apple" onChange={(event) => update(game.pairs.map((item) => item.id === pair.id ? { ...item, left: event.target.value } : item))} /></label>
-        <label>Картинка (необязательно)<input type="url" value={pair.leftImage || ""} placeholder="https://..." onChange={(event) => update(game.pairs.map((item) => item.id === pair.id ? { ...item, leftImage: event.target.value } : item))} /></label>
+        <label>Эмодзи (необязательно)<EmojiPicker value={pair.leftImage || ""} onChange={(value) => update(game.pairs.map((item) => item.id === pair.id ? { ...item, leftImage: value } : item))} /></label>
       </div>
       <span className="gameEditorArrow">↔</span>
       <div className="gameEditorSide">
         <label>Парная карточка<input value={pair.right} placeholder="яблоко" onChange={(event) => update(game.pairs.map((item) => item.id === pair.id ? { ...item, right: event.target.value } : item))} /></label>
-        <label>Картинка (необязательно)<input type="url" value={pair.rightImage || ""} placeholder="https://..." onChange={(event) => update(game.pairs.map((item) => item.id === pair.id ? { ...item, rightImage: event.target.value } : item))} /></label>
+        <label>Эмодзи (необязательно)<EmojiPicker value={pair.rightImage || ""} onChange={(value) => update(game.pairs.map((item) => item.id === pair.id ? { ...item, rightImage: value } : item))} /></label>
       </div>
       <RemoveButton disabled={game.pairs.length <= 2} onClick={() => update(game.pairs.filter((item) => item.id !== pair.id))} />
     </div>)}
@@ -39,7 +78,7 @@ function BuildWordEditor({ game, onChange }: { game: Extract<GameConfig, { type:
       <span className="gameEditorNumber">{index + 1}</span>
       <label>Слово<input value={item.word} placeholder="apple" onChange={(event) => update(game.items.map((entry) => entry.id === item.id ? { ...entry, word: event.target.value } : entry))} /></label>
       <label>Подсказка<input value={item.clue || ""} placeholder="яблоко" onChange={(event) => update(game.items.map((entry) => entry.id === item.id ? { ...entry, clue: event.target.value } : entry))} /></label>
-      <label>Картинка (необязательно)<input type="url" value={item.image || ""} placeholder="https://..." onChange={(event) => update(game.items.map((entry) => entry.id === item.id ? { ...entry, image: event.target.value } : entry))} /></label>
+      <label>Эмодзи (необязательно)<EmojiPicker value={item.image || ""} onChange={(value) => update(game.items.map((entry) => entry.id === item.id ? { ...entry, image: value } : entry))} /></label>
       <RemoveButton disabled={game.items.length <= 1} onClick={() => update(game.items.filter((entry) => entry.id !== item.id))} />
     </div>)}
     <button type="button" className="gameEditorAdd" onClick={() => update([...game.items, { id: uid(), word: "", clue: "" }])}>＋ Добавить слово</button>
