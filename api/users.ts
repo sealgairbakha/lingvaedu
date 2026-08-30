@@ -127,6 +127,12 @@ export default {
       if (password.length < 8)
         return json({ error: "Пароль должен содержать не менее 8 символов" }, 400);
 
+      const existingUsers = await service.auth.admin.listUsers({ page: 1, perPage: 1000 });
+      if (existingUsers.error) return json({ error: existingUsers.error.message }, 502);
+      if (existingUsers.data.users.some((user) =>
+        readUsername(user.user_metadata?.username) === username
+      )) return json({ error: "Имя пользователя уже занято" }, 409);
+
       const authEmail = email || `${crypto.randomUUID()}@no-email.lingvaedu.invalid`;
       const { data, error } = await service.auth.admin.createUser({
         email: authEmail,
@@ -160,6 +166,11 @@ export default {
       ).trim();
       const username = readUsername(body?.username ?? existing.user_metadata?.username);
       if (!validUsername(username)) return json({ error: "Некорректное имя пользователя" }, 400);
+      const usernameUsers = await service.auth.admin.listUsers({ page: 1, perPage: 1000 });
+      if (usernameUsers.error) return json({ error: usernameUsers.error.message }, 502);
+      if (usernameUsers.data.users.some((user) =>
+        user.id !== id && readUsername(user.user_metadata?.username) === username
+      )) return json({ error: "Имя пользователя уже занято" }, 409);
       const group = String(
         body?.group ?? existing.user_metadata?.group_name ?? "",
       ).trim();

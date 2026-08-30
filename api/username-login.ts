@@ -31,12 +31,26 @@ export default {
       .select("user_id")
       .eq("username", username)
       .maybeSingle();
-    if (profile.error || !profile.data)
-      return json({ error: "Неверное имя пользователя или пароль" }, 401);
 
-    const userResult = await service.auth.admin.getUserById(profile.data.user_id);
-    const email = userResult.data.user?.email;
-    if (userResult.error || !email)
+    let email = "";
+    if (profile.data?.user_id) {
+      const userResult = await service.auth.admin.getUserById(profile.data.user_id);
+      email = userResult.data.user?.email || "";
+    } else {
+      // Username metadata is the source of truth for accounts created before
+      // the user_profiles migration was applied.
+      for (let page = 1; page <= 20 && !email; page += 1) {
+        const usersResult = await service.auth.admin.listUsers({ page, perPage: 1000 });
+        if (usersResult.error) break;
+        const matched = usersResult.data.users.find(
+          (user) => String(user.user_metadata?.username || "").toLowerCase() === username,
+        );
+        email = matched?.email || "";
+        if (usersResult.data.users.length < 1000) break;
+      }
+    }
+
+    if (!email)
       return json({ error: "Неверное имя пользователя или пароль" }, 401);
 
     const signedIn = await service.auth.signInWithPassword({ email, password });
