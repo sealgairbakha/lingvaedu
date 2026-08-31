@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { LessonBlock } from "./types";
-import { getTrueFalseLabels, TRUE_FALSE_LANGUAGE_OPTIONS } from "./taskLanguages";
+import { getTrueFalseLabels } from "./taskLanguages";
+import { EditorCardNumber } from "./EditorCardNumber";
 
 type Props = {
   block: LessonBlock;
@@ -99,7 +100,7 @@ function GapTaskEditor({ block, onChange }: Props) {
       <div className="taskBuilderRows">
         {safeRows.map((row, index) => (
           <div className="taskBuilderRow gapBuilderRow" key={index}>
-            <span className="taskRowNumber">{index + 1}</span>
+            <div className="taskCardHeader"><EditorCardNumber index={index} /></div>
             <label className="taskWideField">
               <span>Предложение</span>
               <input
@@ -151,6 +152,14 @@ function GapTaskEditor({ block, onChange }: Props) {
 
 function SelectWordsEditor({ block, onChange }: Props) {
   const parsed = splitLines(block.content).map((line) => {
+    const draftMatch = line.match(draftAnswerPattern);
+    if (draftMatch) {
+      const decodedOptions = readDraftAnswer(draftMatch[1] || "").split("|");
+      return {
+        sentence: line.replace(draftAnswerPattern, ""),
+        options: decodedOptions.length >= 2 ? decodedOptions : [...decodedOptions, ""],
+      };
+    }
     const match = line.match(/\[([^\]]*)\]/);
     return {
       sentence: match ? line.replace(match[0], "___") : line,
@@ -175,7 +184,7 @@ function SelectWordsEditor({ block, onChange }: Props) {
       <div className="taskBuilderRows">
         {rows.map((row, rowIndex) => (
           <div className="taskBuilderRow selectBuilderRow" key={rowIndex}>
-            <span className="taskRowNumber">{rowIndex + 1}</span>
+            <div className="taskCardHeader"><EditorCardNumber index={rowIndex} /></div>
             <label className="taskWideField">
               <span>Предложение</span>
               <input
@@ -366,7 +375,7 @@ function MatchEditor({ block, onChange }: Props) {
       <div className="taskBuilderRows">
         {rows.map((row, index) => (
           <div className="taskBuilderRow matchBuilderRow" key={index}>
-            <span className="taskRowNumber">{index + 1}</span>
+            <div className="taskCardHeader"><EditorCardNumber index={index} /></div>
             <label>
               <span>Слово или фраза</span>
               <input
@@ -406,7 +415,7 @@ function MatchEditor({ block, onChange }: Props) {
   );
 }
 
-function TrueFalseEditor({ block, onChange, onPatch }: Props) {
+function TrueFalseEditor({ block, onChange }: Props) {
   const parsed = splitLines(block.content).map((line) => {
     const [statement, value] = line.split("|");
     return { statement: statement?.trim() || "", value: value?.trim() === "true" };
@@ -418,25 +427,10 @@ function TrueFalseEditor({ block, onChange, onPatch }: Props) {
   return (
     <div className="taskBuilder">
       <EditorHeader title="Утверждения" hint="Для каждого утверждения отметьте правильный ответ." />
-      <div className="trueFalseColumnsHead">
-        <span aria-hidden="true" />
-        <label>
-          <span>Язык кнопок</span>
-          <select
-            aria-label="Язык кнопок верно или неверно"
-            value={block.trueFalseLanguage || "ru"}
-            onChange={(event) => onPatch({ trueFalseLanguage: event.target.value as LessonBlock["trueFalseLanguage"] })}
-          >
-            {TRUE_FALSE_LANGUAGE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>{option.code} · {option.label}</option>
-            ))}
-          </select>
-        </label>
-      </div>
       <div className="taskBuilderRows">
         {rows.map((row, index) => (
           <div className="taskBuilderRow trueFalseBuilderRow" key={index}>
-            <span className="taskRowNumber">{index + 1}</span>
+            <div className="taskCardHeader"><EditorCardNumber index={index} /></div>
             <label className="taskWideField">
               <span>Утверждение</span>
               <input

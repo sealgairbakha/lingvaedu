@@ -26,7 +26,7 @@ function GameComplete({ score, total, onRestart }: { score: number; total: numbe
 }
 
 function MemoryGame({ block, game, onResult }: { block: LessonBlock; game: Extract<GameConfig, { type: "memory" }>; onResult?: Props["onResult"] }) {
-  const validPairs = useMemo(() => game.pairs.filter((pair) => pair.left.trim() && pair.right.trim()), [game.pairs]);
+  const validPairs = useMemo(() => game.pairs.filter((pair) => (pair.left.trim() || pair.leftImage) && (pair.right.trim() || pair.rightImage)), [game.pairs]);
   const createDeck = () => shuffle(validPairs.flatMap((pair) => [
     { key: `${pair.id}-left`, pairId: pair.id, text: pair.left, image: pair.leftImage },
     { key: `${pair.id}-right`, pairId: pair.id, text: pair.right, image: pair.rightImage },
@@ -60,7 +60,7 @@ function MemoryGame({ block, game, onResult }: { block: LessonBlock; game: Extra
     {!validPairs.length ? <p className="gameEmpty">Добавьте хотя бы две заполненные пары.</p> : complete ? <GameComplete score={matched.length} total={validPairs.length} onRestart={restart} /> :
       <div className="memoryGrid">{deck.map((card) => {
         const visible = opened.includes(card.key) || matched.includes(card.pairId);
-        return <button type="button" key={card.key} className={`${visible ? "visible" : ""} ${matched.includes(card.pairId) ? "matched" : ""}`} onClick={() => choose(card.key)} aria-label={visible ? card.text : "Открыть карточку"}>
+        return <button type="button" key={card.key} className={`${visible ? "visible" : ""} ${matched.includes(card.pairId) ? "matched" : ""}`} onClick={() => choose(card.key)} aria-label={visible ? card.text || "Эмодзи" : "Открыть карточку"}>
           <span className="memoryBack">?</span><span className="memoryFace">{card.image && (isImageUrl(card.image) ? <img src={card.image} alt="" /> : <span className="gameCardEmoji" aria-hidden="true">{card.image}</span>)}{card.text}</span>
         </button>;
       })}</div>}

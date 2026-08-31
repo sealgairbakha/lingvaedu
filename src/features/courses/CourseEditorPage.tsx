@@ -1947,43 +1947,17 @@ export function CourseEditorPage() {
                     <div className="inlineBlockInspectorHead">
                       <div>
                         <small>РЕДАКТОР БЛОКА</small>
-                        <b>{b.title}</b>
+                        <input
+                          className="inlineBlockTitleInput"
+                          aria-label="Название блока"
+                          placeholder="Введите название блока"
+                          value={b.title}
+                          onChange={(event) =>
+                            updateBlock(b.id, { title: event.target.value })
+                          }
+                        />
                       </div>
-                      <button
-                        type="button"
-                        aria-label="Закрыть редактор блока"
-                        onClick={() => {
-                          setClosingEditor(b.id);
-                          if (closeEditorTimerRef.current !== null)
-                            window.clearTimeout(closeEditorTimerRef.current);
-                          closeEditorTimerRef.current = window.setTimeout(() => {
-                            setSelected((current) =>
-                              current === b.id ? "" : current,
-                            );
-                            setClosingEditor("");
-                            closeEditorTimerRef.current = null;
-                          }, 380);
-                        }}
-                      >
-                        ×
-                      </button>
                     </div>
-                    <label>
-                      Название
-                      <input
-                        placeholder={
-                          palette.find(
-                            (item) =>
-                              item.kind ===
-                              (b.kind === "media" ? "video" : b.kind),
-                          )?.title || "Название блока"
-                        }
-                        value={b.title}
-                        onChange={(event) =>
-                          updateBlock(b.id, { title: event.target.value })
-                        }
-                      />
-                    </label>
                     {b.kind === "assignment" ? (
                       <div className="blockTextEditor assignmentBlockEditor">
                         <label>

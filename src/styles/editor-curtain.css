@@ -1223,6 +1223,47 @@ html[data-theme="dark"] .taskBlockInspector > label:first-of-type input {
   color: var(--ink);
 }
 
+/* Every inline block uses the same editable title in its inspector header. */
+.inlineBlockInspectorHead > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.inlineBlockInspectorHead .inlineBlockTitleInput {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  margin: 0;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.35;
+  outline: none;
+  transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+}
+
+.inlineBlockInspectorHead .inlineBlockTitleInput:hover {
+  border-color: rgba(101, 75, 246, 0.5);
+  background: var(--card);
+}
+
+.inlineBlockInspectorHead .inlineBlockTitleInput:focus {
+  border-color: rgba(101, 75, 246, 0.42);
+  background: var(--card);
+  box-shadow: 0 0 0 3px rgba(101, 75, 246, 0.1);
+}
+
+.inlineBlockInspectorHead .inlineBlockTitleInput::placeholder {
+  color: var(--muted);
+  font-weight: 700;
+}
+
 html[data-theme="dark"] .taskBlockInspector .taskBuilderRow,
 html[data-theme="dark"] .taskBlockInspector .quizOptionsEditor {
   background: transparent;
@@ -3791,6 +3832,128 @@ html[data-theme="dark"] .coursePlayer .imageLearning .lessonImageButton {
   }
 }
 
+/* Keep the rich-text controls in the document flow so they never cover
+   the editable surface or the next lesson block. */
+.richTextEditor {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.richTextToolbarCurtain,
+.richTextToolbarCurtain.open {
+  margin-bottom: 0;
+  transform: none;
+  overflow: hidden;
+}
+
+.richTextToolbarCurtain.open {
+  max-height: 260px;
+  padding-bottom: 2px;
+}
+
+.richTextToolbar {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.richTextToolbar > *,
+.richTextToolbar select {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.richTextSurface {
+  position: relative;
+  z-index: 1;
+  max-width: 100%;
+}
+
+/* Shared numbering for task and game cards. */
+.taskCardHeader {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  min-height: 30px;
+}
+
+.taskBlockInspector .taskBuilderRow {
+  padding-left: 16px;
+}
+
+.taskOptionsEditor .taskOptionAdd {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px dashed #bdb4f5;
+  border-radius: 10px;
+  background: #f8f6ff;
+  color: var(--purple);
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.taskOptionsEditor .taskOptionAdd:hover {
+  border-color: var(--purple);
+  background: #f1eeff;
+}
+
+html[data-theme="dark"] .taskOptionsEditor .taskOptionAdd {
+  border-color: #5b4e92;
+  background: #25213c;
+  color: #c8bdff;
+}
+
+/* Nested add buttons mirror the primary add-row action. */
+.taskOptionsEditor .taskOptionAdd {
+  min-height: 46px;
+  margin-top: 12px;
+  border: 1px solid #d8d2ff;
+  border-radius: 12px;
+  background: #f4f1ff;
+  color: var(--purple);
+  font-size: var(--font-size-ui);
+  font-weight: 850;
+  box-shadow: 0 10px 26px rgba(35, 42, 62, 0.14);
+  transition: transform .2s ease, background .2s ease, color .2s ease, box-shadow .2s ease;
+}
+
+.taskOptionsEditor .taskOptionAdd:hover {
+  border-color: var(--purple);
+  background: var(--purple);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 13px 28px rgba(101, 75, 246, 0.25);
+}
+
+.taskOptionsEditor .taskOptionAdd:active {
+  transform: translateY(0) scale(.985);
+  box-shadow: 0 6px 16px rgba(101, 75, 246, 0.2);
+}
+
+.taskOptionsEditor .taskOptionAdd:focus-visible {
+  outline: 3px solid rgba(101, 75, 246, 0.2);
+  outline-offset: 2px;
+}
+
+html[data-theme="dark"] .taskOptionsEditor .taskOptionAdd {
+  border-color: #514680;
+  background: #292442;
+  color: #c8bdff;
+}
+
+html[data-theme="dark"] .taskOptionsEditor .taskOptionAdd:hover {
+  border-color: #806df8;
+  background: #806df8;
+  color: #fff;
+}
+
 /* Extended course games */
 .blockGlyph[class*="game-"],
 .blockPalette i[class*="game-"] {
@@ -4787,4 +4950,79 @@ html[data-theme="dark"] .lessonTabRemove:hover {
   .learnerLessonTabs {
     margin-inline: 16px;
   }
+}
+
+/* Final rich-text containment: keep every editor part inside its block. */
+.inlineBlockInspector:has(> .richTextEditor) {
+  overflow: hidden;
+}
+
+.inlineBlockInspector:has(> .richTextEditor) > label {
+  display: grid;
+  gap: 7px;
+  width: 100%;
+  min-width: 0;
+  margin-bottom: 16px;
+}
+
+.inlineBlockInspector:has(> .richTextEditor) > label > input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.richTextEditor {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.richTextToolbarCurtain,
+.richTextToolbarCurtain.open {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  transform: none;
+  overflow: hidden;
+}
+
+.richTextToolbarCurtain.open {
+  max-height: 260px;
+  padding: 0;
+}
+
+.richTextToolbar {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  box-shadow: none;
+}
+
+.richTextToolbar > *,
+.richTextToolbar select,
+.richTextSurface {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.richTextSurface {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  margin: 0;
+}
+
+.taskCardHeader {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  min-height: 30px;
+}
+
+.taskBlockInspector .taskBuilderRow {
+  padding-left: 16px;
 }
