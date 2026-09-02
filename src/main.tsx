@@ -13,6 +13,7 @@ import "./styles/typography.css";
 import "./styles/editor-curtain.css";
 import "./styles/groups.css";
 import "./styles/selects.css";
+import "./styles/responsive.css";
 
 const savedTheme = localStorage.getItem("lingvaedu-theme");
 const initialTheme = savedTheme === "dark" || (!savedTheme && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";

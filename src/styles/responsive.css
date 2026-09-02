@@ -1,0 +1,266 @@
+/* Final cross-device overrides. Keep this stylesheet last in the import order. */
+:root {
+  --topbar-height: calc(68px + env(safe-area-inset-top, 0px));
+}
+
+html,
+body,
+#root {
+  min-width: 0;
+  min-height: 100%;
+}
+
+body { overflow-x: hidden; }
+
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+html.shellNavOpen,
+body.shellNavOpen,
+html.editorDrawerOpen,
+body.editorDrawerOpen,
+html:has(.modalLayer),
+html:has(.modalLayer) body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+.sidebar {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-top: max(24px, env(safe-area-inset-top, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-bottom: max(18px, env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+}
+
+.topbar {
+  height: var(--topbar-height);
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-right: max(28px, env(safe-area-inset-right, 0px));
+  padding-left: max(28px, env(safe-area-inset-left, 0px));
+}
+
+.globalSearchWrap,
+.globalSearch,
+.globalSearch input {
+  min-width: 0;
+}
+
+.notificationPanel {
+  display: flex;
+  max-height: calc(100dvh - var(--topbar-height) - env(safe-area-inset-bottom, 0px));
+  flex-direction: column;
+}
+
+.notificationList {
+  min-height: 0;
+  max-height: none;
+  flex: 1 1 auto;
+}
+
+.content { padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px)); }
+.editorPage { min-height: calc(100dvh - var(--topbar-height)); }
+.editorLayout { height: calc(100dvh - var(--topbar-height) - 70px); }
+
+.editorLoadingState { min-height: 280px; }
+.editorLoadingState > i {
+  display: block;
+  width: 28px;
+  height: 28px;
+  margin: 0 auto 14px;
+  border: 3px solid #ddd7ff;
+  border-top-color: var(--purple);
+  border-radius: 50%;
+  animation: selectionLoader .75s linear infinite;
+}
+
+.selectionTranslator {
+  max-height: calc(100dvh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: manipulation;
+}
+
+/* Keep the hidden course bar in the document flow so scroll direction does not oscillate. */
+.coursePlayer .playerHeader.playerHeaderHidden {
+  height: 74px;
+  max-height: 74px;
+  padding-block: 0;
+  border-bottom-width: 1px;
+}
+
+.modalLayer {
+  padding-top: max(24px, env(safe-area-inset-top, 0px));
+  padding-bottom: max(24px, env(safe-area-inset-bottom, 0px));
+}
+
+@media (max-width: 1100px) {
+  .courseEditor .lessonTree,
+  .courseEditor .blockPalette {
+    height: 100dvh;
+    max-height: 100dvh;
+  }
+
+  .editorPanelToggles { bottom: calc(18px + env(safe-area-inset-bottom, 0px)); }
+}
+
+@media (max-width: 900px) {
+  .coursePlayer .playerHeader {
+    top: var(--topbar-height);
+    transition: transform .3s cubic-bezier(.22, 1, .36, 1), opacity .22s ease;
+  }
+
+  .coursePlayer .playerHeader.playerHeaderHidden {
+    height: 64px;
+    max-height: 64px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(calc(-100% - 1px));
+  }
+
+  .coursePlayer .playerTree {
+    position: sticky;
+    z-index: 18;
+    top: calc(var(--topbar-height) + 76px);
+    overflow: visible;
+    transition: top .3s cubic-bezier(.22, 1, .36, 1), box-shadow .25s ease;
+  }
+
+  .coursePlayer.courseHeaderHidden .playerTree { top: calc(var(--topbar-height) + 12px); }
+
+  .coursePlayer .playerTreeContent {
+    position: absolute;
+    top: calc(100% + 1px);
+    right: 0;
+    left: 0;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-top: 0;
+    border-radius: 0 0 15px 15px;
+    box-shadow: 0 22px 42px rgba(24, 32, 51, .2);
+  }
+
+  .coursePlayer .playerTree.mobileTreeOpen {
+    border-radius: 15px 15px 0 0;
+    box-shadow: 0 14px 35px rgba(24, 32, 51, .14);
+  }
+
+  .coursePlayer .playerTree.mobileTreeOpen .playerTreeContent {
+    max-height: min(58dvh, 500px);
+  }
+
+  .coursePlayer .lessonReader {
+    padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (max-width: 820px) {
+  .globalSearchResults,
+  .notificationPanel {
+    top: var(--topbar-height);
+  }
+}
+
+@media (max-width: 720px) {
+  .coursePlayer .readerFooter { bottom: calc(8px + env(safe-area-inset-bottom, 0px)); }
+}
+
+@media (max-width: 620px) {
+  .topbar {
+    padding-right: max(14px, env(safe-area-inset-right, 0px));
+    padding-left: max(14px, env(safe-area-inset-left, 0px));
+  }
+}
+
+@media (max-width: 560px) {
+  .content { padding-bottom: calc(45px + env(safe-area-inset-bottom, 0px)); }
+
+  .coursesWorking .toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    overflow: visible;
+  }
+
+  .coursesWorking .toolbar label {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .coursesWorking .toolbar .filter {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .reportFilters {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .reportFilters button {
+    width: 100%;
+    min-width: 0;
+    padding-inline: 8px;
+  }
+
+  .reportFilters button:nth-child(3),
+  .reportFilters > span {
+    grid-column: 1 / -1;
+    margin-left: 0;
+    text-align: center;
+  }
+
+  .editorPanelToggles { bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+
+  .modalLayer {
+    padding-top: max(15px, env(safe-area-inset-top, 0px));
+    padding-bottom: max(15px, env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (max-height: 500px) and (max-width: 1000px) and (min-width: 821px) {
+  .sidebar {
+    transform: translateX(-100%);
+    transition: .25s;
+  }
+
+  .sidebar.mobileOpen { transform: none; }
+  .closeNav { display: block; }
+  .sidebar:not(.mobileOpen) .closeNav {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .sidebar.mobileOpen .closeNav {
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+  }
+  .scrim {
+    display: block;
+    position: fixed;
+    z-index: 35;
+    inset: 0;
+    border: 0;
+    background: #11182777;
+  }
+
+  .mainShell { margin-left: 0; }
+  .menuBtn {
+    display: block;
+    margin-right: 12px;
+  }
+
+  .app.sidebarCollapsed .sidebar.mobileOpen { transform: none; }
+  .app:not(.sidebarCollapsed) .menuBtn {
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+  }
+}

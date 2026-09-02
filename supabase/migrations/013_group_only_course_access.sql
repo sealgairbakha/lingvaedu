@@ -26,7 +26,7 @@ drop policy if exists "Users enroll themselves" on public.course_enrollments;
 drop policy if exists "Users create own lesson progress" on public.course_lesson_progress;
 create policy "Group members create own lesson progress"
 on public.course_lesson_progress for insert to authenticated
-with check (user_id = auth.uid() and public.has_group_course_access(auth.uid(), course_id));
+with check (public.can_edit_courses() or (user_id = auth.uid() and public.has_group_course_access(auth.uid(), course_id)));
 
 drop policy if exists "Users update own lesson progress and staff update all" on public.course_lesson_progress;
 create policy "Group members update own lesson progress and staff update all"

@@ -17,13 +17,15 @@ export default {
       return json({ error: "Invalid request" }, 400);
     }
     const text = typeof body === "object" && body !== null && "text" in body && typeof body.text === "string"
-      ? body.text.trim()
+      ? body.text.replace(/\s+/g, " ").trim()
       : "";
     if (!text || text.length > 100) return json({ error: "Text must contain from 1 to 100 characters" }, 400);
 
     const apiKey = process.env.DEEPL_API_KEY;
     if (!apiKey) return json({ error: "Translation service is not configured" }, 503);
-    const targetLanguage = /[а-яё]/i.test(text) ? "EN" : "RU";
+    const latinCharacters = text.match(/[a-z]/gi)?.length || 0;
+    const cyrillicCharacters = text.match(/[а-яё]/gi)?.length || 0;
+    const targetLanguage = cyrillicCharacters > latinCharacters ? "EN" : "RU";
     const host = apiKey.endsWith(":fx") ? "https://api-free.deepl.com" : "https://api.deepl.com";
 
     try {

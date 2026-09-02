@@ -23,6 +23,16 @@ function isEnglishText(text: string) {
   return /[a-z]/i.test(text) && !/[а-яё]/i.test(text);
 }
 
+function normalizeSelectionText(text: string) {
+  return text.replace(/\s+/g, " ").trim();
+}
+
+function getSelectionRect(range: Range) {
+  const clientRects = Array.from(range.getClientRects()).filter((rect) => rect.width || rect.height);
+  const rect = clientRects.at(-1) || range.getBoundingClientRect();
+  return { top: rect.top, right: rect.right, bottom: rect.bottom, left: rect.left };
+}
+
 export function SelectionTranslator({ scopeSelector = ".coursePlayer", onAddToVocabulary }: SelectionTranslatorProps) {
   const popupRef = useRef<HTMLDivElement>(null);
   const requestRef = useRef(0);
@@ -35,10 +45,19 @@ export function SelectionTranslator({ scopeSelector = ".coursePlayer", onAddToVo
   useLayoutEffect(() => {
     if (!popup || !popupRef.current) return;
     const box = popupRef.current.getBoundingClientRect();
-    const x = Math.min(Math.max(popup.rect.left, VIEWPORT_PADDING), window.innerWidth - box.width - VIEWPORT_PADDING);
+    const viewport = window.visualViewport;
+    const viewportLeft = viewport?.offsetLeft || 0;
+    const viewportTop = viewport?.offsetTop || 0;
+    const viewportRight = viewportLeft + (viewport?.width || window.innerWidth);
+    const viewportBottom = viewportTop + (viewport?.height || window.innerHeight);
+    const minX = viewportLeft + VIEWPORT_PADDING;
+    const maxX = Math.max(minX, viewportRight - box.width - VIEWPORT_PADDING);
+    const x = Math.min(Math.max(popup.rect.left, minX), maxX);
     let y = popup.rect.bottom + POPUP_GAP;
-    if (y + box.height > window.innerHeight - VIEWPORT_PADDING) y = popup.rect.top - box.height - POPUP_GAP;
-    y = Math.min(Math.max(y, VIEWPORT_PADDING), window.innerHeight - box.height - VIEWPORT_PADDING);
+    if (y + box.height > viewportBottom - VIEWPORT_PADDING) y = popup.rect.top - box.height - POPUP_GAP;
+    const minY = viewportTop + VIEWPORT_PADDING;
+    const maxY = Math.max(minY, viewportBottom - box.height - VIEWPORT_PADDING);
+    y = Math.min(Math.max(y, minY), maxY);
     if (Math.abs(x - popup.x) > 1 || Math.abs(y - popup.y) > 1) setPopup((current) => current ? { ...current, x, y } : current);
   }, [popup]);
 
@@ -53,16 +72,15 @@ export function SelectionTranslator({ scopeSelector = ".coursePlayer", onAddToVo
     const translateSelection = () => {
       const selection = window.getSelection();
       if (!selection || selection.isCollapsed || selection.rangeCount === 0) return close();
-      const text = selection.toString().trim();
+      const text = normalizeSelectionText(selection.toString());
       if (!text) return close();
       const range = selection.getRangeAt(0);
       const ancestor = range.commonAncestorContainer instanceof Element
         ? range.commonAncestorContainer
         : range.commonAncestorContainer.parentElement;
       if (!ancestor?.closest(scopeSelector) || ancestor.closest("input, textarea, [contenteditable='true'], .selectionTranslator")) return close();
-      const rangeRect = range.getBoundingClientRect();
-      if (!rangeRect.width && !rangeRect.height) return close();
-      const rect = { top: rangeRect.top, right: rangeRect.right, bottom: rangeRect.bottom, left: rangeRect.left };
+      const rect = getSelectionRect(range);
+      if (rect.right <= rect.left && rect.bottom <= rect.top) return close();
       if (text.length > MAX_SELECTION_LENGTH) {
         abortRef.current?.abort();
         setVocabularyNote("");
@@ -99,30 +117,51 @@ export function SelectionTranslator({ scopeSelector = ".coursePlayer", onAddToVo
       });
     };
 
+    const scheduleTranslation = (delay: number) => {
+      if (timerRef.current !== null) window.clearTimeout(timerRef.current);
+      timerRef.current = window.setTimeout(translateSelection, delay);
+    };
     const handleSelectionEnd = (event: MouseEvent | TouchEvent) => {
       const target = event.target;
       if (target instanceof Element && target.closest(".selectionTranslator")) return;
       setPopup(null);
       setVocabularyNote("");
-      if (timerRef.current !== null) window.clearTimeout(timerRef.current);
-      timerRef.current = window.setTimeout(translateSelection, 190);
+      scheduleTranslation("changedTouches" in event ? 320 : 80);
     };
-    const handlePointerDown = (event: MouseEvent) => {
+    const handleSelectionChange = () => {
+      const selection = window.getSelection();
+      if (!selection || selection.isCollapsed || selection.rangeCount === 0) return;
+      scheduleTranslation(260);
+    };
+    const handlePointerDown = (event: PointerEvent) => {
       if (popupRef.current && event.target instanceof Node && !popupRef.current.contains(event.target)) close();
     };
     const handleKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") close(); };
+    const handleKeyUp = (event: KeyboardEvent) => {
+      if (event.shiftKey || event.key.startsWith("Arrow")) scheduleTranslation(90);
+    };
 
     document.addEventListener("mouseup", handleSelectionEnd);
     document.addEventListener("touchend", handleSelectionEnd);
-    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("selectionchange", handleSelectionChange);
+    document.addEventListener("pointerdown", handlePointerDown);
     document.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("resize", close);
+    document.addEventListener("keyup", handleKeyUp);
+    window.addEventListener("resize", close, { passive: true });
+    window.addEventListener("scroll", close, { passive: true });
+    window.visualViewport?.addEventListener("resize", close, { passive: true });
+    window.visualViewport?.addEventListener("scroll", close, { passive: true });
     return () => {
       document.removeEventListener("mouseup", handleSelectionEnd);
       document.removeEventListener("touchend", handleSelectionEnd);
-      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("selectionchange", handleSelectionChange);
+      document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("keyup", handleKeyUp);
       window.removeEventListener("resize", close);
+      window.removeEventListener("scroll", close);
+      window.visualViewport?.removeEventListener("resize", close);
+      window.visualViewport?.removeEventListener("scroll", close);
       if (timerRef.current !== null) window.clearTimeout(timerRef.current);
       abortRef.current?.abort();
     };

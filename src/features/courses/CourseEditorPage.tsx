@@ -411,6 +411,26 @@ export function CourseEditorPage() {
   const [mobilePanel, setMobilePanel] = useState<"tree" | "blocks" | null>(
     null,
   );
+  useEffect(() => {
+    if (!mobilePanel) return;
+    document.documentElement.classList.add("editorDrawerOpen");
+    document.body.classList.add("editorDrawerOpen");
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobilePanel(null);
+    };
+    const drawerQuery = window.matchMedia("(max-width: 1100px)");
+    const closeOnWideViewport = (event: MediaQueryListEvent) => {
+      if (!event.matches) setMobilePanel(null);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    drawerQuery.addEventListener("change", closeOnWideViewport);
+    return () => {
+      document.documentElement.classList.remove("editorDrawerOpen");
+      document.body.classList.remove("editorDrawerOpen");
+      window.removeEventListener("keydown", closeOnEscape);
+      drawerQuery.removeEventListener("change", closeOnWideViewport);
+    };
+  }, [mobilePanel]);
   const [paletteWidth, setPaletteWidth] = useState(() =>
     Math.min(
       520,
@@ -1267,6 +1287,15 @@ export function CourseEditorPage() {
           <button className="btn primary" onClick={() => navigate("/courses")}>
             К курсам
           </button>
+        </div>
+      </main>
+    );
+  if (store.loading && !course)
+    return (
+      <main className="content" aria-busy="true" aria-label="Загружаем редактор курса">
+        <div className="courseEmpty editorLoadingState">
+          <i aria-hidden="true" />
+          <h2>Загружаем курс…</h2>
         </div>
       </main>
     );

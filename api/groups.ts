@@ -50,7 +50,7 @@ function ids(value: unknown) {
     : [];
 }
 
-async function syncGroupEnrollments(service: SupabaseClient<any>) {
+async function syncGroupEnrollments(service: SupabaseClient) {
   const [members, assignments, enrollments] = await Promise.all([
     service.from("learning_group_members").select("group_id,user_id"),
     service.from("learning_group_courses").select("group_id,course_id"),

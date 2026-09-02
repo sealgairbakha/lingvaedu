@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "./auth/AuthProvider";
 import { SelectionTranslator } from "./components/SelectionTranslator";
@@ -422,25 +422,31 @@ function Header({ title, toggleNav }: { title: string; toggleNav: () => void }) 
     localStorage.setItem("lingvaedu-theme", next ? "dark" : "light");
   };
   useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(notificationReadKey) || "[]");
-      setReadNotificationIds(Array.isArray(saved) ? saved : []);
-    } catch {
-      setReadNotificationIds([]);
-    }
+    const timer = window.setTimeout(() => {
+      try {
+        const saved = JSON.parse(localStorage.getItem(notificationReadKey) || "[]");
+        setReadNotificationIds(Array.isArray(saved) ? saved : []);
+      } catch {
+        setReadNotificationIds([]);
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [notificationReadKey]);
   useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(notificationDismissedKey) || "[]");
-      const now = Date.now();
-      const normalized = (Array.isArray(saved) ? saved : [])
-        .map((item) => typeof item === "string" ? { id: item, dismissedAt: new Date().toISOString() } : item as DismissedNotification)
-        .filter((item) => item?.id && now - new Date(item.dismissedAt).getTime() < 24 * 60 * 60 * 1000);
-      setDismissedNotifications(normalized);
-      localStorage.setItem(notificationDismissedKey, JSON.stringify(normalized));
-    } catch {
-      setDismissedNotifications([]);
-    }
+    const timer = window.setTimeout(() => {
+      try {
+        const saved = JSON.parse(localStorage.getItem(notificationDismissedKey) || "[]");
+        const now = Date.now();
+        const normalized = (Array.isArray(saved) ? saved : [])
+          .map((item) => typeof item === "string" ? { id: item, dismissedAt: new Date().toISOString() } : item as DismissedNotification)
+          .filter((item) => item?.id && now - new Date(item.dismissedAt).getTime() < 24 * 60 * 60 * 1000);
+        setDismissedNotifications(normalized);
+        localStorage.setItem(notificationDismissedKey, JSON.stringify(normalized));
+      } catch {
+        setDismissedNotifications([]);
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [notificationDismissedKey]);
   useEffect(() => {
     let active = true;
@@ -536,7 +542,7 @@ function Header({ title, toggleNav }: { title: string; toggleNav: () => void }) 
     window.addEventListener(NOTIFICATIONS_CHANGED_EVENT, reload);
     const timer = window.setInterval(reload, 45_000);
     const channel = supabase && user
-      ? supabase.channel(`header-notifications-${user.id}`)
+      ? supabase.channel(`header-notifications-${user.id}-${crypto.randomUUID()}`)
           .on("postgres_changes", { event: "*", schema: "public", table: "course_assignment_submissions" }, reload)
           .on("postgres_changes", { event: "*", schema: "public", table: "course_assignment_replies" }, reload)
           .subscribe()
@@ -771,10 +777,12 @@ function Shell({
   setPage: (p: Page) => void;
   children: React.ReactNode;
 }) {
+  const location = useLocation();
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem("lingvaedu-sidebar-collapsed") === "true");
+  const compactNavigationQuery = "(max-width: 820px), (max-height: 500px) and (max-width: 1000px)";
   const toggleNav = () => {
-    if (window.matchMedia("(max-width: 820px)").matches) setOpen(true);
+    if (window.matchMedia(compactNavigationQuery).matches) setOpen(true);
     else setCollapsed((current) => {
       const next = !current;
       localStorage.setItem("lingvaedu-sidebar-collapsed", String(next));
@@ -782,12 +790,23 @@ function Shell({
     });
   };
   const hideNav = () => {
-    if (window.matchMedia("(max-width: 820px)").matches) setOpen(false);
+    if (window.matchMedia(compactNavigationQuery).matches) setOpen(false);
     else {
       setCollapsed(true);
       localStorage.setItem("lingvaedu-sidebar-collapsed", "true");
     }
   };
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [location.pathname, location.search]);
+  useEffect(() => {
+    document.documentElement.classList.toggle("shellNavOpen", open);
+    document.body.classList.toggle("shellNavOpen", open);
+    return () => {
+      document.documentElement.classList.remove("shellNavOpen");
+      document.body.classList.remove("shellNavOpen");
+    };
+  }, [open]);
   const title =
     page === "editor"
       ? "Редактор курса"

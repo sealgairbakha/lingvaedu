@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type User } from "@supabase/supabase-js";
 
 const json = (body: Record<string, unknown>, status = 200) =>
   Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
@@ -32,26 +32,36 @@ export default {
       .eq("username", username)
       .maybeSingle();
 
-    let email = "";
+    let matchedUser: User | null = null;
     if (profile.data?.user_id) {
       const userResult = await service.auth.admin.getUserById(profile.data.user_id);
-      email = userResult.data.user?.email || "";
+      matchedUser = userResult.data.user;
     } else {
       // Username metadata is the source of truth for accounts created before
       // the user_profiles migration was applied.
-      for (let page = 1; page <= 20 && !email; page += 1) {
+      for (let page = 1; page <= 20 && !matchedUser; page += 1) {
         const usersResult = await service.auth.admin.listUsers({ page, perPage: 1000 });
         if (usersResult.error) break;
-        const matched = usersResult.data.users.find(
+        matchedUser = usersResult.data.users.find(
           (user) => String(user.user_metadata?.username || "").toLowerCase() === username,
-        );
-        email = matched?.email || "";
+        ) || null;
         if (usersResult.data.users.length < 1000) break;
       }
     }
 
-    if (!email)
+    const email = matchedUser?.email || "";
+    if (!matchedUser || !email)
       return json({ error: "Неверное имя пользователя или пароль" }, 401);
+
+    // Accounts with a username were created by an administrator. Mark older
+    // accounts too, so they are prompted even if they predate this flag.
+    if (matchedUser.user_metadata?.must_change_password === undefined) {
+      const marked = await service.auth.admin.updateUserById(matchedUser.id, {
+        user_metadata: { ...matchedUser.user_metadata, must_change_password: true },
+      });
+      if (marked.error)
+        return json({ error: "Не удалось подготовить смену пароля" }, 500);
+    }
 
     const signedIn = await service.auth.signInWithPassword({ email, password });
     if (signedIn.error || !signedIn.data.session)

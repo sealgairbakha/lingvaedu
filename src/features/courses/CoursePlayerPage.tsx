@@ -1005,6 +1005,7 @@ export function CoursePlayerPage() {
   const [completedLessonNotice, setCompletedLessonNotice] = useState("");
   const [loadedProgressKey, setLoadedProgressKey] = useState("");
   const [mobileTreeOpen, setMobileTreeOpen] = useState(false);
+  const mobileTreeRef = useRef<HTMLElement>(null);
   const [lessonRuns, setLessonRuns] = useState<Record<string, LessonRun>>({});
   const [runsReady, setRunsReady] = useState(false);
   const [now, setNow] = useState(() => Date.now());
@@ -1019,7 +1020,7 @@ export function CoursePlayerPage() {
       frame = window.requestAnimationFrame(() => {
         const currentY = window.scrollY;
         const delta = currentY - lastScrollYRef.current;
-        if (currentY < 72) setHeaderHidden(false);
+        if (mobileTreeOpen || currentY < 72) setHeaderHidden(false);
         else if (delta > 8) setHeaderHidden(true);
         else if (delta < -8) setHeaderHidden(false);
         lastScrollYRef.current = currentY;
@@ -1031,7 +1032,30 @@ export function CoursePlayerPage() {
       window.removeEventListener("scroll", handleScroll);
       if (frame) window.cancelAnimationFrame(frame);
     };
-  }, []);
+  }, [mobileTreeOpen]);
+  useEffect(() => {
+    if (!mobileTreeOpen) return;
+    const closeOnOutsidePress = (event: PointerEvent) => {
+      if (event.target instanceof Node && !mobileTreeRef.current?.contains(event.target)) {
+        setMobileTreeOpen(false);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileTreeOpen(false);
+    };
+    const mobileQuery = window.matchMedia("(max-width: 900px)");
+    const closeOnWideViewport = (event: MediaQueryListEvent) => {
+      if (!event.matches) setMobileTreeOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOnOutsidePress);
+    window.addEventListener("keydown", closeOnEscape);
+    mobileQuery.addEventListener("change", closeOnWideViewport);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsidePress);
+      window.removeEventListener("keydown", closeOnEscape);
+      mobileQuery.removeEventListener("change", closeOnWideViewport);
+    };
+  }, [mobileTreeOpen]);
   useEffect(() => {
     if (!course || !user || progressLoading) return;
     const progressKey = `${user.id}-${course.id}`;
@@ -1304,13 +1328,17 @@ export function CoursePlayerPage() {
       </header>
       <div className="playerLayout">
         <aside
+          ref={mobileTreeRef}
           className={`playerTree ${mobileTreeOpen ? "mobileTreeOpen" : ""}`}
         >
           <button
             className="playerTreeToggle"
             aria-expanded={mobileTreeOpen}
             aria-controls="course-player-lessons"
-            onClick={() => setMobileTreeOpen((open) => !open)}
+            onClick={() => {
+              setHeaderHidden(false);
+              setMobileTreeOpen((open) => !open);
+            }}
           >
             <span>
               <small>{currentModule?.title || "Содержание курса"}</small>

@@ -138,7 +138,13 @@ export default {
         email: authEmail,
         password,
         email_confirm: true,
-        user_metadata: { full_name: fullName, username, contact_email: email, group_name: group },
+        user_metadata: {
+          full_name: fullName,
+          username,
+          contact_email: email,
+          group_name: group,
+          must_change_password: true,
+        },
         app_metadata: { role },
       });
       if (error) return json({ error: error.message }, 400);
