@@ -150,8 +150,8 @@ function RoundsEditor({ game, courseLanguage, onChange }: { game: Extract<GameCo
     {game.type === "missing" && <div className="gameEditorSettings"><label>Секунд на запоминание<input type="number" min="2" max="30" value={game.revealSeconds} onChange={(e) => onChange({ ...game, revealSeconds: Number(e.target.value) || 4 })} /></label></div>}
     {game.type === "speed" && <div className="gameEditorSettings"><label>Секунд на ответ<input type="number" min="3" max="60" value={game.seconds} onChange={(e) => onChange({ ...game, seconds: Number(e.target.value) || 10 })} /></label></div>}
     {game.type === "adventure" && <div className="gameEditorSettings"><label>Имя героя<input value={game.heroName} onChange={(e) => onChange({ ...game, heroName: e.target.value })} /></label></div>}
-    <p className="gameEditorHint">Варианты перечисляйте через запятую. Правильный ответ должен присутствовать среди вариантов.</p>
-    {rounds.map((round, index) => { const entry = round as { id: string; items: string[]; missing: string; prompt: string; statement: string; correct: boolean; options: string[]; answer: string; explanation?: string }; return <div className="gameEditorCard universalGameEditorRow" key={entry.id}>
+    <p className="gameEditorHint">{game.type === "truth" ? "Для каждого утверждения выберите правильный ответ." : "Варианты перечисляйте через запятую. Правильный ответ должен присутствовать среди вариантов."}</p>
+    {rounds.map((round, index) => { const entry = round as { id: string; items: string[]; missing: string; prompt: string; statement: string; correct: boolean; options: string[]; answer: string; explanation?: string }; return <div className={`gameEditorCard universalGameEditorRow ${game.type === "truth" ? "truthGameEditorRow" : ""}`} key={entry.id}>
       <div className="gameCardHeader"><EditorCardNumber index={index} /></div>
       {game.type === "missing" ? <>
         <label>Предметы<input value={entry.items.join(", ")} onChange={(e) => patchRound(entry.id, { items: csv(e.target.value) })} /></label>
@@ -159,7 +159,13 @@ function RoundsEditor({ game, courseLanguage, onChange }: { game: Extract<GameCo
       </> : game.type === "truth" ? <>
         <label>Контекст<input value={entry.prompt} onChange={(e) => patchRound(entry.id, { prompt: e.target.value })} /></label>
         <label>Утверждение<input value={entry.statement} onChange={(e) => patchRound(entry.id, { statement: e.target.value })} /></label>
-        <label>Правильный ответ<select value={entry.correct ? "true" : "false"} onChange={(e) => patchRound(entry.id, { correct: e.target.value === "true" })}><option value="true">{taskLocale.trueLabel}</option><option value="false">{taskLocale.falseLabel}</option></select></label>
+        <div className="gameTruthAnswer">
+          <span>Правильный ответ</span>
+          <div className="trueFalseToggle" role="group" aria-label="Правильный ответ">
+            <button type="button" className={entry.correct ? "active true" : ""} onClick={() => patchRound(entry.id, { correct: true })}>{taskLocale.trueLabel}</button>
+            <button type="button" className={!entry.correct ? "active false" : ""} onClick={() => patchRound(entry.id, { correct: false })}>{taskLocale.falseLabel}</button>
+          </div>
+        </div>
       </> : <>
         {game.type !== "odd-one-out" && <label>Вопрос / подсказка<input value={entry.prompt || ""} onChange={(e) => patchRound(entry.id, { prompt: e.target.value })} /></label>}
         <label>Варианты<input value={entry.options.join(", ")} onChange={(e) => patchRound(entry.id, { options: csv(e.target.value) })} /></label>
@@ -168,7 +174,7 @@ function RoundsEditor({ game, courseLanguage, onChange }: { game: Extract<GameCo
       </>}
       <RemoveButton disabled={rounds.length <= 1} onClick={() => update(rounds.filter((item) => item.id !== entry.id) as typeof rounds)} />
     </div>; })}
-    <button type="button" className="gameEditorAdd" onClick={() => update([...rounds, makeRound()] as typeof rounds)}>＋ Добавить раунд</button>
+    <button type="button" className={game.type === "truth" ? "taskBuilderAdd gameTruthAdd" : "gameEditorAdd"} onClick={() => update([...rounds, makeRound()] as typeof rounds)}>{game.type === "truth" ? <><span>＋</span> Добавить утверждение</> : <>＋ Добавить раунд</>}</button>
   </div>;
 }
 

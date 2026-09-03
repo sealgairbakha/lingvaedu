@@ -3,9 +3,9 @@ import { createPortal } from "react-dom";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
 import { useCourses } from "./CourseProvider";
-import { BlockIcon } from "./BlockIcon";
 import { CourseAssignmentBlock } from "./CourseAssignmentBlock";
 import { GameBlockView } from "./GameBlockView";
+import { LearningBlockHeader } from "./LearningBlockHeader";
 import type { LessonBlock } from "./types";
 import { getCourseTaskLocale, type CourseTaskLocale } from "./courseTaskLocale";
 import { sanitizeRichText } from "./richText";
@@ -342,7 +342,7 @@ export function LessonBlockView({
     ).length;
     return (
       <section className="learningBlock taskLearning dragWordsLearning">
-        <h3>{block.title}</h3>
+        <LearningBlockHeader kind={block.kind} title={block.title} category="task" language={courseLanguage} />
         <div className="wordBank">
           {wordTokens.map((token) => (
             <button
@@ -430,7 +430,7 @@ export function LessonBlockView({
     ).length;
     return (
       <section className="learningBlock taskLearning selectWordsLearning">
-        <h3>{block.title}</h3>
+        <LearningBlockHeader kind={block.kind} title={block.title} category="task" language={courseLanguage} />
         <ol className="gapSentenceList">
           {items.map(({ id, line, match, options }, index) => {
             const visibleOptions = options.length
@@ -502,7 +502,7 @@ export function LessonBlockView({
     ).length;
     return (
       <section className="learningBlock taskLearning fillBlankLearning">
-        <h3>{block.title}</h3>
+        <LearningBlockHeader kind={block.kind} title={block.title} category="task" language={courseLanguage} />
         <ol className="gapSentenceList">
           {items.map(({ id, parsed }, index) => {
             const value = taskAnswers[id] || "";
@@ -616,7 +616,7 @@ export function LessonBlockView({
     };
     return (
       <section className="learningBlock taskLearning matchLearning">
-        <h3>{block.title}</h3>
+        <LearningBlockHeader kind={block.kind} title={block.title} category="task" language={courseLanguage} />
         <div className="matchGrid">
           <div>
             {unresolvedPairs.map((pair) => (
@@ -708,7 +708,7 @@ export function LessonBlockView({
     const correct = items.filter((item) => taskAnswers[item.id] === item.expected).length;
     return (
       <section className="learningBlock taskLearning trueFalseLearning">
-        <h3>{block.title}</h3>
+        <LearningBlockHeader kind={block.kind} title={block.title} category="task" language={courseLanguage} />
         {items.map(({ id, statement, expected }, index) => {
           return (
             <div className="trueFalseCard" key={id}>
@@ -764,7 +764,7 @@ export function LessonBlockView({
       const correctCount = answer === String(correctIndex + 1) ? 1 : 0;
       return (
         <section className="learningBlock quizLearning taskLearning">
-          <h3>{block.title}</h3>
+          <LearningBlockHeader kind={block.kind} title={block.title} category="task" language={courseLanguage} />
           <b>{lines[0] || labels.chooseAnswer}</b>
           {options.map((option, optionIndex) => (
             <label
@@ -803,7 +803,7 @@ export function LessonBlockView({
   if (block.kind === "html")
     return (
       <section className="learningBlock">
-        <h3>{block.title}</h3>
+        <LearningBlockHeader kind={block.kind} title={block.title} category="content" language={courseLanguage} />
         <iframe
           className="lessonEmbed"
           sandbox="allow-scripts"
@@ -815,12 +815,7 @@ export function LessonBlockView({
   if (block.kind === "audio")
     return (
       <section className="learningBlock audioLearning">
-        <div className="mediaBlockHeading">
-          <span className="blockGlyph audio"><BlockIcon kind="audio" /></span>
-          <div>
-            <h3>{block.title}</h3>
-          </div>
-        </div>
+        <LearningBlockHeader kind={block.kind} title={block.title} category="content" language={courseLanguage} />
         {block.content ? (
           <LessonAudioPlayer src={block.content} title={block.title} />
         ) : (
@@ -831,12 +826,7 @@ export function LessonBlockView({
   if (block.kind === "image")
     return (
       <section className="learningBlock imageLearning">
-        <div className="mediaBlockHeading">
-          <span className="blockGlyph image"><BlockIcon kind="image" /></span>
-          <div>
-            <h3>{block.title}</h3>
-          </div>
-        </div>
+        <LearningBlockHeader kind={block.kind} title={block.title} category="content" language={courseLanguage} />
         {blockImages.length ? (
           <div
             className={`lessonImageCollage layout-${block.imageLayout || "grid"} ${blockImages.length === 1 ? "single" : ""}`}
@@ -899,12 +889,7 @@ export function LessonBlockView({
     const isFile = /\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(block.content);
     return (
       <section className="learningBlock videoLearning">
-        <div className="mediaBlockHeading">
-          <span className="blockGlyph video"><BlockIcon kind="video" /></span>
-          <div>
-            <h3>{block.title}</h3>
-          </div>
-        </div>
+        <LearningBlockHeader kind={block.kind} title={block.title} category="content" language={courseLanguage} />
         {youtubeId ? (
           <div className="videoFrame">
             <iframe
@@ -936,6 +921,7 @@ export function LessonBlockView({
   if (block.kind === "file")
     return (
       <section className="learningBlock fileLearning">
+        <LearningBlockHeader kind={block.kind} title={block.title} category="content" language={courseLanguage} />
         {block.content ? (
           <div className="learningFileCard">
             <span className="learningFileIcon" aria-hidden="true">
@@ -959,17 +945,12 @@ export function LessonBlockView({
               </a>
             </span>
           </div>
-        ) : (
-          <>
-            <h3>{block.title}</h3>
-            <p className="emptyMaterial">Файл пока не прикреплён.</p>
-          </>
-        )}
+        ) : <p className="emptyMaterial">Файл пока не прикреплён.</p>}
       </section>
     );
   return (
     <section className="learningBlock">
-      <h3>{block.title}</h3>
+      <LearningBlockHeader kind={block.kind} title={block.title} category="content" language={courseLanguage} />
       {block.richContent ? <div
         className="lessonText richLessonText"
         style={{

@@ -6,6 +6,7 @@ import {
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
 } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
 import { supabase } from "../../lib/supabase";
@@ -33,6 +34,12 @@ const textFontOptions = [
 const textFontFamily = (
   value?: NonNullable<LessonBlock["textStyle"]>["fontFamily"],
 ) => textFontOptions.find((option) => option.value === value)?.family || textFontOptions[0].family;
+
+const previewTaskKinds = new Set<BlockKind>([
+  "drag-words", "select-words", "fill-blank", "quiz", "match", "true-false", "assignment",
+  "game-memory", "game-build-word", "game-listen-choice", "game-missing", "game-odd-one-out",
+  "game-speed", "game-truth", "game-categories", "game-sentence", "game-adventure",
+]);
 
 function TextAlignIcon({ alignment }: { alignment: "left" | "center" | "right" }) {
   const lines = alignment === "left"
@@ -1159,14 +1166,17 @@ export function CourseEditorPage() {
         <span>ПАРАМЕТРЫ УРОКА</span>
       </div>
       <label className="lessonSettingField lessonGoalField">
-        <span className="lessonSettingCopy"><b>Цель урока</b></span>
+        <span className="lessonSettingCopy"><b>Цель урока</b><small>Что ученик освоит после прохождения</small></span>
         <textarea aria-label="Цель урока" maxLength={240} value={lesson?.goal || ""} placeholder="После урока ученик сможет…" onChange={(event) => updateLesson({ goal: event.target.value })} />
       </label>
-      <label className="lessonSettingField">
-        <span className="lessonSettingCopy"><b>Примерное время</b></span>
-        <input aria-label="Примерное время урока в минутах" type="number" min="0" max="999" value={lesson?.estimatedMinutes || 0} onChange={(event) => updateLesson({ estimatedMinutes: Math.max(0, Number(event.target.value)) })} />
+      <label className="lessonSettingField lessonEstimateField">
+        <span className="lessonSettingIcon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5" /><path d="M12 8v4l3 2" /></svg>
+        </span>
+        <span className="lessonSettingCopy"><b>Примерное время</b><small>На изучение материала</small></span>
+        <span className="lessonNumberInput"><input aria-label="Примерное время урока в минутах" type="number" min="0" max="999" value={lesson?.estimatedMinutes || 0} onChange={(event) => updateLesson({ estimatedMinutes: Math.max(0, Number(event.target.value)) })} /><em>мин</em></span>
       </label>
-      <label className="lessonSettingField">
+      <label className="lessonSettingField lessonTimerField">
         <span className="lessonSettingIcon" aria-hidden="true">
           <svg viewBox="0 0 24 24">
             <circle cx="12" cy="13" r="7" />
@@ -1175,6 +1185,7 @@ export function CourseEditorPage() {
         </span>
         <span className="lessonSettingCopy">
           <b>Таймер</b>
+          <small>Лимит на прохождение</small>
         </span>
         <span className="lessonTimerInput" aria-label="Таймер урока">
           <input
@@ -1205,7 +1216,7 @@ export function CourseEditorPage() {
           />
         </span>
       </label>
-      <label className="lessonSettingField">
+      <label className="lessonSettingField lessonAttemptsField">
         <span className="lessonSettingIcon" aria-hidden="true">
           <svg viewBox="0 0 24 24">
             <path d="M6.2 8.2A7 7 0 1 1 5 15" />
@@ -1214,16 +1225,17 @@ export function CourseEditorPage() {
         </span>
         <span className="lessonSettingCopy">
           <b>Попытки</b>
+          <small>Количество повторов</small>
         </span>
-        <input
-          aria-label="Количество попыток прохождения урока"
-          type="number"
-          min="0"
-          value={lesson?.attempts || 0}
-          onChange={(event) => updateLesson({ attempts: +event.target.value })}
-        />
+        <span className="lessonNumberInput"><input
+            aria-label="Количество попыток прохождения урока"
+            type="number"
+            min="0"
+            value={lesson?.attempts || 0}
+            onChange={(event) => updateLesson({ attempts: Math.max(0, Number(event.target.value)) })}
+          /><em>раз</em></span>
       </label>
-      <small className="lessonSettingsHint">Значение 0 — без ограничений</small>
+      <small className="lessonSettingsHint"><span aria-hidden="true">i</span> Значение 0 отключает соответствующее ограничение</small>
     </div>
   );
   const save = async () => {
@@ -1279,6 +1291,9 @@ export function CourseEditorPage() {
     setSaved(true);
   };
   const rendered = visibleBlocks;
+  const previewLessons = course?.modules.flatMap((item) => item.lessons) || [];
+  const previewLessonNumber = Math.max(0, previewLessons.findIndex((item) => item.id === lesson?.id)) + 1;
+  const previewTaskCount = lesson?.blocks.filter((item) => previewTaskKinds.has(item.kind)).length || 0;
   if (!canEditCourses)
     return (
       <main className="content">
@@ -2737,34 +2752,71 @@ export function CourseEditorPage() {
           </span>
         </div>
       )}
-      {preview && (
-        <div className="courseModal" onClick={() => setPreview(false)}>
-          <div onClick={(e) => e.stopPropagation()}>
-            <button className="modalClose" onClick={() => setPreview(false)}>
-              ×
-            </button>
-            <small>{course.title}</small>
-            <h1>{lesson?.title}</h1>
-            <p style={{ fontFamily: textFontFamily(lesson?.descriptionStyle?.fontFamily), fontSize: `${lesson?.descriptionStyle?.fontSize || 16}px`, fontWeight: lesson?.descriptionStyle?.fontWeight || 400, textAlign: lesson?.descriptionStyle?.textAlign || "left" }}>{lesson?.description}</p>
-            {lessonTabs.length > 0 && (
-              <div className="lessonPreviewTabs" role="tablist" aria-label="Вкладки урока">
-                {lessonTabs.map((tab, index) => (
-                  <button
-                    type="button"
-                    key={tab.id}
-                    className={tab.id === activeTabId ? "active" : ""}
-                    onClick={() => setActiveLessonTabId(tab.id)}
-                  >
-                    {tab.title || `Вкладка ${index + 1}`}
-                  </button>
-                ))}
-              </div>
-            )}
-            {rendered.map((b) => (
-              <LessonBlockView key={b.id} block={b} courseLanguage={course.language} />
-            ))}
+      {preview && createPortal(
+        <div className="courseModal coursePreviewModal" onClick={() => setPreview(false)}>
+          <div className="coursePreviewSurface coursePlayer" onClick={(e) => e.stopPropagation()}>
+            <button className="modalClose coursePreviewClose" onClick={() => setPreview(false)} aria-label="Закрыть предпросмотр">×</button>
+            <header className="playerHeader coursePreviewHeader">
+              <button className="playerCoursesBack" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6.5-5.5 5.5 5.5 5.5" /></svg>
+                <span>КУРСЫ</span>
+              </button>
+              <div className="playerCourseIdentity"><small>{course.language}</small><b>{course.title}</b></div>
+              <div className="playerProgress" aria-label="Предпросмотр курса"><span>Предпросмотр</span><i><em style={{ width: "0%" }} /></i></div>
+            </header>
+            <div className="playerLayout coursePreviewLayout">
+              <aside className="playerTree coursePreviewTree">
+                <button className="playerTreeToggle" type="button">
+                  <span><small>{module?.title || "Содержание курса"}</small><b>{lesson?.title || "Выберите урок"}</b></span>
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg>
+                </button>
+                <div className="playerTreeContent">
+                  {course.modules.map((previewModule, moduleIndex) => (
+                    <div key={previewModule.id}>
+                      <h3><span>{moduleIndex + 1}</span>{previewModule.title}</h3>
+                      {previewModule.lessons.map((previewLesson, lessonIndex) => (
+                        <button type="button" className={previewLesson.id === lesson?.id ? "active" : ""} key={previewLesson.id}>
+                          <i>{lessonIndex + 1}</i>
+                          <span>{previewLesson.title}<small>{previewLesson.id === lesson?.id ? "Текущий" : "Урок курса"}</small></span>
+                        </button>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </aside>
+              <article className="lessonReader coursePreviewReader">
+                <div className="readerIntro">
+                  <small>УРОК {previewLessonNumber} ИЗ {previewLessons.length}</small>
+                  <h1>{lesson?.title}</h1>
+                  {(lesson?.goal || lesson?.description) && <p style={{ fontFamily: textFontFamily(lesson?.descriptionStyle?.fontFamily), fontSize: `${lesson?.descriptionStyle?.fontSize || 17}px`, fontWeight: lesson?.descriptionStyle?.fontWeight || 400, textAlign: lesson?.descriptionStyle?.textAlign || "left" }}>{lesson.goal || lesson.description}</p>}
+                  <div className="readerMeta">
+                    {Boolean(lesson?.estimatedMinutes) && <span className="readerLimit"><small>Время</small><b>≈ {lesson?.estimatedMinutes} мин</b></span>}
+                    {previewTaskCount > 0 && <span className="readerLimit"><small>Практика</small><b>{previewTaskCount} {previewTaskCount === 1 ? "задание" : "заданий"}</b></span>}
+                  </div>
+                </div>
+                {lessonTabs.length > 0 && (
+                  <nav className="learnerLessonTabs" aria-label="Разделы урока">
+                    {lessonTabs.map((tab, index) => (
+                      <button type="button" key={tab.id} className={tab.id === activeTabId ? "active" : ""} aria-current={tab.id === activeTabId ? "page" : undefined} onClick={() => setActiveLessonTabId(tab.id)}>
+                        {tab.title || `Вкладка ${index + 1}`}
+                      </button>
+                    ))}
+                  </nav>
+                )}
+                {rendered.length ? (
+                  <div className="learningBlockStack">
+                    {rendered.map((previewBlock) => (
+                      <div className="lessonBlockAnchor" id={`preview-learning-block-${previewBlock.id}`} key={previewBlock.id}>
+                        <LessonBlockView block={previewBlock} courseLanguage={course.language} />
+                      </div>
+                    ))}
+                  </div>
+                ) : <div className="learningBlock emptyMaterial">В этом разделе пока нет учебных материалов.</div>}
+              </article>
+            </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </main>
   );

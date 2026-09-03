@@ -7,6 +7,7 @@ import { SelectionTranslator } from "./components/SelectionTranslator";
 import { CoursesPage } from "./features/courses/CoursesPage";
 import { CourseEditorPage } from "./features/courses/CourseEditorPage";
 import { CoursePlayerPage } from "./features/courses/CoursePlayerPage";
+import { AssignmentReviewPage } from "./features/courses/AssignmentReviewPage";
 import { ProfilePage } from "./features/profile/ProfilePage";
 import { UsersPage } from "./features/users/UsersPage";
 import { GroupsPage } from "./features/groups/GroupsPage";
@@ -25,7 +26,8 @@ type Page =
   | "roles"
   | "reports"
   | "calls"
-  | "calendar";
+  | "calendar"
+  | "assignments";
 type BlockKind = "text" | "media" | "quiz" | "html" | "file";
 type LessonBlock = {
   id: number;
@@ -166,6 +168,7 @@ const nav: {
     section: "ОБУЧЕНИЕ",
     items: [
       { id: "courses", icon: "▤", label: "Курсы" },
+      { id: "assignments", icon: "✓", label: "Задания учеников" },
       { id: "people", icon: "♙", label: "Пользователи" },
       { id: "groups", icon: "◉", label: "Группы" },
     ],
@@ -289,6 +292,7 @@ function NavIcon({ name }: { name: Page | "help" | "logout" }) {
   const paths: Partial<Record<typeof name, React.ReactNode>> = {
     overview: <><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V21h13V9.5M9 21v-6h6v6"/></>,
     courses: <><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 5.5v16M8 7h8M8 11h8"/></>,
+    assignments: <><path d="M6 3.5h8l4 4V20H6Z"/><path d="M14 3.5V8h4M9 13l2 2 4-4"/></>,
     people: <><circle cx="12" cy="8" r="3"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/></>,
     groups: <><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0M16 5.5a3 3 0 0 1 0 5.8M17 15a5 5 0 0 1 4 5"/></>,
     calendar: <><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></>,
@@ -316,6 +320,7 @@ function Sidebar({
 }) {
   const { displayName, initials, avatarUrl, isAdmin, canEditCourses, signOut } = useAuth();
   const adminOnlyPages: Page[] = [
+    "assignments",
     "people",
     "roles",
     "reports",
@@ -647,6 +652,7 @@ function Header({ title, toggleNav }: { title: string; toggleNav: () => void }) 
       { label: "Календарь", description: "Встречи и события", path: "/calendar", keywords: "календарь события встречи" },
       { label: "Видеокомнаты", description: "Комнаты для звонков", path: "/video-rooms", keywords: "видео звонки комнаты" },
       ...(isAdmin ? [
+        { label: "Задания учеников", description: "Архив отправленных работ", path: "/assignments", keywords: "задания работы проверка ответы" },
         { label: "Пользователи", description: "Ученики и сотрудники", path: "/users", keywords: "пользователи ученики сотрудники" },
         { label: "Отчёты", description: "Результаты обучения", path: "/reports", keywords: "отчеты аналитика результаты" },
         { label: "Роли и права", description: "Права доступа", path: "/roles", keywords: "роли права доступ" },
@@ -1954,6 +1960,7 @@ const paths: Record<Page, string> = {
   reports: "/reports",
   calls: "/video-rooms",
   calendar: "/calendar",
+  assignments: "/assignments",
 };
 
 const pageByPath = Object.fromEntries(
@@ -1966,7 +1973,7 @@ export default function App() {
   const { isAdmin, canEditCourses } = useAuth();
   const page = pageByPath[location.pathname] ?? "overview";
   const setPage = (next: Page) => navigate(paths[next]);
-  const adminOnlyPages: Page[] = ["people", "reports", "roles"];
+  const adminOnlyPages: Page[] = ["assignments", "people", "reports", "roles"];
   const denied = (!isAdmin && adminOnlyPages.includes(page)) || ((page === "editor" || page === "groups" || page === "calls") && !canEditCourses);
   const content =
     denied ? (
@@ -1990,6 +1997,8 @@ export default function App() {
       <ProfilePage />
     ) : page === "people" ? (
       <UsersPage key={location.search} />
+    ) : page === "assignments" ? (
+      <AssignmentReviewPage />
     ) : page === "groups" ? (
       <GroupsPage />
     ) : page === "reports" ? (

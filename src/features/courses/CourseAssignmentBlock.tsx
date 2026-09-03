@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useAuth } from "../../auth/AuthProvider";
 import { supabase } from "../../lib/supabase";
-import { BlockIcon } from "./BlockIcon";
+import { LearningBlockHeader } from "./LearningBlockHeader";
 import type { LessonBlock } from "./types";
 import { getCourseTaskLocale } from "./courseTaskLocale";
 
@@ -124,13 +124,18 @@ const mapReply = (row: ReplyRow): AssignmentReply => ({
   updatedAt: row.updated_at,
 });
 
-const formatDate = (value: string, locale = "ru") =>
+const formatMessageDate = (value: string, locale = "ru") =>
   new Intl.DateTimeFormat(locale, {
     day: "numeric",
     month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
+    year: "numeric",
   }).format(new Date(value));
+
+const formatMessageTime = (value: string, locale = "ru") =>
+  new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit" }).format(new Date(value));
+
+const isSameMessageDay = (left: string, right: string) =>
+  new Date(left).toDateString() === new Date(right).toDateString();
 
 const formatSize = (bytes: number | null) => {
   if (!bytes) return "Файл";
@@ -421,7 +426,7 @@ export function CourseAssignmentBlock({
   if (!courseId || !lessonId) {
     return (
       <section className="learningBlock assignmentLearning assignmentPreview">
-        <div className="assignmentHeading"><span className="blockGlyph assignment"><BlockIcon kind="assignment" /></span><div><h3>{block.title}</h3></div></div>
+        <LearningBlockHeader kind={block.kind} title={block.title} category="assignment" language={courseLanguage} />
         <p className="assignmentPrompt">{block.content || labels.assignmentPrompt}</p>
         <div className="assignmentComposer previewComposer"><AttachmentIcon /><span>{labels.assignmentPreview}</span><i><SendIcon /></i></div>
       </section>
@@ -430,10 +435,7 @@ export function CourseAssignmentBlock({
 
   return (
     <section className="learningBlock assignmentLearning">
-      <div className="assignmentHeading">
-        <span className="blockGlyph assignment"><BlockIcon kind="assignment" /></span>
-        <div><h3>{block.title}</h3></div>
-      </div>
+      <LearningBlockHeader kind={block.kind} title={block.title} category="assignment" language={courseLanguage} />
       <p className="assignmentPrompt">{block.content || labels.assignmentPrompt}</p>
       {loading ? <div className="assignmentLoading">Загружаем ответы…</div> : canEditCourses ? (
         <div className="assignmentReviewList">
@@ -442,12 +444,14 @@ export function CourseAssignmentBlock({
           {submissions.map((submission) => {
             const reply = replies.find((item) => item.submissionId === submission.id);
             return <article className="assignmentThread" key={submission.id}>
+              <time className="assignmentConversationDate">{formatMessageDate(submission.updatedAt, labels.htmlLang)}</time>
               <div className="assignmentMessage studentMessage">
-                <div className="assignmentMessageMeta"><b>{submission.studentName}</b><time>{formatDate(submission.updatedAt, labels.htmlLang)}</time></div>
+                <div className="assignmentMessageMeta"><b>{submission.studentName}</b></div>
                 {submission.body && <p>{submission.body}</p>}
                 {submission.attachmentName && <a className="assignmentAttachment" href={attachmentUrls[submission.id] || undefined} target="_blank" rel="noreferrer"><AttachmentIcon /><span><b>{submission.attachmentName}</b><small>{formatSize(submission.attachmentSize)}</small></span></a>}
+                <time className="assignmentMessageTime">{formatMessageTime(submission.updatedAt, labels.htmlLang)}</time>
               </div>
-              {reply && <div className="assignmentMessage teacherMessage"><div className="assignmentMessageMeta"><b>{reply.staffName}</b><time>{formatDate(reply.updatedAt, labels.htmlLang)}</time></div><p>{reply.body}</p></div>}
+              {reply && <>{!isSameMessageDay(submission.updatedAt, reply.updatedAt) && <time className="assignmentConversationDate">{formatMessageDate(reply.updatedAt, labels.htmlLang)}</time>}<div className="assignmentMessage teacherMessage"><div className="assignmentMessageMeta"><b>{reply.staffName}</b></div><p>{reply.body}</p><time className="assignmentMessageTime">{formatMessageTime(reply.updatedAt, labels.htmlLang)}</time></div></>}
               <div className="teacherReplyComposer">
                 <textarea rows={2} aria-label={`Ответ ученику ${submission.studentName}`} placeholder="Ответить ученику…" value={replyDrafts[submission.id] || ""} onChange={(event) => setReplyDrafts((current) => ({ ...current, [submission.id]: event.target.value }))} />
                 <button type="button" disabled={saving || !(replyDrafts[submission.id] || "").trim()} onClick={() => void saveReply(submission)} aria-label="Отправить ответ"><SendIcon /></button>
@@ -458,8 +462,9 @@ export function CourseAssignmentBlock({
       ) : (
         <div className="assignmentStudentArea">
           {ownSubmission && <div className="assignmentThread ownAssignmentThread">
-            <div className="assignmentMessage studentMessage"><div className="assignmentMessageMeta"><b>{labels.you}</b><time>{formatDate(ownSubmission.updatedAt, labels.htmlLang)}</time></div>{ownSubmission.body && <p>{ownSubmission.body}</p>}{ownSubmission.attachmentName && <a className="assignmentAttachment" href={attachmentUrls[ownSubmission.id] || undefined} target="_blank" rel="noreferrer"><AttachmentIcon /><span><b>{ownSubmission.attachmentName}</b><small>{formatSize(ownSubmission.attachmentSize)}</small></span></a>}</div>
-            {replies.find((item) => item.submissionId === ownSubmission.id) && (() => { const reply = replies.find((item) => item.submissionId === ownSubmission.id)!; return <div className="assignmentMessage teacherMessage"><div className="assignmentMessageMeta"><b>{reply.staffName}</b><time>{formatDate(reply.updatedAt, labels.htmlLang)}</time></div><p>{reply.body}</p></div>; })()}
+            <time className="assignmentConversationDate">{formatMessageDate(ownSubmission.updatedAt, labels.htmlLang)}</time>
+            <div className="assignmentMessage studentMessage"><div className="assignmentMessageMeta"><b>{labels.you}</b></div>{ownSubmission.body && <p>{ownSubmission.body}</p>}{ownSubmission.attachmentName && <a className="assignmentAttachment" href={attachmentUrls[ownSubmission.id] || undefined} target="_blank" rel="noreferrer"><AttachmentIcon /><span><b>{ownSubmission.attachmentName}</b><small>{formatSize(ownSubmission.attachmentSize)}</small></span></a>}<time className="assignmentMessageTime">{formatMessageTime(ownSubmission.updatedAt, labels.htmlLang)}</time></div>
+            {replies.find((item) => item.submissionId === ownSubmission.id) && (() => { const reply = replies.find((item) => item.submissionId === ownSubmission.id)!; return <>{!isSameMessageDay(ownSubmission.updatedAt, reply.updatedAt) && <time className="assignmentConversationDate">{formatMessageDate(reply.updatedAt, labels.htmlLang)}</time>}<div className="assignmentMessage teacherMessage"><div className="assignmentMessageMeta"><b>{reply.staffName}</b></div><p>{reply.body}</p><time className="assignmentMessageTime">{formatMessageTime(reply.updatedAt, labels.htmlLang)}</time></div></>; })()}
           </div>}
           <div className="assignmentComposer">
             {pendingFile && <div className="assignmentPendingFile"><AttachmentIcon /><span><b>{pendingFile.name}</b><small>{formatSize(pendingFile.size)}</small></span><button type="button" onClick={() => setPendingFile(null)} aria-label={labels.removeFile}>×</button></div>}

@@ -3883,6 +3883,309 @@ html[data-theme="dark"] .coursePlayer .imageLearning .lessonImageButton {
   padding-left: 16px;
 }
 
+/* Shared course-reader header for every non-game lesson block. */
+.coursePlayer .learningContentHeader {
+  position:relative;
+  display:flex;
+  align-items:center;
+  gap:13px;
+  min-height:86px;
+  margin:clamp(-34px,-3vw,-22px) clamp(-34px,-3vw,-22px) 24px;
+  padding:18px 24px;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 84% -40%,rgba(255,255,255,.22),transparent 42%),
+    linear-gradient(135deg,#302567 0%,#4937b8 52%,#684ff0 100%);
+  color:#fff;
+}
+
+.coursePlayer .learningContentHeader::after {
+  content:"";
+  position:absolute;
+  right:-18px;
+  bottom:-42px;
+  width:132px;
+  height:92px;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:50%;
+  transform:rotate(-16deg);
+  pointer-events:none;
+}
+
+.coursePlayer .learningContentHeaderIcon {
+  position:relative;
+  z-index:1;
+  display:grid;
+  place-items:center;
+  width:42px;
+  height:42px;
+  flex:0 0 42px;
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:13px;
+  background:rgba(255,255,255,.12);
+  color:#fff;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12);
+  backdrop-filter:blur(8px);
+}
+
+.coursePlayer .learningContentHeaderIcon svg {
+  width:21px;
+  height:21px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.8;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+
+.coursePlayer .learningContentHeader > div {
+  position:relative;
+  z-index:1;
+  min-width:0;
+}
+
+.coursePlayer .learningContentHeader small {
+  display:block;
+  color:#d8d2ff;
+  font-size:9px;
+  font-weight:850;
+  line-height:1.2;
+  letter-spacing:1.15px;
+  text-transform:uppercase;
+}
+
+.coursePlayer .learningContentHeader h3 {
+  margin:5px 0 0!important;
+  overflow-wrap:anywhere;
+  color:#fff;
+  font-size:20px;
+  line-height:1.25;
+}
+
+.coursePlayer .assignmentLearning .learningContentHeader {
+  margin:-24px -24px 4px;
+}
+
+html[data-theme="dark"] .coursePlayer .learningContentHeader {
+  background:
+    radial-gradient(circle at 84% -40%,rgba(255,255,255,.13),transparent 42%),
+    linear-gradient(135deg,#28204f 0%,#3c2f8d 52%,#5640cb 100%);
+}
+
+@media(max-width:700px) {
+  .coursePlayer .learningContentHeader {
+    min-height:76px;
+    margin:-21px -18px 20px;
+    padding:15px 18px;
+  }
+
+  .coursePlayer .learningContentHeaderIcon {
+    width:38px;
+    height:38px;
+    flex-basis:38px;
+    border-radius:11px;
+  }
+
+  .coursePlayer .learningContentHeader h3 { font-size:18px; }
+  .coursePlayer .assignmentLearning .learningContentHeader { margin:-17px -17px 3px; }
+}
+
+/* Administrator assignment archive. */
+.assignmentArchivePage { max-width:1480px; }
+.assignmentArchiveHero {
+  position:relative;
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:28px;
+  min-height:190px;
+  margin-bottom:18px;
+  padding:34px 38px;
+  overflow:hidden;
+  border-radius:22px;
+  background:radial-gradient(circle at 88% 8%,rgba(255,255,255,.2),transparent 28%),linear-gradient(130deg,#231a50,#4937ba 58%,#7158f6);
+  color:#fff;
+  box-shadow:0 18px 45px rgba(56,39,139,.2);
+}
+.assignmentArchiveHero::after { content:"";position:absolute;right:-55px;bottom:-130px;width:280px;height:280px;border:1px solid rgba(255,255,255,.12);border-radius:50%; }
+.assignmentArchiveHero>div { position:relative;z-index:1; }
+.assignmentArchiveHero>div:first-child>span { color:#d9d2ff;font-size:10px;font-weight:900;letter-spacing:1.5px; }
+.assignmentArchiveHero h1 { margin:10px 0 7px;font-size:34px;letter-spacing:-.8px; }
+.assignmentArchiveHero p { max-width:590px;margin:0;color:#d8d3f3;font-size:13px;line-height:1.55; }
+.assignmentArchiveStats { display:flex!important;gap:10px; }
+.assignmentArchiveStats>span { display:grid;min-width:105px;padding:13px 15px;border:1px solid rgba(255,255,255,.13);border-radius:14px;background:rgba(255,255,255,.1);backdrop-filter:blur(8px); }
+.assignmentArchiveStats b { font-size:21px;line-height:1; }
+.assignmentArchiveStats small { margin-top:6px;color:#d9d4f3;font-size:9px; }
+.assignmentArchiveSearch { display:flex;align-items:center;gap:10px;height:48px;margin-bottom:18px;padding:0 16px;border:1px solid var(--line);border-radius:13px;background:var(--card);box-shadow:0 7px 20px rgba(31,40,61,.04); }
+.assignmentArchiveSearch>span { color:var(--purple);font-size:18px; }
+.assignmentArchiveSearch input { width:100%;height:100%;border:0;background:transparent;outline:0;font-size:13px; }
+.assignmentArchiveLayout { display:grid;grid-template-columns:minmax(350px,.88fr) minmax(420px,1.12fr);align-items:start;gap:18px; }
+.assignmentFolderList { display:grid;gap:12px; }
+.assignmentCourseFolder { overflow:hidden;border:1px solid var(--line);border-radius:16px;background:var(--card);box-shadow:0 9px 25px rgba(31,40,61,.055); }
+.assignmentCourseFolder>summary { display:flex;align-items:center;gap:12px;min-height:70px;padding:13px 16px;list-style:none;cursor:pointer; }
+.assignmentCourseFolder>summary::-webkit-details-marker { display:none; }
+.assignmentCourseFolder>summary>span:nth-child(2) { display:grid;min-width:0;flex:1; }
+.assignmentCourseFolder>summary b { overflow:hidden;font-size:14px;text-overflow:ellipsis;white-space:nowrap; }
+.assignmentCourseFolder>summary small { margin-top:4px;color:var(--muted);font-size:10px; }
+.assignmentCourseFolder>summary>i { color:#9099aa;font-style:normal;transition:transform .2s; }
+.assignmentCourseFolder[open]>summary>i { transform:rotate(180deg); }
+.assignmentFolderIcon { display:grid;place-items:center;width:42px;height:42px;flex:0 0 42px;border-radius:12px;background:#eeeaff;color:var(--purple); }
+.assignmentFolderIcon svg,.assignmentModuleTitle svg,.assignmentArchiveEmpty>svg,.assignmentPreviewMessage>a>svg { width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round; }
+.assignmentFolderContent { display:grid;gap:13px;padding:5px 12px 13px;border-top:1px solid var(--line);background:color-mix(in srgb,var(--bg) 58%,var(--card)); }
+.assignmentModuleFolder { display:grid;gap:6px;padding-top:10px; }
+.assignmentModuleTitle { display:flex;align-items:center;gap:7px;padding:0 6px;color:#626d82; }
+.assignmentModuleTitle svg { width:16px;height:16px;color:#8c80e9; }
+.assignmentModuleTitle b { flex:1;font-size:10px;text-transform:uppercase;letter-spacing:.45px; }
+.assignmentModuleTitle>span { display:grid;place-items:center;min-width:21px;height:19px;padding:0 6px;border-radius:10px;background:#e9e6f7;color:#6856d2;font-size:9px;font-weight:800; }
+.assignmentModuleFolder>button { display:grid;grid-template-columns:34px minmax(0,1fr) auto;align-items:center;gap:10px;width:100%;min-height:58px;padding:9px 10px;border:1px solid transparent;border-radius:11px;background:transparent;text-align:left;transition:background .2s,border-color .2s,transform .2s; }
+.assignmentModuleFolder>button:hover { background:var(--card);transform:translateX(2px); }
+.assignmentModuleFolder>button.active { border-color:#c6bdf8;background:var(--card);box-shadow:0 6px 16px rgba(73,55,184,.09); }
+.assignmentModuleFolder>button>span:nth-child(2) { display:grid;min-width:0; }
+.assignmentModuleFolder>button>span:nth-child(2)>b { overflow:hidden;font-size:12px;text-overflow:ellipsis;white-space:nowrap; }
+.assignmentModuleFolder>button>span:nth-child(2)>small { overflow:hidden;margin-top:4px;color:var(--muted);font-size:9px;text-overflow:ellipsis;white-space:nowrap; }
+.assignmentStudentAvatar { display:grid;place-items:center;width:34px;height:34px;flex:0 0 34px;border-radius:10px;background:linear-gradient(145deg,#806df8,#513ad5);color:#fff;font-size:12px;font-weight:900;box-shadow:0 5px 12px rgba(81,58,213,.2); }
+.assignmentReviewDot { display:grid;place-items:center;width:22px;height:22px;flex:0 0 22px;border:2px solid #fff;border-radius:50%;color:#fff;box-shadow:0 4px 11px currentColor; }
+.assignmentReviewDot.replied { background:#32d77c;color:#20ad63; }
+.assignmentReviewDot.waiting { background:#ffad32;color:#e58b00; }
+.assignmentReviewDot.overdue { background:#ef4c58;color:#d92f3d; }
+.assignmentReviewDot svg { width:13px;height:13px;fill:none;stroke:#fff;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round; }
+.assignmentReviewDot>span { color:#fff;font-size:12px;font-weight:950;line-height:1; }
+.assignmentStatusLegend { display:flex;justify-content:flex-end;flex-wrap:wrap;gap:14px;margin:-7px 2px 15px; }
+.assignmentStatusLegend>span { display:flex;align-items:center;gap:6px;color:var(--muted);font-size:9px;font-weight:700; }
+.assignmentStatusLegend .assignmentReviewDot { width:14px;height:14px;flex-basis:14px;border-width:1px;box-shadow:none; }
+.assignmentStatusLegend .assignmentReviewDot svg { width:9px;height:9px; }
+.assignmentStatusLegend .assignmentReviewDot>span { font-size:8px; }
+.assignmentArchivePreview { position:sticky;top:86px;min-height:420px;padding:22px;border:1px solid var(--line);border-radius:18px;background:var(--card);box-shadow:0 12px 32px rgba(31,40,61,.07); }
+.assignmentPreviewHead { display:flex;align-items:center;gap:12px;padding-bottom:18px;border-bottom:1px solid var(--line); }
+.assignmentPreviewHead>.assignmentStudentAvatar { width:44px;height:44px;flex-basis:44px;border-radius:13px;font-size:15px; }
+.assignmentPreviewHead>div { display:grid;min-width:0;flex:1; }
+.assignmentPreviewHead small,.assignmentPreviewTask small { color:#8173dc;font-size:8px;font-weight:900;letter-spacing:1px; }
+.assignmentPreviewHead h2 { margin:4px 0 0;overflow:hidden;font-size:19px;text-overflow:ellipsis;white-space:nowrap; }
+.assignmentPreviewBreadcrumbs { display:flex;flex-wrap:wrap;gap:7px;margin:16px 0;color:var(--muted);font-size:10px; }
+.assignmentPreviewBreadcrumbs span { color:#aaa3d5; }
+.assignmentPreviewTask { display:grid;gap:5px;margin-bottom:18px;padding:13px 15px;border-left:3px solid #7661ef;border-radius:0 11px 11px 0;background:#f3f1ff; }
+.assignmentPreviewTask b { font-size:13px; }
+.assignmentPreviewDate { display:block;width:max-content;margin:0 auto 10px;padding:4px 10px;border-radius:99px;background:#eff1f5;color:#818a9a;font-size:9px; }
+.assignmentPreviewMessage,.assignmentPreviewReply { position:relative;display:grid;gap:10px;max-width:88%;padding:14px 14px 27px;border-radius:16px; }
+.assignmentPreviewMessage { justify-self:end;margin-left:auto;border-bottom-right-radius:5px;background:#e9e6ff;color:#27223f; }
+.assignmentPreviewMessage p,.assignmentPreviewReply p { margin:0;font-size:13px;line-height:1.55;white-space:pre-wrap; }
+.assignmentPreviewMessage>a { display:flex;align-items:center;gap:9px;padding:9px;border:1px solid rgba(95,84,160,.2);border-radius:10px;background:rgba(255,255,255,.6);color:inherit;text-decoration:none; }
+.assignmentPreviewMessage>a>span { display:grid;min-width:0; }
+.assignmentPreviewMessage>a b { overflow:hidden;max-width:360px;font-size:9px;text-overflow:ellipsis;white-space:nowrap; }
+.assignmentPreviewMessage>a small { margin-top:3px;color:#777f91;font-size:8px; }
+.assignmentPreviewMessage>time,.assignmentPreviewReply>time { position:absolute;right:12px;bottom:8px;color:#7f789e;font-size:8px; }
+.assignmentPreviewReply { margin-top:10px;border:1px solid var(--line);border-bottom-left-radius:5px;background:#f8f9fb; }
+.assignmentPreviewReply>span { color:#777f90;font-size:9px;font-weight:800; }
+.assignmentArchiveComposer { display:flex;align-items:flex-end;gap:9px;margin-top:16px;padding:8px 8px 8px 14px;border:1px solid #dfe2e9;border-radius:18px;background:#fff;box-shadow:0 7px 22px rgba(31,40,61,.06);transition:border-color .2s,box-shadow .2s; }
+.assignmentArchiveComposer:focus-within { border-color:#9182ef;box-shadow:0 9px 25px rgba(76,57,184,.1),0 0 0 3px rgba(101,75,246,.07); }
+.assignmentArchiveComposer textarea { flex:1;min-width:0;min-height:40px;max-height:150px;padding:8px 2px;border:0;background:transparent;color:var(--ink);font:inherit;font-size:12px;line-height:1.5;outline:0;resize:vertical; }
+.assignmentArchiveComposer>button { display:grid;place-items:center;width:38px;height:38px;flex:0 0 38px;padding:0;border:0;border-radius:50%;background:linear-gradient(145deg,#765ef6,#5239da);color:#fff;box-shadow:0 6px 14px rgba(82,57,218,.25);transition:transform .2s,opacity .2s; }
+.assignmentArchiveComposer>button:not(:disabled):hover { transform:translateY(-1px); }
+.assignmentArchiveComposer>button:disabled { opacity:.35;cursor:not-allowed;box-shadow:none; }
+.assignmentArchiveComposer svg { width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round; }
+.assignmentArchiveReplyError { margin:7px 4px 0;padding:8px 10px;border-radius:9px;background:#fff0f1;color:#c34550;font-size:10px; }
+.assignmentOpenCourse { margin-top:22px; }
+.assignmentArchiveEmpty { display:grid;place-items:center;min-height:280px;padding:35px;border:1px dashed #d6dae5;border-radius:17px;background:var(--card);color:var(--muted);text-align:center; }
+.assignmentArchiveEmpty>svg { width:42px;height:42px;color:#8b7bea; }
+.assignmentArchiveEmpty h2 { margin:13px 0 0;color:var(--ink);font-size:18px; }
+.assignmentArchiveEmpty p { margin:7px 0 0;font-size:12px; }
+
+/* Conversation dates sit above the chat; message times sit inside the lower-right corner. */
+.assignmentConversationDate { justify-self:center;padding:4px 10px;border-radius:99px;background:#e9ecf2;color:#7d8698;font-size:8px;line-height:1.3; }
+.assignmentMessage { position:relative;padding-bottom:27px; }
+.assignmentMessageMeta { justify-content:flex-start; }
+.assignmentMessageTime { position:absolute;right:12px;bottom:8px;color:#7f8797;font-size:8px;font-variant-numeric:tabular-nums; }
+.studentMessage .assignmentMessageTime { color:#7c7599; }
+
+html[data-theme="dark"] .assignmentCourseFolder,
+html[data-theme="dark"] .assignmentArchivePreview,
+html[data-theme="dark"] .assignmentArchiveSearch,
+html[data-theme="dark"] .assignmentArchiveEmpty { background:#171e2c;border-color:var(--line); }
+html[data-theme="dark"] .assignmentFolderContent { background:#121925; }
+html[data-theme="dark"] .assignmentModuleFolder>button.active,
+html[data-theme="dark"] .assignmentModuleFolder>button:hover { background:#20283a; }
+html[data-theme="dark"] .assignmentPreviewTask { background:#292442; }
+html[data-theme="dark"] .assignmentPreviewReply { background:#111825; }
+html[data-theme="dark"] .assignmentArchiveComposer { background:#111825;border-color:var(--line); }
+html[data-theme="dark"] .assignmentConversationDate,
+html[data-theme="dark"] .assignmentPreviewDate { background:#273044;color:#aeb8ca; }
+
+@media(max-width:1050px) {
+  .assignmentArchiveHero { align-items:flex-start;flex-direction:column; }
+  .assignmentArchiveLayout { grid-template-columns:minmax(300px,.8fr) minmax(360px,1.2fr); }
+  .assignmentArchiveStats { width:100%; }
+  .assignmentArchiveStats>span { flex:1; }
+}
+
+@media(max-width:820px) {
+  .assignmentArchiveLayout { grid-template-columns:1fr; }
+  .assignmentArchivePreview { position:static; }
+}
+
+@media(max-width:560px) {
+  .assignmentArchivePage { padding-inline:14px!important; }
+  .assignmentArchiveHero { min-height:0;padding:24px 20px;border-radius:17px; }
+  .assignmentArchiveHero h1 { font-size:27px; }
+  .assignmentArchiveStats { gap:6px; }
+  .assignmentArchiveStats>span { min-width:0;padding:10px; }
+  .assignmentArchiveStats b { font-size:18px; }
+  .assignmentArchiveStats small { font-size:8px; }
+  .assignmentArchiveLayout { gap:12px; }
+  .assignmentArchivePreview { padding:16px;border-radius:15px; }
+  .assignmentPreviewHead { align-items:flex-start;flex-wrap:wrap; }
+  .assignmentStatusLegend { justify-content:flex-start;gap:10px;margin-top:-5px; }
+  .assignmentPreviewHead>.assignmentReviewDot { margin-left:auto; }
+  .assignmentModuleFolder>button { grid-template-columns:34px minmax(0,1fr) 22px; }
+  .assignmentModuleFolder>button>.assignmentReviewDot { align-self:center;justify-self:end; }
+  .assignmentPreviewMessage,.assignmentPreviewReply { max-width:96%; }
+}
+
+/* Course editor preview uses the same player structure as the learner view. */
+.courseModal.coursePreviewModal { padding:18px;background:rgba(10,16,30,.72);backdrop-filter:blur(5px); }
+.courseModal.coursePreviewModal>.coursePreviewSurface {
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  width:min(1180px,100%);
+  height:min(88vh,820px);
+  min-height:0;
+  max-height:none;
+  padding:0;
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:20px;
+  background:var(--bg);
+  box-shadow:0 35px 90px rgba(7,12,25,.38);
+}
+.coursePreviewSurface .coursePreviewClose { position:absolute;z-index:60;top:16px;right:16px;display:grid;place-items:center;width:36px;height:36px;padding:0;border:1px solid rgba(255,255,255,.18);border-radius:10px;background:rgba(255,255,255,.1);color:#fff;font-size:23px;line-height:1;backdrop-filter:blur(7px); }
+.coursePreviewSurface .coursePreviewClose:hover { background:rgba(255,255,255,.2); }
+.coursePreviewSurface .coursePreviewHeader { position:relative;top:auto;flex:0 0 72px;height:72px;padding-right:66px; }
+.coursePreviewSurface .coursePreviewLayout { width:100%;max-width:none;min-height:0;flex:1;margin:0;overflow:hidden;grid-template-columns:270px minmax(0,1fr); }
+.coursePreviewSurface .coursePreviewTree { min-height:0;overflow-y:auto; }
+.coursePreviewSurface .coursePreviewTree button { cursor:default; }
+.coursePreviewSurface .coursePreviewReader { width:min(800px,calc(100% - 48px));height:100%;padding:42px 0;overflow-y:auto;scrollbar-gutter:stable; }
+.coursePreviewSurface .coursePreviewReader .learningBlockStack { margin-bottom:34px; }
+.coursePreviewSurface .coursePreviewReader>.emptyMaterial { padding:34px;border:1px dashed var(--line);border-radius:16px;background:var(--card);text-align:center; }
+.coursePreviewSurface .playerProgress { margin-right:16px; }
+html[data-theme="dark"] .courseModal.coursePreviewModal>.coursePreviewSurface { background:var(--bg); }
+
+@media(max-width:760px) {
+  .courseModal.coursePreviewModal { padding:7px; }
+  .courseModal.coursePreviewModal>.coursePreviewSurface { width:100%;height:calc(100dvh - 14px);border-radius:15px; }
+  .coursePreviewSurface .coursePreviewHeader { flex-basis:64px;height:64px;padding-right:54px; }
+  .coursePreviewSurface .coursePreviewClose { top:14px;right:10px;width:34px;height:34px; }
+  .coursePreviewSurface .coursePreviewLayout { display:block;overflow-y:auto; }
+  .coursePreviewSurface .coursePreviewTree { position:sticky;z-index:5;top:0;overflow:visible;border-bottom:1px solid var(--line); }
+  .coursePreviewSurface .coursePreviewTree .playerTreeContent { display:none; }
+  .coursePreviewSurface .coursePreviewReader { width:calc(100% - 30px);height:auto;overflow:visible;padding:28px 0 42px; }
+}
+
+@media(max-width:900px) {
+  .coursePreviewSurface.coursePlayer .playerHeader.coursePreviewHeader { top:0; }
+  .coursePreviewSurface.coursePlayer .playerTree.coursePreviewTree { position:static;top:auto; }
+  .coursePreviewSurface.coursePlayer .coursePreviewTree .playerTreeContent { position:static;display:none; }
+}
+
 .taskOptionsEditor .taskOptionAdd {
   display: flex;
   align-items: center;
@@ -3975,6 +4278,59 @@ html[data-theme="dark"] .taskOptionsEditor .taskOptionAdd:hover {
   border-radius: 8px;
   background: var(--card);
   color: var(--ink);
+}
+
+.truthGameEditorRow .gameTruthAnswer {
+  display:grid;
+  grid-column:1 / -1;
+  gap:7px;
+  padding-top:4px;
+}
+
+.truthGameEditorRow .gameTruthAnswer > span {
+  color:#667186;
+  font-size:11px;
+  font-weight:750;
+}
+
+.truthGameEditorRow .trueFalseToggle {
+  width:100%;
+}
+
+.truthGameEditorRow .trueFalseToggle button {
+  flex:1;
+  min-width:0;
+}
+
+.gameTruthAdd {
+  margin-top:0;
+}
+
+/* One label rhythm for every course block editor. */
+.blockInspector {
+  --editor-field-label-size:12px;
+}
+
+.blockInspector .gameEditorCard label,
+.blockInspector .gameEditorSettings label,
+.blockInspector .taskBuilderRow label > span,
+.blockInspector .taskStandaloneField > span,
+.blockInspector .taskOptionsEditor > span,
+.blockInspector .gameTruthAnswer > span,
+.blockInspector .trueFalseColumnsHead label > span,
+.blockInspector .imageCollageEditor figcaption label > span {
+  color:#667186!important;
+  font-size:var(--editor-field-label-size)!important;
+  font-weight:750!important;
+  line-height:1.35!important;
+}
+
+.blockInspector .gameEditorCard input,
+.blockInspector .gameEditorCard select,
+.blockInspector .gameEditorSettings input,
+.blockInspector .taskBuilderRow input,
+.blockInspector .taskStandaloneField input {
+  font-size:14px;
 }
 
 .categoryNamesEditor {
@@ -4221,10 +4577,25 @@ html[data-theme="dark"] .openCourseBtn:active { transform:translateY(0) scale(.9
 html[data-theme="dark"] .courseStats { border-bottom-color:transparent; }
 .courseActions { border-top-color:var(--line); }
 html[data-theme="dark"] .courseNewRibbonSetting>button,html[data-theme="dark"] .courseProgressLockSetting>button { background:#111825;border-color:var(--line); }
-.lessonSettingsSidebar .lessonGoalField { display:block!important;height:auto!important;min-height:118px;padding:12px!important; }
-.lessonSettingsSidebar .lessonGoalField .lessonSettingCopy { display:block!important;margin-bottom:8px; }
-.lessonSettingsSidebar .lessonGoalField textarea { display:block;width:100%;min-height:72px;padding:10px 11px;border:1px solid var(--line);border-radius:9px;resize:vertical;background:var(--card);color:var(--ink);font:inherit;line-height:1.4;outline:0; }
-.lessonSettingsSidebar .lessonGoalField textarea:focus { border-color:var(--purple);box-shadow:0 0 0 3px rgba(101,75,246,.09); }
+.lessonSettingsSidebar { gap:10px!important;padding:14px!important;border-radius:16px!important;background:color-mix(in srgb,var(--card) 68%,var(--bg))!important;box-shadow:none!important; }
+.lessonSettingsSidebar .lessonSettingsTitle { margin:0 2px 2px;padding-bottom:2px; }
+.lessonSettingsSidebar .lessonSettingsTitle>span:last-child { color:var(--ink);font-size:12px;font-weight:900;letter-spacing:.75px; }
+.lessonSettingsSidebar .lessonSettingField { grid-template-columns:38px minmax(0,1fr) auto!important;min-height:70px;height:auto!important;padding:10px 11px!important;border-radius:12px!important;background:var(--card)!important;box-shadow:0 5px 14px rgba(34,42,64,.045); }
+.lessonSettingsSidebar .lessonSettingCopy b { font-size:12px;line-height:1.25; }
+.lessonSettingsSidebar .lessonSettingCopy small { margin-top:3px;font-size:9px;line-height:1.3; }
+.lessonSettingsSidebar .lessonGoalField { display:block!important;min-height:148px;padding:13px!important; }
+.lessonSettingsSidebar .lessonGoalField .lessonSettingCopy { display:block!important;margin-bottom:9px; }
+.lessonSettingsSidebar .lessonGoalField textarea { display:block;width:100%;min-height:82px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;resize:vertical;background:color-mix(in srgb,var(--card) 82%,var(--bg));color:var(--ink);font:inherit;font-size:12px;line-height:1.45;outline:0;transition:border-color .2s ease,box-shadow .2s ease,background-color .2s ease; }
+.lessonSettingsSidebar .lessonGoalField textarea:focus { border-color:var(--purple);background:var(--card);box-shadow:0 0 0 3px rgba(101,75,246,.09); }
+.lessonSettingsSidebar .lessonNumberInput { display:flex!important;align-items:center;justify-content:flex-end;gap:5px;min-width:78px;height:40px;padding:0 8px;border-radius:9px;background:color-mix(in srgb,var(--card) 58%,var(--bg)); }
+.lessonSettingsSidebar .lessonNumberInput input { width:40px!important;height:34px!important;margin:0!important;padding:0!important;border:0!important;background:transparent!important;color:var(--ink)!important;font-size:17px!important;font-weight:850!important;text-align:center!important;outline:0!important; }
+.lessonSettingsSidebar .lessonNumberInput em { color:var(--muted);font-size:9px;font-style:normal;font-weight:750; }
+.lessonSettingsSidebar .lessonTimerInput { width:112px;height:40px;padding:0 9px;border-radius:9px;background:color-mix(in srgb,var(--card) 58%,var(--bg)); }
+.lessonSettingsSidebar .lessonTimerInput input,.lessonSettingsSidebar .lessonTimerInput input:first-child { width:100%!important;height:40px!important;background:transparent!important;font-size:16px!important; }
+.lessonSettingsSidebar .lessonSettingsHint { display:flex;align-items:flex-start;justify-content:center;gap:6px;margin:1px 2px 0;color:var(--muted);font-size:9px;line-height:1.4;text-align:left; }
+.lessonSettingsSidebar .lessonSettingsHint:before { display:none; }
+.lessonSettingsSidebar .lessonSettingsHint>span { display:grid;place-items:center;width:15px;height:15px;flex:0 0 15px;border-radius:50%;background:#eeeaff;color:var(--purple);font-size:9px;font-weight:900; }
+.lessonSettingsSidebar .lessonSettingField:focus-within { border-color:color-mix(in srgb,var(--purple) 48%,var(--line));box-shadow:0 0 0 3px rgba(101,75,246,.08); }
 .coursePanelSettings input { width:100%;height:40px;margin-top:7px;padding:0 11px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--ink); }
 .coursePanelSettings>.courseCoverDesigner { display:grid;align-items:stretch;justify-content:stretch;gap:13px;width:100%;margin:5px 0 0;padding:14px;border:1px solid var(--line);border-radius:14px;background:color-mix(in srgb,var(--card) 72%,var(--bg)); }
 .courseCoverDesigner>label,.courseCoverUploadField { display:grid;gap:7px; }
