@@ -2,11 +2,13 @@ import { lazy, Suspense, useState } from "react";
 import type { GameConfig, LessonBlock } from "./types";
 import { uid } from "./types";
 import { EditorCardNumber } from "./EditorCardNumber";
+import { getCourseTaskLocale } from "./courseTaskLocale";
 
 const FullEmojiPicker = lazy(() => import("./FullEmojiPicker"));
 
 type Props = {
   block: LessonBlock;
+  courseLanguage?: string;
   onChange: (game: GameConfig) => void;
 };
 
@@ -132,7 +134,8 @@ function ListenEditor({ game, onChange }: { game: Extract<GameConfig, { type: "l
 
 const csv = (value: string) => value.split(",").map((item) => item.trim()).filter(Boolean);
 
-function RoundsEditor({ game, onChange }: { game: Extract<GameConfig, { type: "missing" | "odd-one-out" | "speed" | "truth" | "adventure" }>; onChange: Props["onChange"] }) {
+function RoundsEditor({ game, courseLanguage, onChange }: { game: Extract<GameConfig, { type: "missing" | "odd-one-out" | "speed" | "truth" | "adventure" }>; courseLanguage?: string; onChange: Props["onChange"] }) {
+  const taskLocale = getCourseTaskLocale(courseLanguage);
   const rounds = game.type === "adventure" ? game.stages : game.rounds;
   const update = (next: typeof rounds) => game.type === "adventure" ? onChange({ ...game, stages: next as typeof game.stages }) : onChange({ ...game, rounds: next as never });
   const patchRound = (id: string, patch: Record<string, unknown>) => update(rounds.map((round) => round.id === id ? { ...round, ...patch } : round) as typeof rounds);
@@ -156,7 +159,7 @@ function RoundsEditor({ game, onChange }: { game: Extract<GameConfig, { type: "m
       </> : game.type === "truth" ? <>
         <label>Контекст<input value={entry.prompt} onChange={(e) => patchRound(entry.id, { prompt: e.target.value })} /></label>
         <label>Утверждение<input value={entry.statement} onChange={(e) => patchRound(entry.id, { statement: e.target.value })} /></label>
-        <label>Правильный ответ<select value={entry.correct ? "true" : "false"} onChange={(e) => patchRound(entry.id, { correct: e.target.value === "true" })}><option value="true">Правда</option><option value="false">Ошибка</option></select></label>
+        <label>Правильный ответ<select value={entry.correct ? "true" : "false"} onChange={(e) => patchRound(entry.id, { correct: e.target.value === "true" })}><option value="true">{taskLocale.trueLabel}</option><option value="false">{taskLocale.falseLabel}</option></select></label>
       </> : <>
         {game.type !== "odd-one-out" && <label>Вопрос / подсказка<input value={entry.prompt || ""} onChange={(e) => patchRound(entry.id, { prompt: e.target.value })} /></label>}
         <label>Варианты<input value={entry.options.join(", ")} onChange={(e) => patchRound(entry.id, { options: csv(e.target.value) })} /></label>
@@ -181,12 +184,12 @@ function SentenceEditor({ game, onChange }: { game: Extract<GameConfig, { type: 
   return <div className="gameBlockEditor"><p className="gameEditorHint">Слова предложения будут автоматически перемешаны.</p>{game.items.map((item, index) => <div className="gameEditorCard sentenceEditorRow" key={item.id}><div className="gameCardHeader"><EditorCardNumber index={index} /></div><label>Предложение<input value={item.sentence} onChange={(e) => onChange({ ...game, items: game.items.map((entry) => entry.id === item.id ? { ...entry, sentence: e.target.value } : entry) })} /></label><label>Подсказка<input value={item.clue || ""} onChange={(e) => onChange({ ...game, items: game.items.map((entry) => entry.id === item.id ? { ...entry, clue: e.target.value } : entry) })} /></label><RemoveButton disabled={game.items.length <= 1} onClick={() => onChange({ ...game, items: game.items.filter((entry) => entry.id !== item.id) })} /></div>)}<button type="button" className="gameEditorAdd" onClick={() => onChange({ ...game, items: [...game.items, { id: uid(), sentence: "", clue: "" }] })}>＋ Добавить предложение</button></div>;
 }
 
-export function GameBlockEditor({ block, onChange }: Props) {
+export function GameBlockEditor({ block, courseLanguage, onChange }: Props) {
   if (!block.game) return null;
   if (block.game.type === "memory") return <MemoryEditor game={block.game} onChange={onChange} />;
   if (block.game.type === "build-word") return <BuildWordEditor game={block.game} onChange={onChange} />;
   if (block.game.type === "listen-choice") return <ListenEditor game={block.game} onChange={onChange} />;
   if (block.game.type === "categories") return <CategoriesEditor game={block.game} onChange={onChange} />;
   if (block.game.type === "sentence") return <SentenceEditor game={block.game} onChange={onChange} />;
-  return <RoundsEditor game={block.game} onChange={onChange} />;
+  return <RoundsEditor game={block.game} courseLanguage={courseLanguage} onChange={onChange} />;
 }

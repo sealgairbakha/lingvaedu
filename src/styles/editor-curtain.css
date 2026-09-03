@@ -4207,19 +4207,20 @@ html:not([data-theme="dark"]) .coursePlayer {
 @media(min-width:1101px){.courseEditor .editorLayout.treeCollapsed{grid-template-columns:0 0 minmax(420px,1fr) 8px var(--palette-width,360px)}.courseEditor .editorLayout.paletteCollapsed{grid-template-columns:var(--tree-width,250px) 8px minmax(420px,1fr) 0 0}.courseEditor .editorLayout.treeCollapsed.paletteCollapsed{grid-template-columns:0 0 minmax(420px,1fr) 0 0}.courseEditor .lessonTree,.courseEditor .blockPalette,.courseEditor .paletteResizer{transition:opacity .24s ease,transform .42s cubic-bezier(.2,.8,.2,1),visibility 0s}.courseEditor .editorLayout.treeCollapsed .lessonTree,.courseEditor .editorLayout.treeCollapsed .treeResizer,.courseEditor .editorLayout.paletteCollapsed .blockPalette,.courseEditor .editorLayout.paletteCollapsed>.paletteResizer:not(.treeResizer){visibility:hidden;overflow:hidden;opacity:0;pointer-events:none;transition:opacity .2s ease,transform .42s cubic-bezier(.2,.8,.2,1),visibility 0s .42s}.courseEditor .editorLayout.treeCollapsed .lessonTree{transform:translateX(-18px)}.courseEditor .editorLayout.paletteCollapsed .blockPalette{transform:translateX(18px)}}
 .saveState i.error { background:#df515a; }
 .peopleSummary>div>span svg { width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round; }
-.courseNewRibbonSetting>button { display:flex;align-items:center;gap:9px;width:100%;height:46px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--muted);text-align:left; }
-.courseNewRibbonSetting>button>i { position:relative;width:34px;height:20px;flex:0 0 34px;border-radius:99px;background:#cfd4dd;transition:background .2s; }
-.courseNewRibbonSetting>button>i:after { content:"";position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(20,28,45,.25);transition:transform .2s; }
-.courseNewRibbonSetting>button.active { color:var(--ink);border-color:color-mix(in srgb,var(--purple) 36%,var(--line)); }
-.courseNewRibbonSetting>button.active>i { background:var(--purple); }
-.courseNewRibbonSetting>button.active>i:after { transform:translateX(14px); }
-.courseNewRibbonSetting>button>b { font-size:13px; }
+.courseNewRibbonSetting>button,.courseProgressLockSetting>button { display:flex;align-items:center;gap:9px;width:100%;height:46px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--muted);text-align:left; }
+.courseNewRibbonSetting>button>i,.courseProgressLockSetting>button>i { position:relative;width:34px;height:20px;flex:0 0 34px;border-radius:99px;background:#cfd4dd;transition:background .2s; }
+.courseNewRibbonSetting>button>i:after,.courseProgressLockSetting>button>i:after { content:"";position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(20,28,45,.25);transition:transform .2s; }
+.courseNewRibbonSetting>button.active,.courseProgressLockSetting>button.active { color:var(--ink);border-color:color-mix(in srgb,var(--purple) 36%,var(--line)); }
+.courseNewRibbonSetting>button.active>i,.courseProgressLockSetting>button.active>i { background:var(--purple); }
+.courseNewRibbonSetting>button.active>i:after,.courseProgressLockSetting>button.active>i:after { transform:translateX(14px); }
+.courseNewRibbonSetting>button>b,.courseProgressLockSetting>button>b { font-size:13px; }
+.courseProgressLockSetting>small { margin-top:1px;color:var(--muted);font-size:10px;line-height:1.4; }
 html[data-theme="dark"] .openCourseBtn { border:1px solid var(--line);background:#20283a;color:#c9bcff;box-shadow:none;transition:border-color .25s ease,background-color .25s ease,color .25s ease,box-shadow .25s ease,transform .2s ease; }
 html[data-theme="dark"] .openCourseBtn:hover,html[data-theme="dark"] .openCourseBtn:focus-visible,html[data-theme="dark"] .openCourseBtn:active { border-color:#8d78ff;background:#3a3064;color:#fff;box-shadow:0 0 0 2px rgba(128,100,242,.16),0 7px 18px rgba(38,27,88,.28); }
 html[data-theme="dark"] .openCourseBtn:active { transform:translateY(0) scale(.985); }
 html[data-theme="dark"] .courseStats { border-bottom-color:transparent; }
 .courseActions { border-top-color:var(--line); }
-html[data-theme="dark"] .courseNewRibbonSetting>button { background:#111825;border-color:var(--line); }
+html[data-theme="dark"] .courseNewRibbonSetting>button,html[data-theme="dark"] .courseProgressLockSetting>button { background:#111825;border-color:var(--line); }
 .lessonSettingsSidebar .lessonGoalField { display:block!important;height:auto!important;min-height:118px;padding:12px!important; }
 .lessonSettingsSidebar .lessonGoalField .lessonSettingCopy { display:block!important;margin-bottom:8px; }
 .lessonSettingsSidebar .lessonGoalField textarea { display:block;width:100%;min-height:72px;padding:10px 11px;border:1px solid var(--line);border-radius:9px;resize:vertical;background:var(--card);color:var(--ink);font:inherit;line-height:1.4;outline:0; }

@@ -3,6 +3,7 @@ import { useAuth } from "../../auth/AuthProvider";
 import { supabase } from "../../lib/supabase";
 import { BlockIcon } from "./BlockIcon";
 import type { LessonBlock } from "./types";
+import { getCourseTaskLocale } from "./courseTaskLocale";
 
 type AssignmentSubmission = {
   id: string;
@@ -123,8 +124,8 @@ const mapReply = (row: ReplyRow): AssignmentReply => ({
   updatedAt: row.updated_at,
 });
 
-const formatDate = (value: string) =>
-  new Intl.DateTimeFormat("ru-RU", {
+const formatDate = (value: string, locale = "ru") =>
+  new Intl.DateTimeFormat(locale, {
     day: "numeric",
     month: "short",
     hour: "2-digit",
@@ -157,13 +158,16 @@ export function CourseAssignmentBlock({
   block,
   courseId,
   lessonId,
+  courseLanguage,
   onSubmitted,
 }: {
   block: LessonBlock;
   courseId?: string;
   lessonId?: string;
+  courseLanguage?: string;
   onSubmitted?: (submitted: boolean) => void;
 }) {
+  const labels = getCourseTaskLocale(courseLanguage);
   const { user, displayName, canEditCourses } = useAuth();
   const [submissions, setSubmissions] = useState<AssignmentSubmission[]>([]);
   const [replies, setReplies] = useState<AssignmentReply[]>([]);
@@ -268,7 +272,7 @@ export function CourseAssignmentBlock({
     event.currentTarget.value = "";
     if (!file) return;
     if (file.size > MAX_FILE_SIZE) {
-      setError("Файл должен быть не больше 50 МБ.");
+      setError(labels.fileTooLarge);
       return;
     }
     setError("");
@@ -357,7 +361,7 @@ export function CourseAssignmentBlock({
       onSubmitted?.(true);
       notifyAssignmentChange();
     } catch (submitError) {
-      const message = submitError instanceof Error ? submitError.message : "Не удалось отправить задание.";
+      const message = submitError instanceof Error ? submitError.message : labels.sendFailed;
       setError(/bucket not found/i.test(message) ? "Хранилище ответов ещё не создано. Выполните миграцию 012." : message);
     } finally {
       setSaving(false);
@@ -418,8 +422,8 @@ export function CourseAssignmentBlock({
     return (
       <section className="learningBlock assignmentLearning assignmentPreview">
         <div className="assignmentHeading"><span className="blockGlyph assignment"><BlockIcon kind="assignment" /></span><div><h3>{block.title}</h3></div></div>
-        <p className="assignmentPrompt">{block.content || "Опишите задание для ученика."}</p>
-        <div className="assignmentComposer previewComposer"><AttachmentIcon /><span>Написать ответ или прикрепить файл…</span><i><SendIcon /></i></div>
+        <p className="assignmentPrompt">{block.content || labels.assignmentPrompt}</p>
+        <div className="assignmentComposer previewComposer"><AttachmentIcon /><span>{labels.assignmentPreview}</span><i><SendIcon /></i></div>
       </section>
     );
   }
@@ -430,7 +434,7 @@ export function CourseAssignmentBlock({
         <span className="blockGlyph assignment"><BlockIcon kind="assignment" /></span>
         <div><h3>{block.title}</h3></div>
       </div>
-      <p className="assignmentPrompt">{block.content || "Выполните задание и отправьте ответ преподавателю."}</p>
+      <p className="assignmentPrompt">{block.content || labels.assignmentPrompt}</p>
       {loading ? <div className="assignmentLoading">Загружаем ответы…</div> : canEditCourses ? (
         <div className="assignmentReviewList">
           <div className="assignmentReviewSummary"><b>{submissions.length}</b><span>{submissions.length === 1 ? "отправленная работа" : "отправленных работ"}</span></div>
@@ -439,11 +443,11 @@ export function CourseAssignmentBlock({
             const reply = replies.find((item) => item.submissionId === submission.id);
             return <article className="assignmentThread" key={submission.id}>
               <div className="assignmentMessage studentMessage">
-                <div className="assignmentMessageMeta"><b>{submission.studentName}</b><time>{formatDate(submission.updatedAt)}</time></div>
+                <div className="assignmentMessageMeta"><b>{submission.studentName}</b><time>{formatDate(submission.updatedAt, labels.htmlLang)}</time></div>
                 {submission.body && <p>{submission.body}</p>}
                 {submission.attachmentName && <a className="assignmentAttachment" href={attachmentUrls[submission.id] || undefined} target="_blank" rel="noreferrer"><AttachmentIcon /><span><b>{submission.attachmentName}</b><small>{formatSize(submission.attachmentSize)}</small></span></a>}
               </div>
-              {reply && <div className="assignmentMessage teacherMessage"><div className="assignmentMessageMeta"><b>{reply.staffName}</b><time>{formatDate(reply.updatedAt)}</time></div><p>{reply.body}</p></div>}
+              {reply && <div className="assignmentMessage teacherMessage"><div className="assignmentMessageMeta"><b>{reply.staffName}</b><time>{formatDate(reply.updatedAt, labels.htmlLang)}</time></div><p>{reply.body}</p></div>}
               <div className="teacherReplyComposer">
                 <textarea rows={2} aria-label={`Ответ ученику ${submission.studentName}`} placeholder="Ответить ученику…" value={replyDrafts[submission.id] || ""} onChange={(event) => setReplyDrafts((current) => ({ ...current, [submission.id]: event.target.value }))} />
                 <button type="button" disabled={saving || !(replyDrafts[submission.id] || "").trim()} onClick={() => void saveReply(submission)} aria-label="Отправить ответ"><SendIcon /></button>
@@ -454,19 +458,19 @@ export function CourseAssignmentBlock({
       ) : (
         <div className="assignmentStudentArea">
           {ownSubmission && <div className="assignmentThread ownAssignmentThread">
-            <div className="assignmentMessage studentMessage"><div className="assignmentMessageMeta"><b>Вы</b><time>{formatDate(ownSubmission.updatedAt)}</time></div>{ownSubmission.body && <p>{ownSubmission.body}</p>}{ownSubmission.attachmentName && <a className="assignmentAttachment" href={attachmentUrls[ownSubmission.id] || undefined} target="_blank" rel="noreferrer"><AttachmentIcon /><span><b>{ownSubmission.attachmentName}</b><small>{formatSize(ownSubmission.attachmentSize)}</small></span></a>}</div>
-            {replies.find((item) => item.submissionId === ownSubmission.id) && (() => { const reply = replies.find((item) => item.submissionId === ownSubmission.id)!; return <div className="assignmentMessage teacherMessage"><div className="assignmentMessageMeta"><b>{reply.staffName}</b><time>{formatDate(reply.updatedAt)}</time></div><p>{reply.body}</p></div>; })()}
+            <div className="assignmentMessage studentMessage"><div className="assignmentMessageMeta"><b>{labels.you}</b><time>{formatDate(ownSubmission.updatedAt, labels.htmlLang)}</time></div>{ownSubmission.body && <p>{ownSubmission.body}</p>}{ownSubmission.attachmentName && <a className="assignmentAttachment" href={attachmentUrls[ownSubmission.id] || undefined} target="_blank" rel="noreferrer"><AttachmentIcon /><span><b>{ownSubmission.attachmentName}</b><small>{formatSize(ownSubmission.attachmentSize)}</small></span></a>}</div>
+            {replies.find((item) => item.submissionId === ownSubmission.id) && (() => { const reply = replies.find((item) => item.submissionId === ownSubmission.id)!; return <div className="assignmentMessage teacherMessage"><div className="assignmentMessageMeta"><b>{reply.staffName}</b><time>{formatDate(reply.updatedAt, labels.htmlLang)}</time></div><p>{reply.body}</p></div>; })()}
           </div>}
           <div className="assignmentComposer">
-            {pendingFile && <div className="assignmentPendingFile"><AttachmentIcon /><span><b>{pendingFile.name}</b><small>{formatSize(pendingFile.size)}</small></span><button type="button" onClick={() => setPendingFile(null)} aria-label="Убрать файл">×</button></div>}
-            <textarea ref={textareaRef} rows={1} aria-label="Ответ на задание" placeholder="Напишите ответ…" value={body} onInput={resizeComposer} onChange={(event) => setBody(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void submitAssignment(); } }} />
+            {pendingFile && <div className="assignmentPendingFile"><AttachmentIcon /><span><b>{pendingFile.name}</b><small>{formatSize(pendingFile.size)}</small></span><button type="button" onClick={() => setPendingFile(null)} aria-label={labels.removeFile}>×</button></div>}
+            <textarea ref={textareaRef} rows={1} aria-label={labels.answer} placeholder={labels.writeAnswer} value={body} onInput={resizeComposer} onChange={(event) => setBody(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void submitAssignment(); } }} />
             <div className="assignmentComposerActions">
-              <label title="Прикрепить файл"><AttachmentIcon /><input type="file" accept={assignmentAccept} onChange={chooseFile} /></label>
-              <small>Enter — отправить · Shift + Enter — новая строка</small>
-              <button type="button" disabled={saving || (!body.trim() && !pendingFile && !ownSubmission?.attachmentPath)} onClick={() => void submitAssignment()} aria-label="Отправить задание"><SendIcon /></button>
+              <label title={labels.attachFile}><AttachmentIcon /><input type="file" accept={assignmentAccept} onChange={chooseFile} /></label>
+              <small>{labels.keyboardHint}</small>
+              <button type="button" disabled={saving || (!body.trim() && !pendingFile && !ownSubmission?.attachmentPath)} onClick={() => void submitAssignment()} aria-label={labels.sendAssignment}><SendIcon /></button>
             </div>
           </div>
-          {ownSubmission && <p className="assignmentSavedNote">Работа сохранена. Вы можете дополнить ответ и отправить его снова.</p>}
+          {ownSubmission && <p className="assignmentSavedNote">{labels.savedSubmission}</p>}
         </div>
       )}
       {error && <p className="assignmentError" role="alert">{error}</p>}

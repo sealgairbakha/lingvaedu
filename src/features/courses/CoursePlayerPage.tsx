@@ -7,7 +7,7 @@ import { BlockIcon } from "./BlockIcon";
 import { CourseAssignmentBlock } from "./CourseAssignmentBlock";
 import { GameBlockView } from "./GameBlockView";
 import type { LessonBlock } from "./types";
-import { getTrueFalseLabels } from "./taskLanguages";
+import { getCourseTaskLocale, type CourseTaskLocale } from "./courseTaskLocale";
 import { sanitizeRichText } from "./richText";
 
 const lessonFontFamilies = {
@@ -193,6 +193,7 @@ function TaskActions({
   onReset,
   onContinue,
   continueLabel,
+  labels,
 }: {
   checked: boolean;
   answered: number;
@@ -202,6 +203,7 @@ function TaskActions({
   onReset: () => void;
   onContinue?: () => void;
   continueLabel?: string;
+  labels: CourseTaskLocale;
 }) {
   const complete = total > 0 && answered === total;
   return (
@@ -209,17 +211,17 @@ function TaskActions({
       <div aria-live="polite">
         {checked ? (
           <>
-            <b>{correct === total ? "Отлично! Всё верно" : `Верно: ${correct} из ${total}`}</b>
+            <b>{correct === total ? `${labels.excellent} ${labels.allCorrect}` : labels.correctCount(correct, total)}</b>
             <small>
               {correct === total
-                ? "Задание выполнено."
-                : "Исправьте отмеченные ответы и проверьте ещё раз."}
+                ? labels.taskComplete
+                : labels.fixAnswers}
             </small>
           </>
         ) : (
           <>
-            <b>{complete ? "Можно проверять" : `Выполнено: ${answered} из ${total}`}</b>
-            <small>{complete ? "Все ответы заполнены." : "Ответьте на все пункты задания."}</small>
+            <b>{complete ? labels.readyToCheck : labels.completedCount(answered, total)}</b>
+            <small>{complete ? labels.allAnswered : labels.answerAll}</small>
           </>
         )}
       </div>
@@ -229,7 +231,7 @@ function TaskActions({
         disabled={!checked && !complete}
         onClick={checked && correct === total && onContinue ? onContinue : checked ? onReset : onCheck}
       >
-        {checked && correct === total && onContinue ? continueLabel || "Следующее задание →" : checked ? "Сбросить ответы" : "Проверить"}
+        {checked && correct === total && onContinue ? continueLabel || labels.nextTask : checked ? labels.reset : labels.check}
       </button>
     </div>
   );
@@ -240,6 +242,7 @@ export function LessonBlockView({
   onTaskResult,
   onContinue,
   continueLabel,
+  courseLanguage,
   courseId,
   lessonId,
 }: {
@@ -247,9 +250,11 @@ export function LessonBlockView({
   onTaskResult?: (blockId: string, passed: boolean) => void;
   onContinue?: () => void;
   continueLabel?: string;
+  courseLanguage?: string;
   courseId?: string;
   lessonId?: string;
 }) {
+  const labels = getCourseTaskLocale(courseLanguage);
   const [answer, setAnswer] = useState("");
   const [taskAnswers, setTaskAnswers] = useState<Record<string, string>>({});
   const [activeWord, setActiveWord] = useState("");
@@ -293,13 +298,14 @@ export function LessonBlockView({
     };
   }, [blockImages.length, openedImage]);
   if (block.kind.startsWith("game-"))
-    return <GameBlockView block={block} onResult={(passed) => onTaskResult?.(block.id, passed)} />;
+    return <GameBlockView block={block} courseLanguage={courseLanguage} onResult={(passed) => onTaskResult?.(block.id, passed)} />;
   if (block.kind === "assignment")
     return (
       <CourseAssignmentBlock
         block={block}
         courseId={courseId}
         lessonId={lessonId}
+        courseLanguage={courseLanguage}
         onSubmitted={(submitted) => onTaskResult?.(block.id, submitted)}
       />
     );
@@ -386,7 +392,7 @@ export function LessonBlockView({
                   placeWord(item.id, event.dataTransfer.getData("text/plain"));
                 }}
               >
-                {wordById.get(taskAnswers[item.id]) || "Перетащите слово"}
+                {wordById.get(taskAnswers[item.id]) || labels.dragWord}
               </button>
               {item.after}
             </li>
@@ -405,6 +411,7 @@ export function LessonBlockView({
           }}
           onContinue={onContinue}
           continueLabel={continueLabel}
+          labels={labels}
         />
       </section>
     );
@@ -453,7 +460,7 @@ export function LessonBlockView({
                       }
                     }
                   >
-                    <option value="">Выберите</option>
+                    <option value="">{labels.select}</option>
                     {visibleOptions.map((option, optionIndex) => (
                       <option key={`${option}-${optionIndex}`} value={option}>{option}</option>
                     ))}
@@ -476,6 +483,7 @@ export function LessonBlockView({
           }}
           onContinue={onContinue}
           continueLabel={continueLabel}
+          labels={labels}
         />
       </section>
     );
@@ -504,7 +512,7 @@ export function LessonBlockView({
                 {parsed.answer && (
                   <input
                     value={value}
-                    aria-label={`Ответ ${index + 1}`}
+                    aria-label={`${labels.answer} ${index + 1}`}
                     style={{ width: `${Math.max(5, Math.min([...parsed.answer].length + 1, 14))}ch` }}
                     className={
                       taskChecked && value
@@ -541,6 +549,7 @@ export function LessonBlockView({
           }}
           onContinue={onContinue}
           continueLabel={continueLabel}
+          labels={labels}
         />
       </section>
     );
@@ -621,7 +630,7 @@ export function LessonBlockView({
                 }}
               >
                 <span>{pair.left}</span>
-                <i className="matchAttemptBars" aria-label={`${(matchAttempts[pair.id] || []).length} из 4 попыток использовано`}>
+                <i className="matchAttemptBars" aria-label={labels.attemptsUsed((matchAttempts[pair.id] || []).length)}>
                   {Array.from({ length: 4 }, (_, index) => {
                     const result = matchAttempts[pair.id]?.[index];
                     return <em key={index} className={result === true ? "correct" : result === false ? "wrong" : ""} />;
@@ -651,7 +660,7 @@ export function LessonBlockView({
                 <div key={pair.id} className={failed ? "failed" : "correct"}>
                   <span className="matchResolvedWord">
                     <strong>{pair.left}</strong>
-                    <i className="matchAttemptBars" aria-label={`${(matchAttempts[pair.id] || []).length} из 4 попыток использовано`}>
+                    <i className="matchAttemptBars" aria-label={labels.attemptsUsed((matchAttempts[pair.id] || []).length)}>
                       {Array.from({ length: 4 }, (_, index) => {
                         const result = matchAttempts[pair.id]?.[index];
                         return <em key={index} className={result === true ? "correct" : result === false ? "wrong" : ""} />;
@@ -660,7 +669,7 @@ export function LessonBlockView({
                   </span>
                   <i className="matchResolvedConnector" aria-hidden="true" />
                   <span>{pair.right}</span>
-                  <b>{failed ? "4 попытки" : "Верно"}</b>
+                  <b>{failed ? labels.attemptsUsed(4) : labels.correct}</b>
                 </div>
               );
             })}
@@ -681,12 +690,12 @@ export function LessonBlockView({
           }}
           onContinue={onContinue}
           continueLabel={continueLabel}
+          labels={labels}
         />
       </section>
     );
   }
   if (block.kind === "true-false") {
-    const labels = getTrueFalseLabels(block.trueFalseLanguage);
     const items = lines.map((line, index) => {
       const [statement, expectedRaw] = line.split("|");
       return {
@@ -740,6 +749,7 @@ export function LessonBlockView({
           }}
           onContinue={onContinue}
           continueLabel={continueLabel}
+          labels={labels}
         />
       </section>
     );
@@ -755,7 +765,7 @@ export function LessonBlockView({
       return (
         <section className="learningBlock quizLearning taskLearning">
           <h3>{block.title}</h3>
-          <b>{lines[0] || "Выберите ответ"}</b>
+          <b>{lines[0] || labels.chooseAnswer}</b>
           {options.map((option, optionIndex) => (
             <label
               key={`${option}-${optionIndex}`}
@@ -785,6 +795,7 @@ export function LessonBlockView({
             }}
             onContinue={onContinue}
             continueLabel={continueLabel}
+            labels={labels}
           />
         </section>
       );
@@ -990,6 +1001,7 @@ export function CoursePlayerPage() {
   const { user, canEditCourses } = useAuth();
   const course = courses.find((x) => x.id === params.get("course"));
   const courseId = course?.id;
+  const courseTaskLocale = getCourseTaskLocale(course?.language);
   const learnerId = user?.id || "guest";
   const lessons = useMemo(
     () =>
@@ -1101,6 +1113,7 @@ export function CoursePlayerPage() {
     );
   }, [courseId, learnerId, lessonRuns, runsReady]);
   const progressReady = loadedProgressKey === `${learnerId}-${courseId}`;
+  const lessonCompletionRequired = course?.requireLessonCompletion !== false;
   const requestedIndex = Math.max(
     0,
     lessons.findIndex((x) => x.lesson.id === lessonId),
@@ -1109,7 +1122,9 @@ export function CoursePlayerPage() {
     ({ lesson }) => !completed.includes(lesson.id),
   );
   const lastUnlockedIndex =
-    firstIncompleteIndex < 0 ? Math.max(lessons.length - 1, 0) : firstIncompleteIndex;
+    !lessonCompletionRequired || firstIncompleteIndex < 0
+      ? Math.max(lessons.length - 1, 0)
+      : firstIncompleteIndex;
   const currentIndex = !progressReady
     ? 0
     : Math.min(requestedIndex, lastUnlockedIndex);
@@ -1131,6 +1146,7 @@ export function CoursePlayerPage() {
   const currentTasksPassed =
     completed.includes(current?.id || "") ||
     currentTaskBlocks.every((block) => passedTaskBlocks[block.id]);
+  const canAdvance = !lessonCompletionRequired || currentTasksPassed;
   useEffect(() => {
     if (!course || !current || !user || !progressReady) return;
     const key = `${course.id}-${current.id}`;
@@ -1159,6 +1175,7 @@ export function CoursePlayerPage() {
     currentRun?.expired && attemptsRemaining === 0,
   );
   const isLessonUnlocked = (index: number) =>
+    !lessonCompletionRequired ||
     index === 0 ||
     lessons.slice(0, index).every(({ lesson }) => completed.includes(lesson.id));
   useEffect(() => {
@@ -1218,7 +1235,7 @@ export function CoursePlayerPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
   const complete = () => {
-    if (!current || !course || !user || currentRun?.expired || !currentTasksPassed) return;
+    if (!current || !course || !user || currentRun?.expired || !canAdvance) return;
     const next = [...new Set([...completed, current.id])];
     setCompleted(next);
     localStorage.setItem(
@@ -1523,10 +1540,11 @@ export function CoursePlayerPage() {
                         return <div className="lessonBlockAnchor" id={`learning-block-${block.id}`} key={block.id}>
                           <LessonBlockView
                             block={block}
+                            courseLanguage={course.language}
                             courseId={course.id}
                             lessonId={current.id}
                             onTaskResult={(blockId, passed) => setPassedTaskBlocks((previous) => ({ ...previous, [blockId]: passed }))}
-                            continueLabel={nextTask ? "Следующее задание →" : "Завершить урок"}
+                            continueLabel={nextTask ? courseTaskLocale.nextTask : courseTaskLocale.finishLesson}
                             onContinue={taskIndex < 0 ? undefined : () => {
                               if (!nextTask) { complete(); return; }
                               if (nextTask.tabId) setActiveLessonTabId(nextTask.tabId);
@@ -1555,25 +1573,25 @@ export function CoursePlayerPage() {
                         selectLesson(lessons[currentIndex - 1].lesson.id)
                       }
                     >
-                      Назад
+                      {courseTaskLocale.previous}
                     </button>
                     <button
                       className="btn primary readerNextButton"
-                      disabled={!currentTasksPassed}
+                      disabled={!canAdvance}
                       title={
-                        currentTasksPassed
+                        canAdvance
                           ? undefined
-                          : "Сначала правильно выполните все задания урока"
+                          : courseTaskLocale.completeTasksFirst
                       }
                       onClick={() => completed.includes(current.id) && currentIndex < lessons.length - 1 ? selectLesson(lessons[currentIndex + 1].lesson.id) : complete()}
                     >
                       {completed.includes(current.id) && currentIndex < lessons.length - 1
-                        ? "Следующий урок →"
-                        : !currentTasksPassed
-                        ? "Выполните задания"
+                        ? courseTaskLocale.nextLesson
+                        : !canAdvance
+                        ? courseTaskLocale.completeTasks
                         : isLastLesson
-                          ? "Завершить курс"
-                          : "Дальше"}
+                          ? courseTaskLocale.finishCourse
+                          : courseTaskLocale.next}
                     </button>
                   </footer>
                 </>

@@ -1,10 +1,11 @@
 import { useState } from "react";
 import type { LessonBlock } from "./types";
-import { getTrueFalseLabels } from "./taskLanguages";
+import { getCourseTaskLocale } from "./courseTaskLocale";
 import { EditorCardNumber } from "./EditorCardNumber";
 
 type Props = {
   block: LessonBlock;
+  courseLanguage?: string;
   onChange: (content: string) => void;
   onPatch: (patch: Partial<LessonBlock>) => void;
 };
@@ -415,7 +416,7 @@ function MatchEditor({ block, onChange }: Props) {
   );
 }
 
-function TrueFalseEditor({ block, onChange }: Props) {
+function TrueFalseEditor({ block, courseLanguage, onChange }: Props) {
   const parsed = splitLines(block.content).map((line) => {
     const [statement, value] = line.split("|");
     return { statement: statement?.trim() || "", value: value?.trim() === "true" };
@@ -423,7 +424,7 @@ function TrueFalseEditor({ block, onChange }: Props) {
   const rows = parsed.length ? parsed : [{ statement: "", value: true }];
   const update = (next: typeof rows) =>
     onChange(next.map((row) => `${row.statement} | ${row.value ? "true" : "false"}`).join("\n"));
-  const labels = getTrueFalseLabels(block.trueFalseLanguage);
+  const labels = getCourseTaskLocale(courseLanguage);
   return (
     <div className="taskBuilder">
       <EditorHeader title="Утверждения" hint="Для каждого утверждения отметьте правильный ответ." />

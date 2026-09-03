@@ -108,7 +108,43 @@ html:has(.modalLayer) body {
     max-height: 100dvh;
   }
 
+  .courseEditor .coursePanelSettings {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .courseEditor .coursePanelSettings > .courseSettingsHeader,
+  .courseEditor .coursePanelSettings > .courseColorField,
+  .courseEditor .coursePanelSettings > .courseProgressLockSetting,
+  .courseEditor .coursePanelSettings > .courseCoverDesigner,
+  .courseEditor .coursePanelSettings > .courseStylePreview {
+    grid-column:1 / -1;
+  }
+
+  .courseEditor .courseProgressLockSetting > button {
+    justify-content:flex-start;
+    min-width:0;
+  }
+
+  .courseEditor .courseProgressLockSetting > button > b {
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+
   .editorPanelToggles { bottom: calc(18px + env(safe-area-inset-bottom, 0px)); }
+}
+
+@media (max-width: 420px) {
+  .courseEditor .lessonTree,
+  .courseEditor .blockPalette {
+    width:100vw!important;
+    max-width:100vw;
+  }
+
+  .courseEditor .blockPalette {
+    padding-inline:16px;
+    padding-bottom:calc(82px + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 @media (max-width: 900px) {

@@ -2005,12 +2005,14 @@ export function CourseEditorPage() {
                     ) : isTaskKind(b.kind) ? (
                       <TaskBlockEditor
                         block={b}
+                        courseLanguage={course.language}
                         onChange={(content) => updateBlock(b.id, { content })}
                         onPatch={(patch) => updateBlock(b.id, patch)}
                       />
                     ) : isGameKind(b.kind) ? (
                       <GameBlockEditor
                         block={b}
+                        courseLanguage={course.language}
                         onChange={(game) => updateBlock(b.id, { game })}
                       />
                     ) : b.kind === "text" ? (
@@ -2388,6 +2390,20 @@ export function CourseEditorPage() {
                 <i /><b>{(course.showNewRibbon ?? course.code === "NEW") ? "Показывать" : "Скрыта"}</b>
               </button>
             </label>
+            <label className="courseProgressLockSetting">
+              <span>Последовательное прохождение</span>
+              <button
+                type="button"
+                role="switch"
+                aria-label="Требовать завершение текущего урока"
+                aria-checked={course.requireLessonCompletion !== false}
+                className={course.requireLessonCompletion !== false ? "active" : ""}
+                onClick={() => mutate((value) => ({ ...value, requireLessonCompletion: value.requireLessonCompletion === false }))}
+              >
+                <i /><b>{course.requireLessonCompletion !== false ? "Включено" : "Выключено"}</b>
+              </button>
+              <small>{course.requireLessonCompletion !== false ? "Следующий урок откроется после выполнения заданий" : "Все уроки доступны без ограничений"}</small>
+            </label>
             <div className="courseCoverDesigner">
               <label>
                 <span>Стиль обложки</span>
@@ -2745,7 +2761,7 @@ export function CourseEditorPage() {
               </div>
             )}
             {rendered.map((b) => (
-              <LessonBlockView key={b.id} block={b} />
+              <LessonBlockView key={b.id} block={b} courseLanguage={course.language} />
             ))}
           </div>
         </div>
