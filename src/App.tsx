@@ -161,14 +161,14 @@ function notificationDate(value: string) {
 
 const nav: {
   section?: string;
-  items: { id: Page; icon: string; label: string }[];
+  items: { id: Page; icon: string; label: string; headerLabel?: string }[];
 }[] = [
   { items: [{ id: "overview", icon: "⌂", label: "Обзор" }] },
   {
     section: "ОБУЧЕНИЕ",
     items: [
       { id: "courses", icon: "▤", label: "Курсы" },
-      { id: "assignments", icon: "✓", label: "Задания учеников" },
+      { id: "assignments", icon: "✓", label: "Задания", headerLabel: "Задания учеников" },
       { id: "people", icon: "♙", label: "Пользователи" },
       { id: "groups", icon: "◉", label: "Группы" },
     ],
@@ -290,9 +290,9 @@ function Logo() {
 
 function NavIcon({ name }: { name: Page | "help" | "logout" }) {
   const paths: Partial<Record<typeof name, React.ReactNode>> = {
-    overview: <><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V21h13V9.5M9 21v-6h6v6"/></>,
-    courses: <><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 5.5v16M8 7h8M8 11h8"/></>,
-    assignments: <><path d="M6 3.5h8l4 4V20H6Z"/><path d="M14 3.5V8h4M9 13l2 2 4-4"/></>,
+    overview: <><rect x="3.5" y="3.5" width="7" height="7" rx="2.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="2.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="2.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="2.5"/></>,
+    courses: <><rect x="3.5" y="4" width="17" height="16" rx="4"/><path d="M8 4v16M11.5 8h5.5M11.5 12h4.5"/></>,
+    assignments: <><rect x="4.5" y="5.5" width="15" height="15" rx="4"/><rect x="8" y="3" width="8" height="5" rx="2"/><path d="m9 14 2 2 4-4"/></>,
     people: <><circle cx="12" cy="8" r="3"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/></>,
     groups: <><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0M16 5.5a3 3 0 0 1 0 5.8M17 15a5 5 0 0 1 4 5"/></>,
     calendar: <><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></>,
@@ -818,7 +818,10 @@ function Shell({
       ? "Редактор курса"
       : page === "profile"
         ? "Мой профиль"
-      : nav.flatMap((n) => n.items).find((i) => i.id === page)?.label ||
+      : (() => {
+          const item = nav.flatMap((group) => group.items).find((entry) => entry.id === page);
+          return item?.headerLabel || item?.label;
+        })() ||
         "Обзор";
   return (
     <div className={`app ${collapsed ? "sidebarCollapsed" : ""}`}>

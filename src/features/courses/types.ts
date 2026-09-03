@@ -1,6 +1,7 @@
 import type { TrueFalseLanguage } from "./taskLanguages";
 
 export type CourseStatus = "published" | "draft" | "archived";
+export type LessonPattern = "none" | "space" | "dinosaurs" | "cars";
 export type BlockKind =
   | "text"
   | "media"
@@ -113,6 +114,7 @@ export type Course = {
   coverImage?: string;
   showNewRibbon?: boolean;
   requireLessonCompletion?: boolean;
+  lessonPattern?: LessonPattern;
   students: number;
   updatedAt: string;
   modules: CourseModule[];
@@ -122,7 +124,7 @@ export const uid = () => crypto.randomUUID();
 
 export const blankCourse = (author: string, authorId?: string, avatarUrl?: string): Course => ({
   id: uid(), title: "Новый курс", code: "NEW", description: "Добавьте описание курса",
-  language: "Английский", author, authorId, mentor: author, mentorAvatar: avatarUrl, status: "draft", color: "purple", showNewRibbon: true, requireLessonCompletion: true,
+  language: "Английский", author, authorId, mentor: author, mentorAvatar: avatarUrl, status: "draft", color: "purple", showNewRibbon: true, requireLessonCompletion: true, lessonPattern: "space",
   students: 0, updatedAt: new Date().toISOString(),
   modules: [{ id: uid(), title: "Первый модуль", lessons: [{ id: uid(), title: "Первый урок", description: "", timeLimit: 0, attempts: 0, blocks: [] }] }],
 });

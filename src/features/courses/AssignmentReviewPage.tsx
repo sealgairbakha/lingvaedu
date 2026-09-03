@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
 import { supabase } from "../../lib/supabase";
@@ -123,6 +123,44 @@ function FileIcon() {
 
 function SendIcon() {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 4 17 8-17 8 3-8Z"/><path d="M7 12h14"/></svg>;
+}
+
+function ChevronDownIcon() {
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 9.5 5 5 5-5"/></svg>;
+}
+
+function AutoGrowingReply({
+  value,
+  label,
+  placeholder,
+  onChange,
+}: {
+  value: string;
+  label: string;
+  placeholder: string;
+  onChange: (value: string) => void;
+}) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useLayoutEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    textarea.style.height = "auto";
+    const nextHeight = Math.min(Math.max(textarea.scrollHeight, 38), 150);
+    textarea.style.height = `${nextHeight}px`;
+    textarea.style.overflowY = textarea.scrollHeight > 150 ? "auto" : "hidden";
+  }, [value]);
+
+  return (
+    <textarea
+      ref={textareaRef}
+      rows={1}
+      aria-label={label}
+      placeholder={placeholder}
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+    />
+  );
 }
 
 export function AssignmentReviewPage() {
@@ -315,7 +353,7 @@ export function AssignmentReviewPage() {
                   <summary>
                     <span className="assignmentFolderIcon"><FolderIcon/></span>
                     <span><b>{folder.title}</b><small>{folder.items.length} {folder.items.length === 1 ? "работа" : "работ"}</small></span>
-                    <i>⌄</i>
+                    <i><ChevronDownIcon /></i>
                   </summary>
                   <div className="assignmentFolderContent">
                     {[...modules.entries()].map(([moduleTitle, moduleItems]) => (
@@ -357,12 +395,11 @@ export function AssignmentReviewPage() {
               </article>
               {selectedReply && <div className="assignmentPreviewReply"><span>Ответил: {selectedReply.staffName}</span><p>{selectedReply.body}</p><time>{formatTime(selectedReply.updatedAt)}</time></div>}
               <form className="assignmentArchiveComposer" onSubmit={(event) => { event.preventDefault(); void saveReply(selected.submission); }}>
-                <textarea
-                  rows={2}
-                  aria-label={`Ответ ученику ${selected.submission.studentName}`}
+                <AutoGrowingReply
+                  label={`Ответ ученику ${selected.submission.studentName}`}
                   placeholder={selectedReply ? "Написать новый ответ…" : "Ответить ученику…"}
                   value={replyDrafts[selected.submission.id] || ""}
-                  onChange={(event) => setReplyDrafts((current) => ({ ...current, [selected.submission.id]: event.target.value }))}
+                  onChange={(value) => setReplyDrafts((current) => ({ ...current, [selected.submission.id]: value }))}
                 />
                 <button type="submit" disabled={savingReply || !(replyDrafts[selected.submission.id] || "").trim()} aria-label="Отправить ответ">
                   <SendIcon />

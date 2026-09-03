@@ -27,12 +27,12 @@ export function LearningBlockHeader({
     ja: { content: "レッスン教材", task: "課題", assignment: "教師課題" },
   }[languageCode][category];
   return (
-    <header className={`learningContentHeader kind-${kind}`}>
+    <header className={`learningContentHeader kind-${kind}${category === "content" ? " withoutEyebrow" : ""}`}>
       <span className="learningContentHeaderIcon" aria-hidden="true">
         <BlockIcon kind={kind} />
       </span>
       <div>
-        <small>{eyebrow}</small>
+        {category !== "content" && <small>{eyebrow}</small>}
         <h3>{title}</h3>
       </div>
     </header>

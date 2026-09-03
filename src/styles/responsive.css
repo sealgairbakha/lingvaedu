@@ -90,8 +90,8 @@ html:has(.modalLayer) body {
 
 /* Keep the hidden course bar in the document flow so scroll direction does not oscillate. */
 .coursePlayer .playerHeader.playerHeaderHidden {
-  height: 74px;
-  max-height: 74px;
+  height: 72px;
+  max-height: 72px;
   padding-block: 0;
   border-bottom-width: 1px;
 }
@@ -115,6 +115,7 @@ html:has(.modalLayer) body {
   .courseEditor .coursePanelSettings > .courseSettingsHeader,
   .courseEditor .coursePanelSettings > .courseColorField,
   .courseEditor .coursePanelSettings > .courseProgressLockSetting,
+  .courseEditor .coursePanelSettings > .courseLessonPatternSetting,
   .courseEditor .coursePanelSettings > .courseCoverDesigner,
   .courseEditor .coursePanelSettings > .courseStylePreview {
     grid-column:1 / -1;
@@ -145,9 +146,21 @@ html:has(.modalLayer) body {
     padding-inline:16px;
     padding-bottom:calc(82px + env(safe-area-inset-bottom, 0px));
   }
+
+  .courseEditor .lessonPatternOptions { grid-template-columns:1fr; }
+
+  .coursePlayer[data-lesson-pattern]:not([data-lesson-pattern="none"])::before {
+    background-size:520px auto;
+  }
 }
 
 @media (max-width: 900px) {
+  .coursePlayer[data-lesson-pattern]:not([data-lesson-pattern="none"])::before {
+    inset:64px 0 0;
+    background-size:760px auto;
+    opacity:.11;
+  }
+
   .coursePlayer .playerHeader {
     top: var(--topbar-height);
     transition: transform .3s cubic-bezier(.22, 1, .36, 1), opacity .22s ease;

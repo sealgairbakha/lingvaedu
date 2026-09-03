@@ -1003,20 +1003,35 @@ export function CoursePlayerPage() {
   const [runsReady, setRunsReady] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const [headerHidden, setHeaderHidden] = useState(false);
+  const playerRef = useRef<HTMLElement>(null);
   const openedLessonKeyRef = useRef("");
   const lastScrollYRef = useRef(0);
+  const headerScrollAnchorRef = useRef(0);
   useEffect(() => {
     lastScrollYRef.current = window.scrollY;
+    headerScrollAnchorRef.current = window.scrollY;
     let frame = 0;
     const handleScroll = () => {
       if (frame) return;
       frame = window.requestAnimationFrame(() => {
         const currentY = window.scrollY;
-        const delta = currentY - lastScrollYRef.current;
-        if (mobileTreeOpen || currentY < 72) setHeaderHidden(false);
-        else if (delta > 8) setHeaderHidden(true);
-        else if (delta < -8) setHeaderHidden(false);
+        const previousY = lastScrollYRef.current;
+        const travel = currentY - headerScrollAnchorRef.current;
+        if (mobileTreeOpen || currentY < 96) {
+          setHeaderHidden(false);
+          headerScrollAnchorRef.current = currentY;
+        } else if (currentY > previousY && travel > 48) {
+          setHeaderHidden(true);
+          headerScrollAnchorRef.current = currentY;
+        } else if (currentY < previousY && travel < -32) {
+          setHeaderHidden(false);
+          headerScrollAnchorRef.current = currentY;
+        }
         lastScrollYRef.current = currentY;
+        if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+          const hue = Math.sin(currentY / 360) * 34;
+          playerRef.current?.style.setProperty("--lesson-pattern-hue", `${hue.toFixed(2)}deg`);
+        }
         frame = 0;
       });
     };
@@ -1286,7 +1301,11 @@ export function CoursePlayerPage() {
     ? Math.round((completed.length / lessons.length) * 100)
     : 0;
   return (
-    <main className={`coursePlayer fade ${headerHidden ? "courseHeaderHidden" : ""}`}>
+    <main
+      ref={playerRef}
+      className={`coursePlayer fade ${headerHidden ? "courseHeaderHidden" : ""}`}
+      data-lesson-pattern={course.lessonPattern || "space"}
+    >
       <header className={`playerHeader ${headerHidden ? "playerHeaderHidden" : ""}`}>
         <button
           className="playerCoursesBack"

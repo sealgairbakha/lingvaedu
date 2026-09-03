@@ -357,6 +357,17 @@ const courseColors = [
   { value: "dark", label: "Тёмный" },
 ] as const;
 
+const lessonPatterns: {
+  value: NonNullable<Course["lessonPattern"]>;
+  label: string;
+  hint: string;
+}[] = [
+  { value: "none", label: "Без узора", hint: "Только мягкий градиент" },
+  { value: "space", label: "Космос", hint: "Планеты, ракета и звёзды" },
+  { value: "dinosaurs", label: "Динозавры", hint: "Динозавры, следы и листья" },
+  { value: "cars", label: "Машинки", hint: "Автомобили и дорожные линии" },
+];
+
 export function CourseEditorPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
@@ -2419,6 +2430,39 @@ export function CourseEditorPage() {
               </button>
               <small>{course.requireLessonCompletion !== false ? "Следующий урок откроется после выполнения заданий" : "Все уроки доступны без ограничений"}</small>
             </label>
+            <div className="courseLessonPatternSetting">
+              <div className="courseLessonPatternHeading">
+                <span>Фон страницы урока</span>
+                <small>Узор остаётся по краям и не мешает материалам</small>
+              </div>
+              <div className="lessonPatternOptions" role="radiogroup" aria-label="Фоновый узор урока">
+                {lessonPatterns.map((pattern) => {
+                  const activePattern = course.lessonPattern || "space";
+                  return (
+                    <button
+                      key={pattern.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={activePattern === pattern.value}
+                      className={activePattern === pattern.value ? "active" : ""}
+                      data-pattern={pattern.value}
+                      onClick={() => mutate((value) => ({ ...value, lessonPattern: pattern.value }))}
+                    >
+                      <span className="lessonPatternSwatch" aria-hidden="true"><i /></span>
+                      <span><b>{pattern.label}</b><small>{pattern.hint}</small></span>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="lessonPatternPreview" data-pattern={course.lessonPattern || "space"} aria-label="Предпросмотр фона страницы урока">
+                <div className="lessonPatternPreviewArt" aria-hidden="true" />
+                <div className="lessonPatternPreviewCourse">
+                  <small>УРОК 1 ИЗ 8</small>
+                  <b>{lesson?.title || "Название урока"}</b>
+                  <span><i /><i /><i /></span>
+                </div>
+              </div>
+            </div>
             <div className="courseCoverDesigner">
               <label>
                 <span>Стиль обложки</span>
@@ -2754,7 +2798,7 @@ export function CourseEditorPage() {
       )}
       {preview && createPortal(
         <div className="courseModal coursePreviewModal" onClick={() => setPreview(false)}>
-          <div className="coursePreviewSurface coursePlayer" onClick={(e) => e.stopPropagation()}>
+          <div className="coursePreviewSurface coursePlayer" data-lesson-pattern={course.lessonPattern || "space"} onClick={(e) => e.stopPropagation()}>
             <button className="modalClose coursePreviewClose" onClick={() => setPreview(false)} aria-label="Закрыть предпросмотр">×</button>
             <header className="playerHeader coursePreviewHeader">
               <button className="playerCoursesBack" type="button">
