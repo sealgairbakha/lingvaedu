@@ -832,7 +832,7 @@ function Shell({
         close={() => setOpen(false)}
         hide={hideNav}
       />
-      <div className="mainShell">
+      <div className={page === "editor" || page === "player" ? "mainShell" : "mainShell workspaceBackdrop"}>
         <Header title={title} toggleNav={toggleNav} />
         {children}
       </div>

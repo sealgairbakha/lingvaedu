@@ -3960,6 +3960,135 @@ html[data-theme="dark"] .coursePlayer .imageLearning .lessonImageButton {
   padding-left: 16px;
 }
 
+/* Shared atmospheric backdrop for the standard workspace pages. */
+.mainShell.workspaceBackdrop {
+  --workspace-grid: rgba(91, 67, 210, .09);
+  --workspace-glow-primary: rgba(112, 78, 255, .29);
+  --workspace-glow-blue: rgba(54, 148, 255, .23);
+  --workspace-glow-mint: rgba(36, 209, 166, .21);
+  --workspace-glow-warm: rgba(255, 139, 150, .19);
+  --workspace-glow-lime: rgba(201, 244, 93, .2);
+  position: relative;
+  isolation: isolate;
+  background-color: #f4f2ff;
+  background-image:
+    radial-gradient(ellipse at 5% 8%, var(--workspace-glow-primary), transparent 31rem),
+    radial-gradient(ellipse at 96% 16%, var(--workspace-glow-blue), transparent 34rem),
+    radial-gradient(ellipse at 73% 73%, var(--workspace-glow-mint), transparent 35rem),
+    radial-gradient(ellipse at 10% 91%, var(--workspace-glow-warm), transparent 29rem),
+    linear-gradient(118deg, transparent 22%, var(--workspace-glow-lime) 43%, transparent 58%),
+    linear-gradient(145deg, rgba(255, 255, 255, .68), rgba(244, 242, 255, .54));
+  background-attachment: fixed;
+}
+
+.mainShell.workspaceBackdrop::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 68px 0 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle, var(--workspace-grid) 1.3px, transparent 1.55px),
+    linear-gradient(125deg, transparent 36%, rgba(255, 255, 255, .42) 45%, transparent 54%);
+  background-size: 28px 28px, 100% 100%;
+  mask-image: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, .82) 76%, transparent 100%);
+}
+
+.mainShell.workspaceBackdrop::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  top: 126px;
+  right: clamp(34px, 7vw, 120px);
+  width: clamp(150px, 17vw, 250px);
+  aspect-ratio: 1;
+  pointer-events: none;
+  border: 2px solid rgba(113, 91, 226, .18);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 42px rgba(113, 91, 226, .075),
+    0 0 0 84px rgba(55, 158, 224, .055),
+    0 0 80px 24px rgba(103, 80, 244, .12);
+}
+
+.mainShell.workspaceBackdrop > .content {
+  position: relative;
+  z-index: 1;
+  background: transparent !important;
+}
+
+.mainShell.workspaceBackdrop > .topbar {
+  background: rgba(255, 255, 255, .8);
+  box-shadow: 0 1px 0 rgba(71, 79, 105, .07);
+  backdrop-filter: blur(18px) saturate(135%);
+}
+
+html[data-theme="dark"] .mainShell.workspaceBackdrop {
+  --workspace-grid: rgba(174, 160, 255, .085);
+  --workspace-glow-primary: rgba(101, 75, 246, .31);
+  --workspace-glow-blue: rgba(43, 134, 224, .22);
+  --workspace-glow-mint: rgba(29, 174, 145, .17);
+  --workspace-glow-warm: rgba(210, 84, 126, .14);
+  --workspace-glow-lime: rgba(164, 207, 64, .1);
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(ellipse at 5% 8%, var(--workspace-glow-primary), transparent 31rem),
+    radial-gradient(ellipse at 96% 16%, var(--workspace-glow-blue), transparent 34rem),
+    radial-gradient(ellipse at 73% 73%, var(--workspace-glow-mint), transparent 35rem),
+    radial-gradient(ellipse at 10% 91%, var(--workspace-glow-warm), transparent 29rem),
+    linear-gradient(118deg, transparent 22%, var(--workspace-glow-lime) 43%, transparent 58%),
+    linear-gradient(145deg, rgba(18, 24, 35, .72), rgba(15, 21, 31, .62));
+}
+
+html[data-theme="dark"] .mainShell.workspaceBackdrop::after {
+  border-color: rgba(174, 160, 255, .08);
+  box-shadow:
+    0 0 0 42px rgba(126, 105, 246, .025),
+    0 0 0 84px rgba(67, 133, 191, .018);
+}
+
+html[data-theme="dark"] .mainShell.workspaceBackdrop > .topbar {
+  background: rgba(17, 23, 34, .88);
+  box-shadow: 0 1px 0 rgba(210, 218, 235, .06);
+}
+
+@media (max-width: 820px) {
+  .mainShell.workspaceBackdrop {
+    background-image:
+      radial-gradient(circle at 0 8%, var(--workspace-glow-primary), transparent 19rem),
+      radial-gradient(circle at 100% 38%, var(--workspace-glow-blue), transparent 22rem),
+      radial-gradient(circle at 35% 92%, var(--workspace-glow-mint), transparent 24rem),
+      linear-gradient(132deg, transparent 30%, var(--workspace-glow-lime) 48%, transparent 66%),
+      linear-gradient(145deg, rgba(255, 255, 255, .68), rgba(244, 242, 255, .56));
+  }
+
+  html[data-theme="dark"] .mainShell.workspaceBackdrop {
+    background-image:
+      radial-gradient(circle at 0 8%, var(--workspace-glow-primary), transparent 19rem),
+      radial-gradient(circle at 100% 38%, var(--workspace-glow-blue), transparent 22rem),
+      radial-gradient(circle at 35% 92%, var(--workspace-glow-mint), transparent 24rem),
+      linear-gradient(132deg, transparent 30%, var(--workspace-glow-lime) 48%, transparent 66%),
+      linear-gradient(145deg, rgba(18, 24, 35, .74), rgba(15, 21, 31, .64));
+  }
+
+  .mainShell.workspaceBackdrop::before {
+    opacity: .58;
+    background-size: 24px 24px;
+  }
+
+  .mainShell.workspaceBackdrop::after {
+    top: 108px;
+    right: -68px;
+    opacity: .7;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mainShell.workspaceBackdrop {
+    background-attachment: scroll;
+  }
+}
+
 /* Shared course-reader header for every non-game lesson block. */
 .coursePlayer .learningContentHeader {
   position:relative;
