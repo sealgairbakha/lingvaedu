@@ -1332,7 +1332,7 @@ export function CoursePlayerPage() {
             className="btn ghost playerEditButton"
             aria-label="Редактировать курс"
             title="Редактировать курс"
-            onClick={() => navigate(`/courses/editor?course=${course.id}`)}
+            onClick={() => navigate(`/courses/editor?course=${course.id}&lesson=${current.id}`)}
           >
             <span aria-hidden="true">
               <svg viewBox="0 0 24 24">

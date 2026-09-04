@@ -381,6 +381,14 @@ export function CourseEditorPage() {
   const { canEditCourses, user } = useAuth();
   const store = useCourses();
   const source = store.courses.find((x) => x.id === params.get("course"));
+  const requestedLessonId = params.get("lesson") || "";
+  const initialModule =
+    source?.modules.find((item) =>
+      item.lessons.some((lesson) => lesson.id === requestedLessonId),
+    ) || source?.modules[0];
+  const initialLesson =
+    initialModule?.lessons.find((lesson) => lesson.id === requestedLessonId) ||
+    initialModule?.lessons[0];
   const savedCourseRef = useRef<Course | null>(
     source ? structuredClone(source) : null,
   );
@@ -389,10 +397,8 @@ export function CourseEditorPage() {
   const lessonDescriptionRef = useRef<HTMLTextAreaElement>(null);
   const lessonTabsListRef = useRef<HTMLDivElement>(null);
   const [course, setCourse] = useState<Course | null>(source || null);
-  const [moduleId, setModuleId] = useState(source?.modules[0]?.id || "");
-  const [lessonId, setLessonId] = useState(
-    source?.modules[0]?.lessons[0]?.id || "",
-  );
+  const [moduleId, setModuleId] = useState(initialModule?.id || "");
+  const [lessonId, setLessonId] = useState(initialLesson?.id || "");
   const [activeLessonTabId, setActiveLessonTabId] = useState("");
   const [editingLessonTabId, setEditingLessonTabId] = useState("");
   const [selected, setSelected] = useState("");
@@ -576,11 +582,19 @@ export function CourseEditorPage() {
     const timer = window.setTimeout(() => {
       setCourse(source);
       savedCourseRef.current = structuredClone(source);
-      setModuleId(source.modules[0]?.id || "");
-      setLessonId(source.modules[0]?.lessons[0]?.id || "");
+      const requestedModule =
+        source.modules.find((item) =>
+          item.lessons.some((lesson) => lesson.id === requestedLessonId),
+        ) || source.modules[0];
+      const requestedLesson =
+        requestedModule?.lessons.find(
+          (lesson) => lesson.id === requestedLessonId,
+        ) || requestedModule?.lessons[0];
+      setModuleId(requestedModule?.id || "");
+      setLessonId(requestedLesson?.id || "");
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [course, source]);
+  }, [course, requestedLessonId, source]);
   const module =
     course?.modules.find((x) => x.id === moduleId) || course?.modules[0];
   const lesson =
