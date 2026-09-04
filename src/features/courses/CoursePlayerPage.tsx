@@ -34,6 +34,7 @@ const taskBlockKinds = new Set<LessonBlock["kind"]>([
   "game-truth",
   "game-categories",
   "game-sentence",
+  "game-translate-sentence",
   "game-adventure",
 ]);
 

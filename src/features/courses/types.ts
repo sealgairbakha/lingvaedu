@@ -24,6 +24,7 @@ export type BlockKind =
   | "game-truth"
   | "game-categories"
   | "game-sentence"
+  | "game-translate-sentence"
   | "game-adventure"
   | "html"
   | "file";
@@ -50,9 +51,13 @@ export type SpeedGameConfig = { type: "speed"; seconds: number; rounds: { id: st
 export type TruthGameConfig = { type: "truth"; rounds: { id: string; prompt: string; statement: string; correct: boolean; image?: string }[] };
 export type CategoriesGameConfig = { type: "categories"; categories: { id: string; name: string }[]; items: { id: string; text: string; categoryId: string }[] };
 export type SentenceGameConfig = { type: "sentence"; items: { id: string; sentence: string; clue?: string }[] };
+export type TranslateSentenceGameConfig = {
+  type: "translate-sentence";
+  items: { id: string; sentence: string; answers: string[]; hints: string[] }[];
+};
 export type AdventureGameConfig = { type: "adventure"; heroName: string; stages: { id: string; prompt: string; answer: string; options: string[] }[] };
 
-export type GameConfig = MemoryGameConfig | BuildWordGameConfig | ListenChoiceGameConfig | MissingGameConfig | OddOneOutGameConfig | SpeedGameConfig | TruthGameConfig | CategoriesGameConfig | SentenceGameConfig | AdventureGameConfig;
+export type GameConfig = MemoryGameConfig | BuildWordGameConfig | ListenChoiceGameConfig | MissingGameConfig | OddOneOutGameConfig | SpeedGameConfig | TruthGameConfig | CategoriesGameConfig | SentenceGameConfig | TranslateSentenceGameConfig | AdventureGameConfig;
 
 export type LessonBlock = {
   id: string;

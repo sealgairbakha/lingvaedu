@@ -116,8 +116,7 @@ html:has(.modalLayer) body {
   .courseEditor .coursePanelSettings > .courseColorField,
   .courseEditor .coursePanelSettings > .courseProgressLockSetting,
   .courseEditor .coursePanelSettings > .courseLessonPatternSetting,
-  .courseEditor .coursePanelSettings > .courseCoverDesigner,
-  .courseEditor .coursePanelSettings > .courseStylePreview {
+  .courseEditor .coursePanelSettings > .courseCoverDesigner {
     grid-column:1 / -1;
   }
 

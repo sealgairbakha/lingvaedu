@@ -190,6 +190,22 @@ function SentenceEditor({ game, onChange }: { game: Extract<GameConfig, { type: 
   return <div className="gameBlockEditor"><p className="gameEditorHint">Слова предложения будут автоматически перемешаны.</p>{game.items.map((item, index) => <div className="gameEditorCard sentenceEditorRow" key={item.id}><div className="gameCardHeader"><EditorCardNumber index={index} /></div><label>Предложение<input value={item.sentence} onChange={(e) => onChange({ ...game, items: game.items.map((entry) => entry.id === item.id ? { ...entry, sentence: e.target.value } : entry) })} /></label><label>Подсказка<input value={item.clue || ""} onChange={(e) => onChange({ ...game, items: game.items.map((entry) => entry.id === item.id ? { ...entry, clue: e.target.value } : entry) })} /></label><RemoveButton disabled={game.items.length <= 1} onClick={() => onChange({ ...game, items: game.items.filter((entry) => entry.id !== item.id) })} /></div>)}<button type="button" className="gameEditorAdd" onClick={() => onChange({ ...game, items: [...game.items, { id: uid(), sentence: "", clue: "" }] })}>＋ Добавить предложение</button></div>;
 }
 
+function TranslateSentenceEditor({ game, onChange }: { game: Extract<GameConfig, { type: "translate-sentence" }>; onChange: Props["onChange"] }) {
+  const update = (items: typeof game.items) => onChange({ ...game, items });
+  const patchItem = (id: string, patch: Partial<(typeof game.items)[number]>) => update(game.items.map((item) => item.id === id ? { ...item, ...patch } : item));
+  return <div className="gameBlockEditor translateSentenceEditor">
+    <p className="gameEditorHint">Ученик напечатает перевод. Допустимые варианты разделяйте знаком |, а каждую подсказку пишите с новой строки.</p>
+    {game.items.map((item, index) => <div className="gameEditorCard translateSentenceEditorRow" key={item.id}>
+      <div className="gameCardHeader"><EditorCardNumber index={index} /></div>
+      <label>Предложение для перевода<input value={item.sentence} placeholder="Where are you from?" onChange={(event) => patchItem(item.id, { sentence: event.target.value })} /></label>
+      <label>Допустимые переводы<input value={item.answers.join(" | ")} placeholder="Откуда ты? | Откуда вы?" onChange={(event) => patchItem(item.id, { answers: event.target.value.split("|").map((value) => value.trim()) })} /></label>
+      <label className="translateHintsField">Подсказки<textarea value={item.hints.join("\n")} placeholder={'Начните со слова «Откуда»\nВ переводе два слова'} onChange={(event) => patchItem(item.id, { hints: event.target.value.split("\n").map((value) => value.trim()) })} /></label>
+      <RemoveButton disabled={game.items.length <= 1} onClick={() => update(game.items.filter((entry) => entry.id !== item.id))} />
+    </div>)}
+    <button type="button" className="gameEditorAdd" onClick={() => update([...game.items, { id: uid(), sentence: "", answers: [], hints: [] }])}>＋ Добавить предложение</button>
+  </div>;
+}
+
 export function GameBlockEditor({ block, courseLanguage, onChange }: Props) {
   if (!block.game) return null;
   if (block.game.type === "memory") return <MemoryEditor game={block.game} onChange={onChange} />;
@@ -197,5 +213,6 @@ export function GameBlockEditor({ block, courseLanguage, onChange }: Props) {
   if (block.game.type === "listen-choice") return <ListenEditor game={block.game} onChange={onChange} />;
   if (block.game.type === "categories") return <CategoriesEditor game={block.game} onChange={onChange} />;
   if (block.game.type === "sentence") return <SentenceEditor game={block.game} onChange={onChange} />;
+  if (block.game.type === "translate-sentence") return <TranslateSentenceEditor game={block.game} onChange={onChange} />;
   return <RoundsEditor game={block.game} courseLanguage={courseLanguage} onChange={onChange} />;
 }

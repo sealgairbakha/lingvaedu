@@ -38,7 +38,7 @@ const textFontFamily = (
 const previewTaskKinds = new Set<BlockKind>([
   "drag-words", "select-words", "fill-blank", "quiz", "match", "true-false", "assignment",
   "game-memory", "game-build-word", "game-listen-choice", "game-missing", "game-odd-one-out",
-  "game-speed", "game-truth", "game-categories", "game-sentence", "game-adventure",
+  "game-speed", "game-truth", "game-categories", "game-sentence", "game-translate-sentence", "game-adventure",
 ]);
 
 function TextAlignIcon({ alignment }: { alignment: "left" | "center" | "right" }) {
@@ -160,6 +160,7 @@ const palette: {
   { kind: "game-truth", title: "Правда или ошибка?", hint: "Определять, верно ли утверждение", group: "Игры" },
   { kind: "game-categories", title: "Разложи по коробкам", hint: "Распределять слова по категориям", group: "Игры" },
   { kind: "game-sentence", title: "Составь предложение", hint: "Собирать предложение из перемешанных слов", group: "Игры" },
+  { kind: "game-translate-sentence", title: "Переведи предложение", hint: "Печатать перевод и открывать подсказки", group: "Игры" },
   { kind: "game-adventure", title: "Приключение героя", hint: "Проходить этапы истории, отвечая на вопросы", group: "Игры" },
 ];
 
@@ -172,7 +173,7 @@ const taskKinds: BlockKind[] = [
   "true-false",
 ];
 const isTaskKind = (kind: BlockKind) => taskKinds.includes(kind);
-const gameKinds: BlockKind[] = ["game-memory", "game-build-word", "game-listen-choice", "game-missing", "game-odd-one-out", "game-speed", "game-truth", "game-categories", "game-sentence", "game-adventure"];
+const gameKinds: BlockKind[] = ["game-memory", "game-build-word", "game-listen-choice", "game-missing", "game-odd-one-out", "game-speed", "game-truth", "game-categories", "game-sentence", "game-translate-sentence", "game-adventure"];
 const isGameKind = (kind: BlockKind) => gameKinds.includes(kind);
 
 function UploadIcon() {
@@ -337,6 +338,7 @@ const makeBlock = (kind: BlockKind): LessonBlock => {
   if (kind === "game-truth") return { ...base, game: { type: "truth", rounds: [{ id: uid(), prompt: "Перевод слова apple", statement: "Apple означает яблоко", correct: true }] } };
   if (kind === "game-categories") { const fruit = uid(); const transport = uid(); return { ...base, game: { type: "categories", categories: [{ id: fruit, name: "Фрукты" }, { id: transport, name: "Транспорт" }], items: [{ id: uid(), text: "apple", categoryId: fruit }, { id: uid(), text: "car", categoryId: transport }] } }; }
   if (kind === "game-sentence") return { ...base, game: { type: "sentence", items: [{ id: uid(), sentence: "I like learning English", clue: "Я люблю учить английский" }] } };
+  if (kind === "game-translate-sentence") return { ...base, game: { type: "translate-sentence", items: [{ id: uid(), sentence: "Where are you from?", answers: ["Откуда ты?", "Откуда вы?"], hints: ["Начните со слова «Откуда»", "В переводе два слова"] }] } };
   if (kind === "game-adventure") return { ...base, game: { type: "adventure", heroName: "Лингвик", stages: [{ id: uid(), prompt: "Помоги герою открыть ворота: выбери перевод слова key", answer: "ключ", options: ["ключ", "дверь", "замок"] }] } };
   return base;
 };
@@ -360,13 +362,18 @@ const courseColors = [
 const lessonPatterns: {
   value: NonNullable<Course["lessonPattern"]>;
   label: string;
-  hint: string;
 }[] = [
-  { value: "none", label: "Без узора", hint: "Только мягкий градиент" },
-  { value: "space", label: "Космос", hint: "Планеты, ракета и звёзды" },
-  { value: "dinosaurs", label: "Динозавры", hint: "Динозавры, следы и листья" },
-  { value: "cars", label: "Машинки", hint: "Автомобили и дорожные линии" },
+  { value: "none", label: "Нет" },
+  { value: "space", label: "Космос" },
+  { value: "dinosaurs", label: "Дино" },
+  { value: "cars", label: "Машинки" },
 ];
+
+const lessonPatternIconByType: Partial<Record<NonNullable<Course["lessonPattern"]>, string>> = {
+  space: "/lesson-pattern-icons/space.png",
+  dinosaurs: "/lesson-pattern-icons/dinosaurs.png",
+  cars: "/lesson-pattern-icons/cars.png",
+};
 
 export function CourseEditorPage() {
   const navigate = useNavigate();
@@ -2404,18 +2411,6 @@ export function CourseEditorPage() {
                 <option value="archived">Архив</option>
               </select>
             </label>
-            <label className="courseNewRibbonSetting">
-              <span>Лента NEW</span>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={course.showNewRibbon ?? course.code === "NEW"}
-                className={(course.showNewRibbon ?? course.code === "NEW") ? "active" : ""}
-                onClick={() => mutate((value) => ({ ...value, showNewRibbon: !(value.showNewRibbon ?? value.code === "NEW") }))}
-              >
-                <i /><b>{(course.showNewRibbon ?? course.code === "NEW") ? "Показывать" : "Скрыта"}</b>
-              </button>
-            </label>
             <label className="courseProgressLockSetting">
               <span>Последовательное прохождение</span>
               <button
@@ -2448,8 +2443,10 @@ export function CourseEditorPage() {
                       data-pattern={pattern.value}
                       onClick={() => mutate((value) => ({ ...value, lessonPattern: pattern.value }))}
                     >
-                      <span className="lessonPatternSwatch" aria-hidden="true"><i /></span>
-                      <span><b>{pattern.label}</b><small>{pattern.hint}</small></span>
+                      <span className="lessonPatternSwatch" aria-hidden="true">
+                        {lessonPatternIconByType[pattern.value] && <img src={lessonPatternIconByType[pattern.value]} alt="" />}
+                      </span>
+                      <span><b>{pattern.label}</b></span>
                     </button>
                   );
                 })}
@@ -2470,6 +2467,18 @@ export function CourseEditorPage() {
                   <option value="orbit">Орбиты</option><option value="grid">Сетка</option><option value="waves">Волны</option>
                 </select>
               </label>
+              <label className="courseNewRibbonSetting">
+                <span>Лента NEW</span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={course.showNewRibbon ?? course.code === "NEW"}
+                  className={(course.showNewRibbon ?? course.code === "NEW") ? "active" : ""}
+                  onClick={() => mutate((value) => ({ ...value, showNewRibbon: !(value.showNewRibbon ?? value.code === "NEW") }))}
+                >
+                  <i /><b>{(course.showNewRibbon ?? course.code === "NEW") ? "Показывать" : "Скрыта"}</b>
+                </button>
+              </label>
               <div className="courseCoverUploadField">
                 <span>Изображение обложки</span>
                 <label className={`courseCoverUploader ${coverUploading ? "uploading" : ""}`}>
@@ -2481,34 +2490,33 @@ export function CourseEditorPage() {
                 {coverUploadError && <p className="uploadError">{coverUploadError}</p>}
                 {course.coverImage && <button type="button" className="removeCourseCover" onClick={() => mutate((value) => ({ ...value, coverImage: undefined }))}>Удалить изображение</button>}
               </div>
-            </div>
-            <div className="courseStylePreview">
-              <small>Превью карточки</small>
-              <div className="courseStylePreviewCard">
-                <div
-                  className={`courseStylePreviewCover courseCoverArt ${course.color} cover-${course.coverStyle || "orbit"} ${course.coverImage ? "has-image" : ""}`}
-                  style={course.coverImage ? { "--cover-image": `url(${course.coverImage})` } as CSSProperties : undefined}
-                >
-                  {!course.coverImage && <><i /><i /><i /></>}
-                  {(course.showNewRibbon ?? course.code === "NEW") && <span className="courseNewRibbon">NEW</span>}
-                  <small>{course.language.toUpperCase()}</small>
-                </div>
-                <div className="courseStylePreviewBody">
-                  <em
-                    className={
-                      course.status === "published" ? "published" : "draft"
-                    }
+              <div className="courseStylePreview">
+                <div className="courseStylePreviewCard">
+                  <div
+                    className={`courseStylePreviewCover courseCoverArt ${course.color} cover-${course.coverStyle || "orbit"} ${course.coverImage ? "has-image" : ""}`}
+                    style={course.coverImage ? { "--cover-image": `url(${course.coverImage})` } as CSSProperties : undefined}
                   >
-                    ●{" "}
-                    {course.status === "published"
-                      ? "Опубликован"
-                      : course.status === "archived"
-                        ? "Архив"
-                        : "Черновик"}
-                  </em>
-                  <b>{course.title || "Название курса"}</b>
-                  <small>{course.language}{course.level ? ` · ${course.level}` : ""}</small>
-                  {course.description && <p>{course.description}</p>}
+                    {!course.coverImage && <><i /><i /><i /></>}
+                    {(course.showNewRibbon ?? course.code === "NEW") && <span className="courseNewRibbon">NEW</span>}
+                    <small>{course.language.toUpperCase()}</small>
+                  </div>
+                  <div className="courseStylePreviewBody">
+                    <em
+                      className={
+                        course.status === "published" ? "published" : "draft"
+                      }
+                    >
+                      ●{" "}
+                      {course.status === "published"
+                        ? "Опубликован"
+                        : course.status === "archived"
+                          ? "Архив"
+                          : "Черновик"}
+                    </em>
+                    <b>{course.title || "Название курса"}</b>
+                    <small>{course.language}{course.level ? ` · ${course.level}` : ""}</small>
+                    {course.description && <p>{course.description}</p>}
+                  </div>
                 </div>
               </div>
             </div>

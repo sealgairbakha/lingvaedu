@@ -11,11 +11,25 @@ const shuffle = <T,>(values: T[]) => {
   return result;
 };
 const normalize = (value: string) => value.trim().toLocaleLowerCase().replace(/\s+/g, " ");
+const normalizeTranslation = (value: string) => normalize(value)
+  .replace(/ё/g, "е")
+  .replace(/[.,!?;:"“”«»()[\]{}]/g, "")
+  .replace(/\s+/g, " ")
+  .trim();
 const isImageUrl = (value?: string) => Boolean(value && /^(https?:\/\/|data:image\/|blob:)/i.test(value));
 
 type Props = { block: LessonBlock; courseLanguage?: string; onResult?: (passed: boolean) => void };
 const GameLocaleContext = createContext<CourseTaskLocale>(getCourseTaskLocale());
 const useGameLocale = () => useContext(GameLocaleContext);
+
+const translationCopy = {
+  ru: { instruction: "ПЕРЕВЕДИТЕ ПРЕДЛОЖЕНИЕ", answer: "Ваш перевод", placeholder: "Напишите перевод…", hints: "Подсказки", correct: "Верно! Отличный перевод.", wrong: "Пока не совпало. Проверьте перевод и попробуйте ещё раз.", showHint: "Показать подсказку", moreHint: "Ещё подсказка", empty: "Добавьте предложение и хотя бы один перевод.", wordCount: (count: number) => `В переводе ${count} ${count === 1 ? "слово" : count < 5 ? "слова" : "слов"}`, initialLetters: (mask: string) => `Первые буквы: ${mask}` },
+  en: { instruction: "TRANSLATE THE SENTENCE", answer: "Your translation", placeholder: "Type your translation…", hints: "Hints", correct: "Correct! Great translation.", wrong: "Not quite yet. Check your translation and try again.", showHint: "Show a hint", moreHint: "Another hint", empty: "Add a sentence and at least one translation.", wordCount: (count: number) => `The translation has ${count} ${count === 1 ? "word" : "words"}`, initialLetters: (mask: string) => `First letters: ${mask}` },
+  kk: { instruction: "СӨЙЛЕМДІ АУДАРЫҢЫЗ", answer: "Сіздің аудармаңыз", placeholder: "Аударманы жазыңыз…", hints: "Көмектер", correct: "Дұрыс! Тамаша аударма.", wrong: "Әзірге сәйкес емес. Аударманы тексеріп, қайталап көріңіз.", showHint: "Көмекті көрсету", moreHint: "Тағы бір көмек", empty: "Сөйлем мен кемінде бір аударма қосыңыз.", wordCount: (count: number) => `Аудармада ${count} сөз бар`, initialLetters: (mask: string) => `Алғашқы әріптер: ${mask}` },
+  ko: { instruction: "문장을 번역하세요", answer: "번역", placeholder: "번역을 입력하세요…", hints: "힌트", correct: "정답입니다! 훌륭한 번역이에요.", wrong: "아직 일치하지 않습니다. 번역을 확인하고 다시 시도하세요.", showHint: "힌트 보기", moreHint: "다른 힌트", empty: "문장과 번역을 하나 이상 추가하세요.", wordCount: (count: number) => `번역은 ${count}개 단어입니다`, initialLetters: (mask: string) => `첫 글자: ${mask}` },
+  "zh-CN": { instruction: "翻译句子", answer: "你的翻译", placeholder: "输入翻译…", hints: "提示", correct: "正确！翻译得很好。", wrong: "还不完全正确。请检查后重试。", showHint: "显示提示", moreHint: "再来一个提示", empty: "请添加句子和至少一个译文。", wordCount: (count: number) => `译文有 ${count} 个词`, initialLetters: (mask: string) => `首字母：${mask}` },
+  ja: { instruction: "文を翻訳してください", answer: "あなたの翻訳", placeholder: "翻訳を入力…", hints: "ヒント", correct: "正解です！すばらしい翻訳です。", wrong: "まだ一致していません。翻訳を確認してもう一度お試しください。", showHint: "ヒントを見る", moreHint: "次のヒント", empty: "文と翻訳を1つ以上追加してください。", wordCount: (count: number) => `翻訳は${count}語です`, initialLetters: (mask: string) => `最初の文字：${mask}` },
+};
 
 function GameHeader({ title, current, total, score }: { title: string; current: number; total: number; score: number }) {
   const labels = useGameLocale();
@@ -65,9 +79,10 @@ function MemoryGame({ block, game, onResult }: { block: LessonBlock; game: Extra
     <GameHeader title={block.title} current={matched.length} total={validPairs.length} score={matched.length} />
     {!validPairs.length ? <p className="gameEmpty">{labels.emptyPairs}</p> : complete ? <GameComplete score={matched.length} total={validPairs.length} onRestart={restart} /> :
       <div className="memoryGrid">{deck.map((card) => {
-        const visible = opened.includes(card.key) || matched.includes(card.pairId);
-        return <button type="button" key={card.key} className={`${visible ? "visible" : ""} ${matched.includes(card.pairId) ? "matched" : ""}`} onClick={() => choose(card.key)} aria-label={visible ? card.text || labels.emoji : labels.openCard}>
-          <span className="memoryBack">?</span><span className="memoryFace">{card.image && (isImageUrl(card.image) ? <img src={card.image} alt="" /> : <span className="gameCardEmoji" aria-hidden="true">{card.image}</span>)}{card.text}</span>
+        const isMatched = matched.includes(card.pairId);
+        const visible = opened.includes(card.key) || isMatched;
+        return <button type="button" key={card.key} className={`${visible ? "visible" : ""} ${isMatched ? "matched" : ""}`} onClick={() => choose(card.key)} aria-label={visible ? card.text || labels.emoji : labels.openCard}>
+          <span className="memoryBack">{isMatched ? "✓" : "?"}</span><span className="memoryFace">{card.image && (isImageUrl(card.image) ? <img src={card.image} alt="" /> : <span className="gameCardEmoji" aria-hidden="true">{card.image}</span>)}{card.text}</span>
         </button>;
       })}</div>}
   </section>;
@@ -198,6 +213,53 @@ function SentenceGame({ block, game, onResult }: { block: LessonBlock; game: Ext
   return <section className="learningBlock gameLearning sentenceGame"><GameHeader title={block.title} current={round + 1} total={items.length} score={score} />{!items.length ? <p className="gameEmpty">{labels.emptySentence}</p> : complete ? <GameComplete score={score} total={items.length} onRestart={restart} /> : item && <div className="sentenceBoard"><p className="gameClue">{item.clue || labels.buildSentence}</p><div className={`sentenceAnswer ${bad ? "wrong" : ""}`}>{answer || labels.tapWords}</div><div className="sentenceWords">{words.map((entry, index) => <button type="button" disabled={chosen.includes(index)} key={`${entry.id}-${entry.word}`} onClick={() => { setChosen((value) => [...value, index]); setBad(false); }}>{entry.word}</button>)}</div><div className="gameActions"><button type="button" className="secondary" onClick={() => setChosen([])}>{labels.clear}</button><button type="button" className="primary" disabled={chosen.length !== words.length} onClick={() => { if (normalize(answer) === normalize(item.sentence)) { const last = round === items.length - 1; setScore((v) => v + 1); setRound((v) => v + 1); setChosen([]); if (last) onResult?.(true); } else setBad(true); }}>{labels.check}</button></div></div>}</section>;
 }
 
+function makeTranslationHints(answer: string, copy: (typeof translationCopy)[keyof typeof translationCopy]) {
+  const words = answer.trim().split(/\s+/).filter(Boolean);
+  const mask = words.map((word) => `${word[0] || ""}${"•".repeat(Math.max(1, [...word].length - 1))}`).join(" ");
+  return [copy.wordCount(words.length), copy.initialLetters(mask)];
+}
+
+function TranslateSentenceGame({ block, game, onResult }: { block: LessonBlock; game: Extract<GameConfig, { type: "translate-sentence" }>; onResult?: Props["onResult"] }) {
+  const labels = useGameLocale();
+  const copy = translationCopy[labels.htmlLang as keyof typeof translationCopy] || translationCopy.ru;
+  const items = useMemo(() => game.items.filter((item) => item.sentence.trim() && item.answers.some((answer) => answer.trim())), [game.items]);
+  const [round, setRound] = useState(0);
+  const [answer, setAnswer] = useState("");
+  const [score, setScore] = useState(0);
+  const [feedback, setFeedback] = useState<"idle" | "wrong" | "correct">("idle");
+  const [visibleHints, setVisibleHints] = useState(0);
+  const item = items[round];
+  const complete = items.length > 0 && round >= items.length;
+  const hints = useMemo(() => item ? (item.hints.filter((hint) => hint.trim()).length ? item.hints.filter((hint) => hint.trim()) : makeTranslationHints(item.answers[0] || "", copy)) : [], [copy, item]);
+  const check = () => {
+    if (!item || !answer.trim() || feedback === "correct") return;
+    const isCorrect = item.answers.some((variant) => normalizeTranslation(variant) === normalizeTranslation(answer));
+    if (isCorrect) {
+      setFeedback("correct");
+      setScore((value) => value + 1);
+      if (round === items.length - 1) onResult?.(true);
+    } else {
+      setFeedback("wrong");
+      setVisibleHints((value) => Math.max(1, value));
+    }
+  };
+  const next = () => { setRound((value) => value + 1); setAnswer(""); setFeedback("idle"); setVisibleHints(0); };
+  const restart = () => { setRound(0); setAnswer(""); setScore(0); setFeedback("idle"); setVisibleHints(0); onResult?.(false); };
+  return <section className="learningBlock gameLearning translateSentenceGame">
+    <GameHeader title={block.title} current={round + 1} total={items.length} score={score} />
+    {!items.length ? <p className="gameEmpty">{copy.empty}</p> : complete ? <GameComplete score={score} total={items.length} onRestart={restart} /> : item && <form className="translateSentenceBoard" onSubmit={(event) => { event.preventDefault(); check(); }}>
+      <div className="translatePrompt"><small>{copy.instruction}</small><p>{item.sentence}</p></div>
+      <label className="translateAnswerField">{copy.answer}<textarea autoFocus value={answer} disabled={feedback === "correct"} className={feedback} placeholder={copy.placeholder} onChange={(event) => { setAnswer(event.target.value); if (feedback === "wrong") setFeedback("idle"); }} /></label>
+      {visibleHints > 0 && <div className="translationHints" aria-live="polite"><b>{copy.hints}</b>{hints.slice(0, visibleHints).map((hint, index) => <p key={`${index}-${hint}`}><span>{index + 1}</span>{hint}</p>)}</div>}
+      <div className={`translationFeedback ${feedback}`} aria-live="polite">{feedback === "correct" ? copy.correct : feedback === "wrong" ? copy.wrong : ""}</div>
+      <div className="gameActions translateGameActions">
+        {feedback !== "correct" && <button type="button" className="secondary hintButton" disabled={visibleHints >= hints.length} onClick={() => setVisibleHints((value) => Math.min(hints.length, value + 1))}>{visibleHints ? copy.moreHint : copy.showHint}</button>}
+        {feedback === "correct" ? <button type="button" className="primary" onClick={next}>{round === items.length - 1 ? labels.finish : labels.next}</button> : <button type="submit" className="primary" disabled={!answer.trim()}>{labels.check}</button>}
+      </div>
+    </form>}
+  </section>;
+}
+
 function GameBlockContent({ block, onResult }: Omit<Props, "courseLanguage">) {
   if (!block.game) return <section className="learningBlock gameLearning"><p className="gameEmpty">Настройте игру в редакторе курса.</p></section>;
   if (block.game.type === "memory") return <MemoryGame block={block} game={block.game} onResult={onResult} />;
@@ -209,6 +271,7 @@ function GameBlockContent({ block, onResult }: Omit<Props, "courseLanguage">) {
   if (block.game.type === "truth") return <TruthGame block={block} game={block.game} onResult={onResult} />;
   if (block.game.type === "categories") return <CategoriesGame block={block} game={block.game} onResult={onResult} />;
   if (block.game.type === "sentence") return <SentenceGame block={block} game={block.game} onResult={onResult} />;
+  if (block.game.type === "translate-sentence") return <TranslateSentenceGame block={block} game={block.game} onResult={onResult} />;
   return <ChoiceGame block={block} rounds={block.game.stages} mode="adventure" heroName={block.game.heroName} onResult={onResult} />;
 }
 
