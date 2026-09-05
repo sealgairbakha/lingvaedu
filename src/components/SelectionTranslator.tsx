@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useAuth } from "../auth/AuthProvider";
 
 type SelectionTranslatorProps = {
   scopeSelector?: string;
@@ -34,6 +35,7 @@ function getSelectionRect(range: Range) {
 }
 
 export function SelectionTranslator({ scopeSelector = ".coursePlayer", onAddToVocabulary }: SelectionTranslatorProps) {
+  const { session } = useAuth();
   const popupRef = useRef<HTMLDivElement>(null);
   const requestRef = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
@@ -101,7 +103,7 @@ export function SelectionTranslator({ scopeSelector = ".coursePlayer", onAddToVo
       setPopup({ text, translation: "", status: "loading", rect, x: rect.left, y: rect.bottom + POPUP_GAP });
       void fetch("/api/translate", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token || ""}` },
         body: JSON.stringify({ text }),
         signal: controller.signal,
       }).then(async (response) => {
@@ -165,7 +167,7 @@ export function SelectionTranslator({ scopeSelector = ".coursePlayer", onAddToVo
       if (timerRef.current !== null) window.clearTimeout(timerRef.current);
       abortRef.current?.abort();
     };
-  }, [scopeSelector]);
+  }, [scopeSelector, session?.access_token]);
 
   if (!popup) return null;
 

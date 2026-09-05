@@ -1,3 +1,5 @@
+import { createClient } from "@supabase/supabase-js";
+
 type DeepLResponse = {
   translations?: Array<{ text?: string; detected_source_language?: string }>;
 };
@@ -10,6 +12,14 @@ const json = (body: Record<string, unknown>, status = 200, headers?: HeadersInit
 export default {
   async fetch(request: Request) {
     if (request.method !== "POST") return json({ error: "Method not allowed" }, 405, { Allow: "POST" });
+    const token = request.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
+    if (!token) return json({ error: "Требуется авторизация" }, 401);
+    const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !supabaseKey) return json({ error: "Авторизация не настроена" }, 503);
+    const auth = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false, autoRefreshToken: false } });
+    const { data: caller, error: authError } = await auth.auth.getUser(token);
+    if (authError || !caller.user) return json({ error: "Сессия истекла. Войдите снова." }, 401);
     let body: unknown;
     try {
       body = await request.json();

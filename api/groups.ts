@@ -38,7 +38,8 @@ function publicUser(user: User) {
 
 async function bodyOf(request: Request) {
   try {
-    return (await request.json()) as Record<string, unknown>;
+    const body: unknown = await request.json();
+    return body && typeof body === "object" && !Array.isArray(body) ? body as Record<string, unknown> : null;
   } catch {
     return null;
   }
@@ -170,33 +171,47 @@ export default {
     if (!groupId) return json({ error: "Группа не выбрана" }, 400);
 
     if (request.method === "PATCH") {
+      const name = typeof body.name === "string" ? body.name.trim() : "";
+      const validIds = (value: unknown) => Array.isArray(value) && value.length <= 1000 && value.every((id) => typeof id === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id));
+      if (name.length < 2 || name.length > 160 || !validIds(body.memberIds) || !validIds(body.courseIds))
+        return json({ error: "Укажите название группы и корректные списки участников и курсов" }, 400);
       const memberIds = ids(body.memberIds);
       const courseIds = ids(body.courseIds);
+      // Read the current associations first; never empty a group before new data is accepted.
+      const [existingMembers, existingCourses] = await Promise.all([
+        service.from("learning_group_members").select("user_id").eq("group_id", groupId),
+        service.from("learning_group_courses").select("course_id").eq("group_id", groupId),
+      ]);
+      if (existingMembers.error || existingCourses.error)
+        return json({ error: "Не удалось прочитать состав группы. Изменения не сохранены." }, 502);
       const update = await service.from("learning_groups").update({
-        name: String(body.name || "").trim(),
+        name,
         description: String(body.description || "").trim(),
         mentor_id: body.mentorId ? String(body.mentorId) : null,
         updated_at: new Date().toISOString(),
       }).eq("id", groupId);
       if (update.error) return json({ error: update.error.message }, 400);
 
-      const [clearMembers, clearCourses] = await Promise.all([
-        service.from("learning_group_members").delete().eq("group_id", groupId),
-        service.from("learning_group_courses").delete().eq("group_id", groupId),
-      ]);
-      if (clearMembers.error || clearCourses.error)
-        return json({ error: (clearMembers.error || clearCourses.error)!.message }, 400);
-
       const writes = [];
-      if (memberIds.length) writes.push(service.from("learning_group_members").insert(
+      if (memberIds.length) writes.push(service.from("learning_group_members").upsert(
         memberIds.map((userId) => ({ group_id: groupId, user_id: userId })),
+        { onConflict: "group_id,user_id", ignoreDuplicates: true },
       ));
-      if (courseIds.length) writes.push(service.from("learning_group_courses").insert(
+      if (courseIds.length) writes.push(service.from("learning_group_courses").upsert(
         courseIds.map((courseId) => ({ group_id: groupId, course_id: courseId })),
+        { onConflict: "group_id,course_id", ignoreDuplicates: true },
       ));
       const results = await Promise.all(writes);
       const writeError = results.find((result) => result.error)?.error;
       if (writeError) return json({ error: writeError.message }, 400);
+      const removedMembers = (existingMembers.data || []).map((row) => row.user_id).filter((id) => !memberIds.includes(id));
+      const removedCourses = (existingCourses.data || []).map((row) => row.course_id).filter((id) => !courseIds.includes(id));
+      const removals = [];
+      if (removedMembers.length) removals.push(service.from("learning_group_members").delete().eq("group_id", groupId).in("user_id", removedMembers));
+      if (removedCourses.length) removals.push(service.from("learning_group_courses").delete().eq("group_id", groupId).in("course_id", removedCourses));
+      const removalResults = await Promise.all(removals);
+      const removalError = removalResults.find((result) => result.error)?.error;
+      if (removalError) return json({ error: removalError.message }, 400);
       const syncError = await syncGroupEnrollments(service);
       if (syncError) return json({ error: syncError.message }, 400);
       return json({ ok: true });

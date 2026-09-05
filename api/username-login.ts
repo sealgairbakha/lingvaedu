@@ -13,14 +13,16 @@ export default {
 
     let body: Record<string, unknown>;
     try {
-      body = (await request.json()) as Record<string, unknown>;
+      const value: unknown = await request.json();
+      if (!value || typeof value !== "object" || Array.isArray(value)) return json({ error: "Некорректный запрос" }, 400);
+      body = value as Record<string, unknown>;
     } catch {
       return json({ error: "Некорректный запрос" }, 400);
     }
 
     const username = String(body.username || "").trim().toLowerCase();
     const password = String(body.password || "");
-    if (!/^[a-z0-9._-]{3,32}$/.test(username) || !password)
+    if (!/^[a-z0-9._-]{3,32}$/.test(username) || !password || password.length > 1024)
       return json({ error: "Неверное имя пользователя или пароль" }, 400);
 
     const service = createClient(url, serviceKey, {
@@ -36,7 +38,7 @@ export default {
     if (profile.data?.user_id) {
       const userResult = await service.auth.admin.getUserById(profile.data.user_id);
       matchedUser = userResult.data.user;
-    } else {
+    } else if (profile.error?.code === "42P01" || profile.error?.code === "PGRST205") {
       // Username metadata is the source of truth for accounts created before
       // the user_profiles migration was applied.
       for (let page = 1; page <= 20 && !matchedUser; page += 1) {
@@ -48,10 +50,19 @@ export default {
         if (usersResult.data.users.length < 1000) break;
       }
     }
+    if (profile.error && profile.error.code !== "42P01" && profile.error.code !== "PGRST205")
+      return json({ error: "Вход временно недоступен. Попробуйте позже." }, 503);
 
     const email = matchedUser?.email || "";
     if (!matchedUser || !email)
       return json({ error: "Неверное имя пользователя или пароль" }, 401);
+
+    // Authenticate with a separate client so the service client retains its server credentials.
+    const authClient = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
+    const signedIn = await authClient.auth.signInWithPassword({ email, password });
+    if (signedIn.error || !signedIn.data.session)
+      return json({ error: "Неверное имя пользователя или пароль" }, 401);
+    let session = signedIn.data.session;
 
     // Accounts with a username were created by an administrator. Mark older
     // accounts too, so they are prompted even if they predate this flag.
@@ -61,15 +72,15 @@ export default {
       });
       if (marked.error)
         return json({ error: "Не удалось подготовить смену пароля" }, 500);
+      const refreshed = await authClient.auth.refreshSession({ refresh_token: session.refresh_token });
+      if (refreshed.error || !refreshed.data.session)
+        return json({ error: "Не удалось завершить вход. Попробуйте снова." }, 503);
+      session = refreshed.data.session;
     }
 
-    const signedIn = await service.auth.signInWithPassword({ email, password });
-    if (signedIn.error || !signedIn.data.session)
-      return json({ error: "Неверное имя пользователя или пароль" }, 401);
-
     return json({
-      accessToken: signedIn.data.session.access_token,
-      refreshToken: signedIn.data.session.refresh_token,
+      accessToken: session.access_token,
+      refreshToken: session.refresh_token,
     });
   },
 };

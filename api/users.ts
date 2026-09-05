@@ -41,7 +41,8 @@ function bearerToken(request: Request) {
 
 async function parseBody(request: Request) {
   try {
-    return (await request.json()) as Record<string, unknown>;
+    const body: unknown = await request.json();
+    return body && typeof body === "object" && !Array.isArray(body) ? body as Record<string, unknown> : null;
   } catch {
     return null;
   }

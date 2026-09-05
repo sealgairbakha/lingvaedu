@@ -1,19 +1,25 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "./auth/AuthProvider";
 import { SelectionTranslator } from "./components/SelectionTranslator";
-import { CoursesPage } from "./features/courses/CoursesPage";
-import { CourseEditorPage } from "./features/courses/CourseEditorPage";
-import { CoursePlayerPage } from "./features/courses/CoursePlayerPage";
-import { AssignmentReviewPage } from "./features/courses/AssignmentReviewPage";
-import { ProfilePage } from "./features/profile/ProfilePage";
-import { UsersPage } from "./features/users/UsersPage";
-import { GroupsPage } from "./features/groups/GroupsPage";
-import { VideoRoomsPage } from "./features/video/VideoRoomsPage";
+import { PageState } from "./components/PageState";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import { ConnectionNotice } from "./components/ConnectionNotice";
 import { useCourses } from "./features/courses/CourseProvider";
 import { supabase } from "./lib/supabase";
+
+const CoursesPage = lazy(() => import("./features/courses/CoursesPage").then((module) => ({ default: module.CoursesPage })));
+const CourseEditorPage = lazy(() => import("./features/courses/CourseEditorPage").then((module) => ({ default: module.CourseEditorPage })));
+const CoursePlayerPage = lazy(() => import("./features/courses/CoursePlayerPage").then((module) => ({ default: module.CoursePlayerPage })));
+const AssignmentReviewPage = lazy(() => import("./features/courses/AssignmentReviewPage").then((module) => ({ default: module.AssignmentReviewPage })));
+const ProfilePage = lazy(() => import("./features/profile/ProfilePage").then((module) => ({ default: module.ProfilePage })));
+const UsersPage = lazy(() => import("./features/users/UsersPage").then((module) => ({ default: module.UsersPage })));
+const GroupsPage = lazy(() => import("./features/groups/GroupsPage").then((module) => ({ default: module.GroupsPage })));
+const VideoRoomsPage = lazy(() => import("./features/video/VideoRoomsPage").then((module) => ({ default: module.VideoRoomsPage })));
+const ReportsPage = lazy(() => import("./features/reports/ReportsPage").then((module) => ({ default: module.ReportsPage })));
+const RolesPage = lazy(() => import("./features/users/RolesPage").then((module) => ({ default: module.RolesPage })));
 
 type Page =
   | "overview"
@@ -28,13 +34,6 @@ type Page =
   | "calls"
   | "calendar"
   | "assignments";
-type BlockKind = "text" | "media" | "quiz" | "html" | "file";
-type LessonBlock = {
-  id: number;
-  kind: BlockKind;
-  title: string;
-  description: string;
-};
 
 function AccountMenuIcon({ kind }: { kind: "profile" | "settings" | "sun" | "moon" | "logout" }) {
   const paths = {
@@ -184,101 +183,6 @@ const nav: {
   },
 ];
 
-const courseRows = [
-  {
-    title: "English for work",
-    code: "EN",
-    color: "violet",
-    status: "Опубликован",
-    students: 184,
-    lessons: 24,
-    progress: 76,
-    mentor: "Анна Ким",
-  },
-  {
-    title: "Русский без барьеров",
-    code: "RU",
-    color: "blue",
-    status: "Опубликован",
-    students: 96,
-    lessons: 18,
-    progress: 63,
-    mentor: "Олег Миронов",
-  },
-  {
-    title: "Қазақ тілі: Бастау",
-    code: "KZ",
-    color: "orange",
-    status: "Опубликован",
-    students: 142,
-    lessons: 20,
-    progress: 81,
-    mentor: "Айгүл Сәрсен",
-  },
-  {
-    title: "Business English B2",
-    code: "B2",
-    color: "green",
-    status: "Черновик",
-    students: 0,
-    lessons: 12,
-    progress: 35,
-    mentor: "Не назначен",
-  },
-];
-
-const people = [
-  {
-    name: "Алия Касымова",
-    email: "aliya.k@company.kz",
-    initials: "АК",
-    role: "Ученик",
-    group: "Sales Team",
-    courses: 2,
-    progress: 86,
-    active: "Сегодня",
-  },
-  {
-    name: "Марат Ибраев",
-    email: "m.ibrayev@company.kz",
-    initials: "МИ",
-    role: "Ученик",
-    group: "Newcomers",
-    courses: 1,
-    progress: 54,
-    active: "Вчера",
-  },
-  {
-    name: "Анна Ким",
-    email: "anna.kim@lingva.kz",
-    initials: "АК",
-    role: "Наставник",
-    group: "English mentors",
-    courses: 3,
-    progress: 92,
-    active: "5 мин назад",
-  },
-  {
-    name: "Нурлан Садыков",
-    email: "n.sadykov@company.kz",
-    initials: "НС",
-    role: "Менеджер",
-    group: "HR Department",
-    courses: 4,
-    progress: 71,
-    active: "12 авг",
-  },
-  {
-    name: "Диана Ли",
-    email: "diana.li@company.kz",
-    initials: "ДЛ",
-    role: "Ученик",
-    group: "Marketing",
-    courses: 2,
-    progress: 39,
-    active: "11 авг",
-  },
-];
 
 function Logo() {
   return (
@@ -823,8 +727,14 @@ function Shell({
           return item?.headerLabel || item?.label;
         })() ||
         "Обзор";
+  useEffect(() => { document.title = `${title} — LingvaEdu`; }, [title]);
   return (
     <div className={`app ${collapsed ? "sidebarCollapsed" : ""}`}>
+      <a className="skipContent" href="#workspace-content" onClick={(event) => {
+        event.preventDefault();
+        const main = document.querySelector<HTMLElement>(".mainShell main");
+        if (main) { main.tabIndex = -1; main.focus(); main.scrollIntoView({ block: "start" }); }
+      }}>К содержимому</a>
       <Sidebar
         page={page}
         setPage={setPage}
@@ -835,6 +745,7 @@ function Shell({
       <div className={page === "editor" || page === "player" ? "mainShell" : "mainShell workspaceBackdrop"}>
         <Header title={title} toggleNav={toggleNav} />
         {children}
+        <ConnectionNotice />
       </div>
     </div>
   );
@@ -1044,566 +955,6 @@ function PanelHead({
     </div>
   );
 }
-function Event({
-  time,
-  date,
-  title,
-  people,
-  color,
-}: {
-  time: string;
-  date: string;
-  title: string;
-  people: string;
-  color: string;
-}) {
-  return (
-    <div className="event">
-      <div className={`dateBlock ${color}`}>
-        <b>{time}</b>
-        <span>{date}</span>
-      </div>
-      <div>
-        <b>{title}</b>
-        <span>♙ {people}</span>
-      </div>
-      <button>•••</button>
-    </div>
-  );
-}
-
-function Courses({ go }: { go: (p: Page) => void }) {
-  const [q, setQ] = useState("");
-  const rows = courseRows.filter((c) =>
-    c.title.toLowerCase().includes(q.toLowerCase()),
-  );
-  return (
-    <main className="content fade">
-      <PageTitle
-        title="Курсы"
-        text="Создавайте программы обучения и управляйте их содержанием."
-        action={
-          <button className="btn primary" onClick={() => go("editor")}>
-            ＋ Новый курс
-          </button>
-        }
-      />
-      <div className="tabs">
-        <button className="active">
-          Все курсы <span>12</span>
-        </button>
-        <button>
-          Опубликованные <span>8</span>
-        </button>
-        <button>
-          Черновики <span>3</span>
-        </button>
-        <button>
-          Архив <span>1</span>
-        </button>
-      </div>
-      <div className="toolbar">
-        <label>
-          <span>⌕</span>
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Поиск по курсам"
-          />
-        </label>
-        <button className="filter">Язык: Все ⌄</button>
-        <button className="filter">Автор: Все ⌄</button>
-        <button className="viewToggle">▦　☷</button>
-      </div>
-      <div className="courseGrid">
-        {rows.map((c, i) => (
-          <article className="courseCard" key={c.title}>
-            <div className={`courseCover ${c.color}`}>
-              <span>{c.code}</span>
-              <div className="coverDots">•••</div>
-              <small>{i === 3 ? "BUSINESS" : "LINGVA COURSE"}</small>
-            </div>
-            <div className="courseInfo">
-              <div className="statusRow">
-                <span
-                  className={c.status === "Черновик" ? "draft" : "published"}
-                >
-                  ● {c.status}
-                </span>
-                <small>Обновлён {i + 2} дня назад</small>
-              </div>
-              <h3>{c.title}</h3>
-              <p>
-                Практический курс с упражнениями, живыми встречами и поддержкой
-                наставника.
-              </p>
-              <div className="courseStats">
-                <span>▤ {c.lessons} урока</span>
-                <span>♙ {c.students} учеников</span>
-              </div>
-              <div className="mentor">
-                <span>{c.mentor.slice(0, 2)}</span>
-                <div>
-                  <small>НАСТАВНИК</small>
-                  <b>{c.mentor}</b>
-                </div>
-                <button onClick={() => go("editor")}>Редактировать →</button>
-              </div>
-            </div>
-          </article>
-        ))}
-      </div>
-    </main>
-  );
-}
-
-const seedBlocks: LessonBlock[] = [
-  {
-    id: 1,
-    kind: "text",
-    title: "Приветствие и цель урока",
-    description: "Форматированный текст · 486 символов",
-  },
-  {
-    id: 2,
-    kind: "media",
-    title: "Знакомство в деловой среде",
-    description: "Видео · MP4 · 04:32",
-  },
-  {
-    id: 3,
-    kind: "quiz",
-    title: "Выберите правильное приветствие",
-    description: "Один ответ · 4 варианта · 2 попытки",
-  },
-  {
-    id: 4,
-    kind: "file",
-    title: "Useful phrases.pdf",
-    description: "PDF · 2,4 МБ · доступен для скачивания",
-  },
-];
-
-const palette: {
-  kind: BlockKind;
-  icon: string;
-  title: string;
-  desc: string;
-}[] = [
-  {
-    kind: "text",
-    icon: "T",
-    title: "Текст",
-    desc: "Заголовки и форматирование",
-  },
-  {
-    kind: "media",
-    icon: "▶",
-    title: "Медиа",
-    desc: "Видео, аудио и изображения",
-  },
-  { kind: "quiz", icon: "✓", title: "Задание", desc: "Тесты и практика" },
-  {
-    kind: "html",
-    icon: "</>",
-    title: "HTML-код",
-    desc: "Встраиваемый контент",
-  },
-  { kind: "file", icon: "↥", title: "Файл", desc: "PDF, PPT, DOC и другое" },
-];
-
-function Editor({ back }: { back: () => void }) {
-  const [blocks, setBlocks] = useState(seedBlocks);
-  const [selected, setSelected] = useState(3);
-  const [saved, setSaved] = useState(true);
-  const add = (p: (typeof palette)[number]) => {
-    setBlocks([
-      ...blocks,
-      {
-        id: Date.now(),
-        kind: p.kind,
-        title:
-          p.title === "Задание"
-            ? "Новое практическое задание"
-            : `Новый блок: ${p.title}`,
-        description: p.desc,
-      },
-    ]);
-    setSaved(false);
-  };
-  return (
-    <main className="editorPage fade">
-      <div className="editorTop">
-        <button className="backBtn" onClick={back}>
-          ←
-        </button>
-        <div>
-          <span>English for work</span>
-          <b>Урок 1. First impressions</b>
-        </div>
-        <div className="saveState">
-          <i className={saved ? "saved" : ""} />
-          {saved ? "Все изменения сохранены" : "Есть несохранённые изменения"}
-        </div>
-        <button className="btn ghost">Предпросмотр</button>
-        <button className="btn primary" onClick={() => setSaved(true)}>
-          Сохранить
-        </button>
-      </div>
-      <div className="editorLayout">
-        <aside className="lessonTree">
-          <div className="treeHead">
-            <span>СОДЕРЖАНИЕ КУРСА</span>
-            <button>＋</button>
-          </div>
-          <div className="module">
-            <button className="moduleTitle">
-              <span>⋮⋮</span>
-              <div>
-                <small>МОДУЛЬ 1</small>
-                <b>Start communicating</b>
-              </div>
-              <i>⌃</i>
-            </button>
-            {[
-              "First impressions",
-              "Introduce yourself",
-              "Meet the team",
-              "Checkpoint",
-            ].map((x, i) => (
-              <button
-                className={`treeLesson ${i === 0 ? "active" : ""}`}
-                key={x}
-              >
-                <i>{i === 3 ? "✓" : i + 1}</i>
-                <span>
-                  {x}
-                  <small>
-                    {i === 3 ? "Тест · 10 вопросов" : `${4 + i} блоков`}
-                  </small>
-                </span>
-                {i === 0 && <b>•••</b>}
-              </button>
-            ))}
-          </div>
-          <div className="module">
-            <button className="moduleTitle">
-              <span>⋮⋮</span>
-              <div>
-                <small>МОДУЛЬ 2</small>
-                <b>Everyday work</b>
-              </div>
-              <i>⌄</i>
-            </button>
-          </div>
-          <button className="addModule">＋ Добавить модуль</button>
-        </aside>
-        <section className="canvas">
-          <div className="canvasHead">
-            <div>
-              <span>УРОК 1</span>
-              <input defaultValue="First impressions" />
-              <p>
-                Научитесь знакомиться и производить хорошее первое впечатление.
-              </p>
-            </div>
-            <button>⚙ Настройки урока</button>
-          </div>
-          <div className="blockCanvas">
-            {blocks.map((b, i) => (
-              <article
-                key={b.id}
-                className={`lessonBlock ${selected === i ? "selected" : ""}`}
-                onClick={() => setSelected(i)}
-              >
-                <span className="drag">⋮⋮</span>
-                <div className={`blockGlyph ${b.kind}`}>
-                  {palette.find((p) => p.kind === b.kind)?.icon}
-                </div>
-                <div>
-                  <b>{b.title}</b>
-                  <p>{b.description}</p>
-                </div>
-                <button>•••</button>
-              </article>
-            ))}
-            <div className="insertLine">
-              <span>＋</span>
-            </div>
-          </div>
-        </section>
-        <aside className="blockPalette">
-          <div>
-            <span>БЛОКИ</span>
-            <p>Добавьте блок в конец урока</p>
-          </div>
-          {palette.map((p) => (
-            <button key={p.kind} onClick={() => add(p)}>
-              <i className={p.kind}>{p.icon}</i>
-              <span>
-                <b>{p.title}</b>
-                <small>{p.desc}</small>
-              </span>
-              <em>＋</em>
-            </button>
-          ))}
-          <div className="paletteTip">
-            <i>!</i>
-            <p>
-              <b>Перетаскивайте блоки</b>
-              <br />
-              Меняйте порядок элементов прямо в уроке.
-            </p>
-          </div>
-        </aside>
-      </div>
-    </main>
-  );
-}
-
-function People() {
-  const [q, setQ] = useState("");
-  const list = useMemo(
-    () =>
-      people.filter((p) =>
-        (p.name + p.email).toLowerCase().includes(q.toLowerCase()),
-      ),
-    [q],
-  );
-  const [modal, setModal] = useState(false);
-  return (
-    <main className="content fade">
-      <PageTitle
-        title="Пользователи"
-        text="Управляйте учениками, сотрудниками и наставниками."
-        secondary={<button className="btn ghost">Пригласить по ссылке</button>}
-        action={
-          <button className="btn primary" onClick={() => setModal(true)}>
-            ＋ Добавить пользователя
-          </button>
-        }
-      />
-      <section className="peopleSummary">
-        <div>
-          <span className="violet">♙</span>
-          <p>
-            Всего пользователей<b>1 248</b>
-          </p>
-        </div>
-        <div>
-          <span className="green">●</span>
-          <p>
-            Активны за 30 дней<b>1 086</b>
-          </p>
-        </div>
-        <div>
-          <span className="orange">◎</span>
-          <p>
-            Наставники<b>24</b>
-          </p>
-        </div>
-        <div>
-          <span className="blue">◉</span>
-          <p>
-            Группы<b>38</b>
-          </p>
-        </div>
-      </section>
-      <div className="toolbar">
-        <label>
-          <span>⌕</span>
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Имя или электронная почта"
-          />
-        </label>
-        <button className="filter">Все роли ⌄</button>
-        <button className="filter">Все группы ⌄</button>
-        <button className="filter">Статус: Активные ⌄</button>
-        <button className="export">⇩ Экспорт</button>
-      </div>
-      <div className="dataTable">
-        <div className="dataRow head">
-          <span>ПОЛЬЗОВАТЕЛЬ</span>
-          <span>РОЛЬ</span>
-          <span>ГРУППА</span>
-          <span>КУРСЫ</span>
-          <span>ПРОГРЕСС</span>
-          <span>АКТИВНОСТЬ</span>
-          <span />
-        </div>
-        {list.map((p, i) => (
-          <div className="dataRow" key={p.email}>
-            <div className="personCell">
-              <span className={`avatarColor a${i}`}>{p.initials}</span>
-              <div>
-                <b>{p.name}</b>
-                <small>{p.email}</small>
-              </div>
-            </div>
-            <span>
-              <mark
-                className={
-                  p.role === "Ученик"
-                    ? "student"
-                    : p.role === "Наставник"
-                      ? "mentor"
-                      : "manager"
-                }
-              >
-                {p.role}
-              </mark>
-            </span>
-            <span>{p.group}</span>
-            <span>{p.courses}</span>
-            <span>
-              <div className="inlineProgress">
-                <i style={{ width: `${p.progress}%` }} />
-              </div>
-              <b>{p.progress}%</b>
-            </span>
-            <span className="muted">{p.active}</span>
-            <button>•••</button>
-          </div>
-        ))}
-      </div>
-      {modal && (
-        <Modal title="Добавить пользователя" close={() => setModal(false)}>
-          <label>
-            Имя и фамилия
-            <input placeholder="Например, Алия Касымова" />
-          </label>
-          <label>
-            Электронная почта
-            <input placeholder="name@company.kz" type="email" />
-          </label>
-          <div className="modalGrid">
-            <label>
-              Роль
-              <select>
-                <option>Ученик</option>
-                <option>Наставник</option>
-                <option>Менеджер</option>
-              </select>
-            </label>
-            <label>
-              Группа
-              <select>
-                <option>Без группы</option>
-                <option>Sales Team</option>
-                <option>Newcomers</option>
-              </select>
-            </label>
-          </div>
-          <button className="btn primary full" onClick={() => setModal(false)}>
-            Добавить и отправить приглашение
-          </button>
-        </Modal>
-      )}
-    </main>
-  );
-}
-
-function Reports() {
-  return (
-    <main className="content fade">
-      <PageTitle
-        title="Отчёты"
-        text="20 ключевых метрик обучения в одном месте."
-        secondary={<button className="btn ghost">13 июл — 13 авг ⌄</button>}
-        action={<button className="btn primary">⇩ Скачать отчёт</button>}
-      />
-      <div className="reportFilters">
-        <button>Все курсы ⌄</button>
-        <button>Все группы ⌄</button>
-        <button>Все наставники ⌄</button>
-        <span>Данные обновлены 5 минут назад</span>
-      </div>
-      <section className="metricGrid reportMetrics">
-        <Metric
-          icon="progress"
-          label="Завершаемость"
-          value="78,6%"
-          delta="+4,2%"
-          note="к прошлому периоду"
-          tone="violet"
-        />
-        <Metric
-          icon="score"
-          label="Средний балл"
-          value="8,4 / 10"
-          delta="+0,6"
-          note="к прошлому периоду"
-          tone="orange"
-        />
-        <Metric
-          icon="time"
-          label="Время обучения"
-          value="6,2 ч"
-          delta="+11%"
-          note="на ученика"
-          tone="blue"
-        />
-        <Metric
-          icon="return"
-          label="Возврат к обучению"
-          value="84%"
-          delta="+2,8%"
-          note="за 30 дней"
-          tone="green"
-        />
-      </section>
-      <div className="reportGrid">
-        <section className="panel completion">
-          <PanelHead
-            title="Динамика завершения"
-            text="Процент завершённых уроков"
-            action={<button className="quiet">По неделям ⌄</button>}
-          />
-          <div className="lineChart">
-            <div className="chartLines">
-              <i />
-              <i />
-              <i />
-              <i />
-            </div>
-            <div className="lineFill" />
-            <div className="lineStroke">●　　　●　　 ●　　　●　　 ●</div>
-            <div className="xaxis">
-              <span>15 июл</span>
-              <span>22 июл</span>
-              <span>29 июл</span>
-              <span>5 авг</span>
-              <span>12 авг</span>
-            </div>
-          </div>
-        </section>
-        <section className="panel effectiveness">
-          <PanelHead
-            title="Эффективность курсов"
-            text="По среднему результату"
-          />
-          <div>
-            {courseRows.slice(0, 4).map((c, i) => (
-              <div className="effectRow" key={c.title}>
-                <span>{i + 1}</span>
-                <div>
-                  <b>{c.title}</b>
-                  <small>{c.students || 48} учеников</small>
-                </div>
-                <div className="effectBar">
-                  <i style={{ width: `${[92, 87, 81, 74][i]}%` }} />
-                </div>
-                <strong>{[92, 87, 81, 74][i]}%</strong>
-              </div>
-            ))}
-          </div>
-        </section>
-      </div>
-    </main>
-  );
-}
 
 type CalendarEventRecord = {
   id: string;
@@ -1678,11 +1029,13 @@ function Calendar() {
     const data = new FormData(form);
     const start = new Date(String(data.get("start")));
     const end = new Date(String(data.get("end")));
-    if (!String(data.get("title") || "").trim() || Number.isNaN(start.getTime()) || end <= start) {
+    if (!String(data.get("title") || "").trim() || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) {
       setError("Заполните название и укажите корректное время окончания");
       return;
     }
     setSaving(true);
+    setError("");
+    try {
     const payload = {
       title: String(data.get("title")).trim(), description: String(data.get("description") || "").trim(),
       start_at: start.toISOString(), end_at: end.toISOString(), color: String(data.get("color")),
@@ -1695,6 +1048,8 @@ function Calendar() {
     setSaving(false);
     if (result.error) setError(result.error.message);
     else { setEditing(null); setSelected(start); setCursor(start); await loadEvents(); }
+    } catch { setError("Не удалось сохранить событие. Проверьте подключение и попробуйте снова."); }
+    finally { setSaving(false); }
   };
 
   const removeEvent = async (event: CalendarEventRecord) => {
@@ -1763,170 +1118,6 @@ function Calendar() {
   );
 }
 
-type PermissionKey =
-  | "courses.view" | "courses.edit" | "courses.publish"
-  | "users.view" | "users.add" | "users.roles"
-  | "reports.view" | "reports.export" | "calls.create";
-
-type AccessRole = {
-  id: string;
-  name: string;
-  description: string;
-  color: "violet" | "blue" | "green" | "orange" | "pink";
-  permissions: PermissionKey[];
-  system?: boolean;
-};
-
-const permissionGroups: { title: string; items: { id: PermissionKey; label: string }[] }[] = [
-  { title: "Курсы и контент", items: [
-    { id: "courses.view", label: "Просматривать назначенные курсы" },
-    { id: "courses.edit", label: "Редактировать уроки" },
-    { id: "courses.publish", label: "Публиковать изменения" },
-  ] },
-  { title: "Пользователи", items: [
-    { id: "users.view", label: "Просматривать учеников своих групп" },
-    { id: "users.add", label: "Добавлять учеников в группу" },
-    { id: "users.roles", label: "Изменять роли пользователей" },
-  ] },
-  { title: "Отчёты и встречи", items: [
-    { id: "reports.view", label: "Просматривать отчёты своих групп" },
-    { id: "reports.export", label: "Экспортировать отчёты" },
-    { id: "calls.create", label: "Создавать видеокомнаты" },
-  ] },
-];
-
-const allPermissions = permissionGroups.flatMap((group) => group.items.map((item) => item.id));
-const defaultRoles: AccessRole[] = [
-  { id: "admin", name: "Администратор", description: "Полный доступ ко всем функциям", color: "violet", permissions: allPermissions, system: true },
-  { id: "staff", name: "Наставник", description: "Ведёт назначенные курсы и группы", color: "green", permissions: ["courses.view", "courses.edit", "users.view", "users.add", "reports.view", "reports.export", "calls.create"], system: true },
-  { id: "student", name: "Ученик", description: "Учится на назначенных курсах", color: "pink", permissions: ["courses.view"], system: true },
-];
-
-function readSavedRoles() {
-  try {
-    const saved = JSON.parse(localStorage.getItem("lingvaedu.roles") || "null") as AccessRole[] | null;
-    if (Array.isArray(saved) && saved.length) {
-      const custom = saved.filter((role) => !defaultRoles.some((item) => item.id === role.id));
-      return defaultRoles.map((role) => saved.find((item) => item.id === role.id) || role).concat(custom);
-    }
-  } catch { /* use safe defaults */ }
-  return defaultRoles;
-}
-
-function Roles() {
-  const { session } = useAuth();
-  const [roles, setRoles] = useState<AccessRole[]>(readSavedRoles);
-  const [selectedId, setSelectedId] = useState("staff");
-  const [draft, setDraft] = useState<AccessRole>(() => ({ ...defaultRoles[1], permissions: [...defaultRoles[1].permissions] }));
-  const [counts, setCounts] = useState<Record<string, number>>({});
-  const [creating, setCreating] = useState(false);
-  const [newName, setNewName] = useState("");
-  const [message, setMessage] = useState("");
-  const selected = roles.find((role) => role.id === selectedId) || roles[0];
-
-  useEffect(() => {
-    if (!session?.access_token) return;
-    void fetch("/api/users", { headers: { Authorization: `Bearer ${session.access_token}` } })
-      .then((response) => response.ok ? response.json() : Promise.reject())
-      .then((payload: { users?: { role: string }[] }) => {
-        const next: Record<string, number> = {};
-        for (const user of payload.users || []) next[user.role] = (next[user.role] || 0) + 1;
-        setCounts(next);
-      })
-      .catch(() => undefined);
-  }, [session]);
-
-  const saveRoles = (next: AccessRole[]) => {
-    setRoles(next);
-    localStorage.setItem("lingvaedu.roles", JSON.stringify(next));
-  };
-  const selectRole = (id: string) => {
-    const role = roles.find((item) => item.id === id);
-    if (!role) return;
-    setSelectedId(id);
-    setDraft({ ...role, permissions: [...role.permissions] });
-    setMessage("");
-  };
-  const saveDraft = () => {
-    const name = draft.name.trim();
-    if (!name) return;
-    const next = roles.map((role) => role.id === draft.id ? { ...draft, name } : role);
-    saveRoles(next);
-    setMessage("Изменения сохранены");
-    window.setTimeout(() => setMessage(""), 2500);
-  };
-  const createRole = () => {
-    const name = newName.trim();
-    if (!name) return;
-    const role: AccessRole = { id: crypto.randomUUID(), name, description: "Новая пользовательская роль", color: "blue", permissions: [] };
-    saveRoles([...roles, role]);
-    setSelectedId(role.id); setDraft({ ...role, permissions: [] }); setCreating(false); setNewName(""); setMessage("Роль создана");
-  };
-  const duplicate = () => {
-    const copy: AccessRole = { ...draft, id: crypto.randomUUID(), name: `${draft.name} — копия`, system: false, permissions: [...draft.permissions] };
-    saveRoles([...roles, copy]); setSelectedId(copy.id); setDraft({ ...copy, permissions: [...copy.permissions] }); setMessage("Копия роли создана");
-  };
-  const remove = () => {
-    if (draft.system || !window.confirm(`Удалить роль «${draft.name}»?`)) return;
-    const next = roles.filter((role) => role.id !== draft.id);
-    saveRoles(next); setSelectedId(next[0].id); setDraft({ ...next[0], permissions: [...next[0].permissions] }); setMessage("Роль удалена");
-  };
-
-  return (
-    <main className="content fade">
-      <PageTitle
-        title="Роли и права"
-        text="Создавайте роли и точно настраивайте доступ к функциям."
-        action={<button className="btn primary" onClick={() => setCreating(true)}>＋ Создать роль</button>}
-      />
-      <div className="roleLayout">
-        <section className="roleList panel">
-          <PanelHead title="Роли" text={`${roles.length} ролей · ${Object.values(counts).reduce((sum, value) => sum + value, 0)} пользователей`} />
-          <select className="roleMobileSelect" value={selectedId} onChange={(event) => selectRole(event.target.value)} aria-label="Выбрать роль">{roles.map((role) => <option value={role.id} key={role.id}>{role.name}</option>)}</select>
-          {roles.map((role) => (
-            <button className={selectedId === role.id ? "active" : ""} key={role.id} onClick={() => selectRole(role.id)}>
-              <span className={role.color}>{role.name[0]}</span>
-              <div>
-                <b>{role.name}</b>
-                <small>{counts[role.id] || 0} пользователей{role.system ? " · системная" : ""}</small>
-              </div>
-              <i>›</i>
-            </button>
-          ))}
-        </section>
-        <section className="permissions panel">
-          <div className="permissionHead">
-            <div className={`roleBadge ${draft.color}`}>{draft.name[0] || "Р"}</div>
-            <div>
-              <span>РОЛЬ</span>
-              <input className="roleNameInput" value={draft.name} maxLength={60} onChange={(event) => setDraft({ ...draft, name: event.target.value })} aria-label="Название роли" />
-              <input className="roleDescriptionInput" value={draft.description} maxLength={160} onChange={(event) => setDraft({ ...draft, description: event.target.value })} aria-label="Описание роли" />
-            </div>
-            <button className="btn ghost" onClick={duplicate}>Дублировать</button>
-          </div>
-          {permissionGroups.map((group) => (
-            <div className="permissionSection" key={group.title}>
-              <h3>{group.title}</h3>
-              {group.items.map((permission) => (
-                <label key={permission.id}>
-                  <span>{permission.label}</span>
-                  <input
-                    type="checkbox"
-                    checked={draft.permissions.includes(permission.id)}
-                    onChange={() => setDraft({ ...draft, permissions: draft.permissions.includes(permission.id) ? draft.permissions.filter((id) => id !== permission.id) : [...draft.permissions, permission.id] })}
-                  />
-                  <i />
-                </label>
-              ))}
-            </div>
-          ))}
-          <div className="permissionActions"><button className="btn primary" onClick={saveDraft} disabled={!draft.name.trim()}>Сохранить изменения</button>{!draft.system && <button className="btn danger" onClick={remove}>Удалить роль</button>} {message && <span className="roleMessage">✓ {message}</span>}</div>
-        </section>
-      </div>
-      {creating && <Modal title="Создать роль" close={() => setCreating(false)}><form onSubmit={(event) => { event.preventDefault(); createRole(); }}><label>Название роли<input autoFocus required maxLength={60} value={newName} onChange={(event) => setNewName(event.target.value)} placeholder="Например, Куратор" /></label><button className="btn primary full" disabled={!newName.trim()}>Создать роль</button></form></Modal>}
-    </main>
-  );
-}
 
 function Modal({
   title,
@@ -1937,13 +1128,36 @@ function Modal({
   close: () => void;
   children: React.ReactNode;
 }) {
+  const titleId = useId();
+  const dialogRef = useRef<HTMLElement>(null);
+  const closeRef = useRef(close);
+  useLayoutEffect(() => { closeRef.current = close; });
+  useEffect(() => {
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const dialog = dialogRef.current;
+    dialog?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { event.preventDefault(); closeRef.current(); }
+      if (event.key !== "Tab" || !dialog) return;
+      const items = Array.from(dialog.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]')).filter((element) => element.getClientRects().length);
+      const first = items[0];
+      const last = items.at(-1);
+      if (!first) { event.preventDefault(); dialog.focus(); return; }
+      if (event.shiftKey && (document.activeElement === first || document.activeElement === dialog)) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && (document.activeElement === last || document.activeElement === dialog)) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => { document.body.style.overflow = previousOverflow; document.removeEventListener("keydown", onKeyDown); previousFocus?.focus(); };
+  }, []);
   return (
     <div className="modalLayer">
-      <button className="modalScrim" onClick={close} />
-      <section className="modal">
+      <button className="modalScrim" onClick={close} aria-label="Закрыть окно" tabIndex={-1} />
+      <section className="modal" ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}>
         <div className="modalHead">
-          <h2>{title}</h2>
-          <button onClick={close}>×</button>
+          <h2 id={titleId}>{title}</h2>
+          <button onClick={close} aria-label="Закрыть окно">×</button>
         </div>
         {children}
       </section>
@@ -1974,6 +1188,7 @@ export default function App() {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAdmin, canEditCourses } = useAuth();
+  const { loadError, progressError, reload, retryProgress } = useCourses();
   const page = pageByPath[location.pathname] ?? "overview";
   const setPage = (next: Page) => navigate(paths[next]);
   const adminOnlyPages: Page[] = ["assignments", "people", "reports", "roles"];
@@ -2005,17 +1220,23 @@ export default function App() {
     ) : page === "groups" ? (
       <GroupsPage />
     ) : page === "reports" ? (
-      <Reports />
+      <ReportsPage />
     ) : page === "calls" ? (
       <VideoRoomsPage />
     ) : page === "calendar" ? (
       <Calendar />
     ) : (
-      <Roles />
+      <RolesPage />
     );
   return (
     <Shell page={page} setPage={setPage}>
-      {content}
+      <ErrorBoundary key={location.pathname}>
+        {loadError && <div className="content"><div className="platformNotice" role="alert"><span>{loadError}</span><button className="btn ghost" onClick={reload}>Повторить</button></div></div>}
+        {progressError && <div className="content"><div className="platformNotice" role="status"><span>{progressError}</span><button className="btn ghost" onClick={() => void retryProgress()}>Повторить</button></div></div>}
+        <Suspense fallback={<main className="content"><PageState title="Загружаем раздел" description="Это займёт несколько секунд." loading /></main>}>
+          {pageByPath[location.pathname] || location.pathname === "/overview" ? content : <main className="content"><PageState title="Страница не найдена" description="Возможно, ссылка устарела. Откройте нужный раздел через меню." action={<button className="btn primary" onClick={() => setPage("overview")}>На главную</button>} /></main>}
+        </Suspense>
+      </ErrorBoundary>
       {page === "player" && <SelectionTranslator />}
     </Shell>
   );

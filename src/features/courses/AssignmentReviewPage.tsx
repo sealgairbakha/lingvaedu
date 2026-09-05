@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
 import { supabase } from "../../lib/supabase";
 import { useCourses } from "./CourseProvider";
+import { PageState } from "../../components/PageState";
 
 type ReviewSubmission = {
   id: string;
@@ -176,16 +177,22 @@ export function AssignmentReviewPage() {
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
   const [savingReply, setSavingReply] = useState(false);
   const [replyError, setReplyError] = useState("");
+  const [loadError, setLoadError] = useState("");
+  const [reloadVersion, setReloadVersion] = useState(0);
+  const [statusFilter, setStatusFilter] = useState<ReviewState | "all">("all");
 
   useEffect(() => {
     let active = true;
     const load = async () => {
       setLoading(true);
+      setLoadError("");
+      try {
       if (supabase && user) {
         const { data, error } = await supabase
           .from("course_assignment_submissions")
           .select("*")
           .order("updated_at", { ascending: false });
+        if (error) throw error;
         if (!error) {
           const nextSubmissions = ((data || []) as Record<string, unknown>[]).map(mapSubmission);
           const ids = nextSubmissions.map((item) => item.id);
@@ -195,7 +202,8 @@ export function AssignmentReviewPage() {
               .from("course_assignment_replies")
               .select("*")
               .in("submission_id", ids);
-            if (!replyError) nextReplies = ((replyRows || []) as Record<string, unknown>[]).map(mapReply);
+            if (replyError) throw replyError;
+            nextReplies = ((replyRows || []) as Record<string, unknown>[]).map(mapReply);
           }
           const urls: Record<string, string> = {};
           await Promise.all(nextSubmissions.map(async (item) => {
@@ -225,10 +233,16 @@ export function AssignmentReviewPage() {
         setSelectedId((current) => current || local.submissions[0]?.id || "");
         setLoading(false);
       }
+      } catch {
+        if (active) {
+          setLoadError("Не удалось загрузить работы учеников. Проверьте подключение и попробуйте снова.");
+          setLoading(false);
+        }
+      }
     };
     void load();
     return () => { active = false; };
-  }, [user]);
+  }, [user, reloadVersion]);
 
   const contexts = useMemo(() => submissions.map((submission) => {
     const course = courses.find((item) => item.id === submission.courseId);
@@ -246,10 +260,12 @@ export function AssignmentReviewPage() {
 
   const filtered = useMemo(() => {
     const query = search.trim().toLocaleLowerCase();
-    if (!query) return contexts;
-    return contexts.filter((item) => [item.courseTitle, item.moduleTitle, item.lessonTitle, item.blockTitle, item.submission.studentName]
-      .some((value) => value.toLocaleLowerCase().includes(query)));
-  }, [contexts, search]);
+    return contexts.filter((item) => {
+      const state = getReviewState(item.submission, replies.some((reply) => reply.submissionId === item.submission.id));
+      return (statusFilter === "all" || state === statusFilter) && (!query || [item.courseTitle, item.moduleTitle, item.lessonTitle, item.blockTitle, item.submission.studentName]
+        .some((value) => value.toLocaleLowerCase().includes(query)));
+    });
+  }, [contexts, search, replies, statusFilter]);
 
   const folders = useMemo(() => {
     const result = new Map<string, { id: string; title: string; items: typeof filtered }>();
@@ -261,7 +277,7 @@ export function AssignmentReviewPage() {
     return [...result.values()].sort((a, b) => a.title.localeCompare(b.title, "ru"));
   }, [filtered]);
 
-  const selected = contexts.find((item) => item.submission.id === selectedId) || filtered[0];
+  const selected = filtered.find((item) => item.submission.id === selectedId) || filtered[0];
   const selectedReply = selected ? replies.find((item) => item.submissionId === selected.submission.id) : undefined;
   const answered = new Set(replies.map((item) => item.submissionId)).size;
 
@@ -333,15 +349,20 @@ export function AssignmentReviewPage() {
 
       <label className="assignmentArchiveSearch">
         <span aria-hidden="true">⌕</span>
-        <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Найти курс, урок, задание или ученика" />
+        <input aria-label="Поиск по работам учеников" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Найти курс, урок, задание или ученика" />
       </label>
       <div className="assignmentStatusLegend" aria-label="Статусы проверки">
         {(["replied", "waiting", "overdue"] as ReviewState[]).map((state) => <span key={state}><ReviewStatusDot state={state}/>{reviewStateLabels[state]}</span>)}
       </div>
 
-      {loading ? <div className="assignmentArchiveEmpty">Загружаем задания…</div> : !submissions.length ? (
+      <div className="assignmentReviewControls" role="group" aria-label="Фильтр по статусу работы">
+        {(["all", "waiting", "overdue", "replied"] as const).map((state) => <button key={state} aria-pressed={statusFilter === state} onClick={() => setStatusFilter(state)}>{({ all: "Все", waiting: "Ждут ответа", overdue: "Просрочены", replied: "Проверены" })[state]}{" "}<span>{state === "all" ? submissions.length : submissions.filter((item) => getReviewState(item, replies.some((reply) => reply.submissionId === item.id)) === state).length}</span></button>)}
+        <button className="assignmentRefresh" disabled={loading} onClick={() => setReloadVersion((value) => value + 1)}>Обновить</button>
+      </div>
+
+      {loading ? <PageState title="Загружаем работы" description="Собираем задания и ответы преподавателей." loading /> : loadError ? <PageState title="Работы временно недоступны" description={loadError} action={<button className="btn primary" onClick={() => setReloadVersion((value) => value + 1)}>Попробовать снова</button>} /> : !submissions.length ? (
         <div className="assignmentArchiveEmpty"><FileIcon/><h2>Работ пока нет</h2><p>Здесь появятся задания, которые отправят ученики.</p></div>
-      ) : (
+      ) : !filtered.length ? <PageState title="Подходящих работ нет" description="Попробуйте другой запрос или снимите фильтр по статусу." action={<button className="btn ghost" onClick={() => { setSearch(""); setStatusFilter("all"); }}>Сбросить фильтры</button>} /> : (
         <div className="assignmentArchiveLayout">
           <section className="assignmentFolderList" aria-label="Папки курсов">
             {!folders.length && <div className="assignmentArchiveEmpty"><p>По вашему запросу ничего не найдено.</p></div>}

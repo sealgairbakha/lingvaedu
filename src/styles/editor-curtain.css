@@ -4253,12 +4253,12 @@ html[data-theme="dark"] .coursePlayer .learningContentHeader {
 .assignmentModuleFolder>button>span:nth-child(2)>b { overflow:hidden;font-size:14px;text-overflow:ellipsis;white-space:nowrap; }
 .assignmentModuleFolder>button>span:nth-child(2)>small { overflow:hidden;margin-top:4px;color:var(--muted);font-size:12px;text-overflow:ellipsis;white-space:nowrap; }
 .assignmentStudentAvatar { display:grid;place-items:center;width:34px;height:34px;flex:0 0 34px;border-radius:10px;background:linear-gradient(145deg,#806df8,#513ad5);color:#fff;font-size:12px;font-weight:900;box-shadow:0 5px 12px rgba(81,58,213,.2); }
-.assignmentReviewDot { display:grid;place-items:center;width:22px;height:22px;flex:0 0 22px;border:0;border-radius:50%;color:#fff;box-shadow:0 2px 5px rgba(31,40,61,.18); }
+.assignmentReviewDot { display:grid;place-items:center;width:16px;height:16px;flex:0 0 16px;border:0;border-radius:50%;color:#fff;box-shadow:none; }
 .assignmentReviewDot.replied { background:#32d77c;color:#20ad63; }
 .assignmentReviewDot.waiting { background:#ffad32;color:#e58b00; }
 .assignmentReviewDot.overdue { background:#ef4c58;color:#d92f3d; }
-.assignmentReviewDot svg { width:13px;height:13px;fill:none;stroke:#fff;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round; }
-.assignmentReviewDot>span { color:#fff;font-size:12px;font-weight:950;line-height:1; }
+.assignmentReviewDot svg { width:10px;height:10px;fill:none;stroke:#fff;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round; }
+.assignmentReviewDot>span { color:#fff;font-size:10px;font-weight:950;line-height:1; }
 .assignmentStatusLegend { display:flex;justify-content:flex-end;flex-wrap:wrap;gap:14px;margin:-7px 2px 15px; }
 .assignmentStatusLegend>span { display:flex;align-items:center;gap:6px;color:var(--muted);font-size:9px;font-weight:700; }
 .assignmentStatusLegend .assignmentReviewDot { width:14px;height:14px;flex-basis:14px;box-shadow:none; }
@@ -4344,7 +4344,7 @@ html[data-theme="dark"] .assignmentPreviewDate { background:#273044;color:#aeb8c
   .assignmentPreviewHead { align-items:flex-start;flex-wrap:wrap; }
   .assignmentStatusLegend { justify-content:flex-start;gap:10px;margin-top:-5px; }
   .assignmentPreviewHead>.assignmentReviewDot { margin-left:auto; }
-  .assignmentModuleFolder>button { grid-template-columns:34px minmax(0,1fr) 22px; }
+  .assignmentModuleFolder>button { grid-template-columns:34px minmax(0,1fr) 16px; }
   .assignmentModuleFolder>button>.assignmentReviewDot { align-self:center;justify-self:end; }
   .assignmentPreviewMessage,.assignmentPreviewReply { max-width:96%; }
 }

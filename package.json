@@ -9,6 +9,10 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "npm run lint && npm run typecheck && npm run test && npm run build",
+    "typecheck": "tsc -p tsconfig.checks.json",
     "preview": "vite preview",
     "admin:create": "node scripts/create-admin.mjs"
   },
@@ -22,6 +26,7 @@
   },
   "devDependencies": {
     "@eslint/js": "9.39.4",
+    "@testing-library/react": "^16.3.3",
     "@types/node": "22.19.19",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
@@ -30,9 +35,11 @@
     "eslint-plugin-react-hooks": "7.1.1",
     "eslint-plugin-react-refresh": "^0.5.4",
     "globals": "16.4.0",
+    "jsdom": "^28.1.0",
     "typescript": "5.9.3",
     "typescript-eslint": "8.59.3",
-    "vite": "8.0.13"
+    "vite": "^8.2.2",
+    "vitest": "^4.1.11"
   },
   "type": "module"
 }

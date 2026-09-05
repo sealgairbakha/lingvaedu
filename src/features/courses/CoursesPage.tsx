@@ -10,8 +10,9 @@ const courseLessons = (course: Course) => course.modules.flatMap((module) => mod
 
 function getCourseProgress(course: Course, progress: CourseLessonProgress[]) {
   const lessons = courseLessons(course);
-  const entries = progress.filter((item) => item.courseId === course.id);
-  const completed = entries.filter((item) => item.status === "completed").length;
+  const lessonIds = new Set(lessons.map((lesson) => lesson.id));
+  const entries = progress.filter((item) => item.courseId === course.id && lessonIds.has(item.lessonId));
+  const completed = new Set(entries.filter((item) => item.status === "completed").map((item) => item.lessonId)).size;
   const last = [...entries].sort((a, b) => Date.parse(b.lastOpenedAt) - Date.parse(a.lastOpenedAt))[0];
   const lastLesson = lessons.find((lesson) => lesson.id === last?.lessonId) || lessons[0];
   const percent = lessons.length ? Math.round((completed / lessons.length) * 100) : 0;
@@ -71,12 +72,23 @@ function AdminCourses() {
   const [q, setQ] = useState("");
   const [language, setLanguage] = useState("Все");
   const [author, setAuthor] = useState("Все");
+  const [actionError, setActionError] = useState("");
+  const [busyId, setBusyId] = useState("");
+  const runAction = async (id: string, action: () => Promise<unknown>) => {
+    if (busyId) return;
+    setBusyId(id);
+    setActionError("");
+    try { await action(); }
+    catch (error) { setActionError(error instanceof Error ? error.message : "Не удалось выполнить действие. Попробуйте снова."); }
+    finally { setBusyId(""); }
+  };
   const languages = [...new Set(courses.map((course) => course.language))];
   const authors = [...new Set(courses.map((course) => course.author))];
   const rows = useMemo(() => courses.filter((course) => (tab === "all" || course.status === tab) && (language === "Все" || course.language === language) && (author === "Все" || course.author === author) && `${course.title} ${course.description}`.toLowerCase().includes(q.toLowerCase())), [author, courses, language, q, tab]);
   const edit = (id: string) => navigate(`/courses/editor?course=${id}`);
   const create = () => edit(createCourse().id);
   return <main className="content fade coursesWorking">
+    {actionError && <div className="platformNotice" role="alert">{actionError}</div>}
     <div className="pageTitle"><div><h1>Курсы</h1><p>Создавайте программы обучения и управляйте их содержанием.</p></div><button className="btn primary" onClick={create}>＋ Новый курс</button></div>
     <div className="tabs">{(["all", "published", "draft", "archived"] as const).map((item) => <button key={item} className={tab === item ? "active" : ""} onClick={() => setTab(item)}>{labels[item]} <span>{courses.filter((course) => item === "all" || course.status === item).length}</span></button>)}</div>
     <div className="toolbar"><label><span>⌕</span><input value={q} onChange={(event) => setQ(event.target.value)} placeholder="Поиск по курсам" /></label><select className="filter" value={language} onChange={(event) => setLanguage(event.target.value)}><option>Все</option>{languages.map((item) => <option key={item}>{item}</option>)}</select><select className="filter" value={author} onChange={(event) => setAuthor(event.target.value)}><option>Все</option>{authors.map((item) => <option key={item}>{item}</option>)}</select></div>
@@ -85,7 +97,7 @@ function AdminCourses() {
       const mentorName = isCurrentAuthor ? displayName : course.mentor;
       const mentorAvatar = isCurrentAuthor ? avatarUrl : course.mentorAvatar;
       return <article className="courseCard" key={course.id}>
-        <button className="courseCoverButton" onClick={() => navigate(`/courses/learn?course=${course.id}`)}><CourseCover course={course} /></button>
+        <button className="courseCoverButton" aria-label={`Открыть курс ${course.title}`} onClick={() => navigate(`/courses/learn?course=${course.id}`)}><CourseCover course={course} /></button>
         <div className="courseInfo">
           <div className="statusRow"><span className={course.status === "published" ? "published" : "draft"}>● {statusLabel[course.status]}</span><small>{new Date(course.updatedAt).toLocaleDateString("ru-RU")}</small></div>
           <h3>{course.title}</h3><p>{course.description}</p>
@@ -97,7 +109,7 @@ function AdminCourses() {
               <div><small>НАСТАВНИК КУРСА</small><b>{mentorName}</b></div>
               <span className="courseMentorVerified" title="Наставник курса"><MentorVerifiedIcon /></span>
             </div>
-            <div className="courseActions"><button onClick={() => duplicateCourse(course.id)}>Дублировать</button><button onClick={() => saveCourse({ ...course, status: course.status === "archived" ? "draft" : "archived" })}>{course.status === "archived" ? "Вернуть" : "В архив"}</button><button className="editCourseAction" onClick={() => edit(course.id)}>Редактировать</button><button className="dangerText" onClick={() => confirm(`Удалить курс «${course.title}»?`) && removeCourse(course.id)}>Удалить</button></div>
+            <div className="courseActions" aria-busy={busyId === course.id}><button disabled={Boolean(busyId)} onClick={() => void runAction(course.id, () => duplicateCourse(course.id))}>Дублировать</button><button disabled={Boolean(busyId)} onClick={() => void runAction(course.id, () => saveCourse({ ...course, status: course.status === "archived" ? "draft" : "archived" }))}>{course.status === "archived" ? "Вернуть" : "В архив"}</button><button className="editCourseAction" onClick={() => edit(course.id)}>Редактировать</button><button disabled={Boolean(busyId)} className="dangerText" onClick={() => { if (confirm(`Удалить курс «${course.title}»?`)) void runAction(course.id, () => removeCourse(course.id)); }}>Удалить</button></div>
           </div>
         </div>
       </article>;

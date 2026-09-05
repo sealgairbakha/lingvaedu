@@ -11,6 +11,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
 import { supabase } from "../../lib/supabase";
 import { useCourses } from "./CourseProvider";
+import { downloadCourseDraft } from "./courseDraft";
 import { LessonBlockView } from "./CoursePlayerPage";
 import { BlockIcon } from "./BlockIcon";
 import { RichTextEditor } from "./RichTextEditor";
@@ -1276,35 +1277,46 @@ export function CourseEditorPage() {
       setSaving(true);
       setSaveError("");
       try {
-        await store.saveCourse(course);
-        savedCourseRef.current = structuredClone(course);
+        const persisted = await store.saveCourse(course);
+        savedCourseRef.current = structuredClone(persisted);
+        setCourse((current) => current?.id === persisted.id ? { ...current, updatedAt: persisted.updatedAt } : current);
         if (version === changeVersionRef.current) setSaved(true);
-      } catch {
-        setSaveError("Ошибка сохранения");
+      } catch (error) {
+        setSaveError(error instanceof Error ? error.message : "Ошибка сохранения");
       } finally {
         setSaving(false);
       }
     }
   };
   useEffect(() => {
-    if (!autoSaveEnabled || !course || saved || saving) return;
+    if (!autoSaveEnabled || !course || saved || saving || saveError) return;
     const snapshot = structuredClone(course);
     const version = changeVersionRef.current;
     const timer = window.setTimeout(async () => {
       setSaving(true);
       setSaveError("");
       try {
-        await store.saveCourse(snapshot);
-        savedCourseRef.current = structuredClone(snapshot);
+        const persisted = await store.saveCourse(snapshot);
+        savedCourseRef.current = structuredClone(persisted);
+        setCourse((current) => current?.id === persisted.id ? { ...current, updatedAt: persisted.updatedAt } : current);
         if (version === changeVersionRef.current) setSaved(true);
-      } catch {
-        setSaveError("Ошибка сохранения");
+      } catch (error) {
+        setSaveError(error instanceof Error ? error.message : "Ошибка сохранения");
       } finally {
         setSaving(false);
       }
     }, 800);
     return () => window.clearTimeout(timer);
-  }, [autoSaveEnabled, course, saved, saving, store]);
+  }, [autoSaveEnabled, course, saved, saving, saveError, store]);
+  useEffect(() => {
+    if (saved) return;
+    const warnBeforeClosing = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warnBeforeClosing);
+    return () => window.removeEventListener("beforeunload", warnBeforeClosing);
+  }, [saved]);
   const cancelChanges = () => {
     const snapshot = savedCourseRef.current;
     if (!snapshot || saving) return;
@@ -1321,6 +1333,7 @@ export function CourseEditorPage() {
     setSelected("");
     setUploadError("");
     setSaved(true);
+    setSaveError("");
   };
   const rendered = visibleBlocks;
   const previewLessons = course?.modules.flatMap((item) => item.lessons) || [];
@@ -1418,9 +1431,9 @@ export function CourseEditorPage() {
             <span>Блоки</span>
           </button>
         </div>
-        <div className="saveState">
+        <div className="saveState" role="status" title={saveError || undefined}>
           <i className={saveError ? "error" : saved ? "saved" : ""} />
-          {saveError || (saving
+          {(saveError ? "Не удалось сохранить" : "") || (saving
             ? "Сохраняем изменения…"
             : saved
               ? "Все изменения сохранены"
@@ -1438,6 +1451,7 @@ export function CourseEditorPage() {
             onChange={(event) => {
               const enabled = event.target.checked;
               setAutoSaveEnabled(enabled);
+              setSaveError("");
               localStorage.setItem("lingvaedu-editor-autosave", String(enabled));
             }}
           />
@@ -1464,6 +1478,7 @@ export function CourseEditorPage() {
           {saving ? "Сохраняем…" : saved ? "Сохранено" : "Сохранить"}
         </button>
       </div>
+      {saveError && <div className="platformNotice editorSaveNotice" role="alert"><span>{saveError} Ваши изменения остаются в редакторе. Можно скачать их в JSON; вложения сохраняются как ссылки.</span><div className="editorSaveActions"><button className="btn ghost" onClick={() => downloadCourseDraft(course)}>Скачать черновик</button><button className="btn ghost" disabled={saving} onClick={() => void save()}>Повторить</button></div></div>}
       {mobilePanel && (
         <button
           type="button"

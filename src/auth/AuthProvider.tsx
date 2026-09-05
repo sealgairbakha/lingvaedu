@@ -6,6 +6,8 @@ type AuthContextValue = {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  recovery: boolean;
+  finishRecovery: () => void;
   displayName: string;
   initials: string;
   avatarUrl: string;
@@ -20,18 +22,27 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(isSupabaseConfigured);
+  const [recovery, setRecovery] = useState(() => new URLSearchParams(window.location.hash.slice(1)).get("type") === "recovery");
 
   useEffect(() => {
     if (!supabase) return;
+    let active = true;
+    let authEventReceived = false;
     supabase.auth.getSession().then(({ data }) => {
+      if (!active || authEventReceived) return;
       setSession(data.session);
       setLoading(false);
+    }).catch(() => {
+      if (active && !authEventReceived) setLoading(false);
     });
     const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      authEventReceived = true;
+      if (_event === "PASSWORD_RECOVERY") setRecovery(true);
+      if (_event === "SIGNED_OUT") setRecovery(false);
       setSession(nextSession);
       setLoading(false);
     });
-    return () => data.subscription.unsubscribe();
+    return () => { active = false; data.subscription.unsubscribe(); };
   }, []);
 
   const value = useMemo<AuthContextValue>(() => {
@@ -55,6 +66,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user,
       session,
       loading,
+      recovery,
+      finishRecovery: () => setRecovery(false),
       displayName,
       initials,
       avatarUrl,
@@ -65,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await supabase?.auth.signOut();
       },
     };
-  }, [session, loading]);
+  }, [session, loading, recovery]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

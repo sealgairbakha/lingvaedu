@@ -9,7 +9,7 @@ function validatePassword(password: string) {
 }
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, recovery } = useAuth();
   const [mode, setMode] = useState<Mode>(() =>
     new URLSearchParams(window.location.search).get("register") === "1"
       ? "register"
@@ -24,8 +24,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
   if (!isSupabaseConfigured) return <AuthSetup/>;
   if (loading) return <div className="authLoading"><div className="authSpinner"/><b>LingvaEdu</b></div>;
-  if (user?.user_metadata?.must_change_password === true)
-    return <FirstLoginPassword />;
+  if (user && (recovery || user.user_metadata?.must_change_password === true))
+    return <FirstLoginPassword recovery={recovery} />;
   if (user) return children;
 
   const submit = async (event: React.FormEvent) => {
@@ -78,11 +78,11 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     } finally { setBusy(false); }
   };
 
-  return <div className="authPage"><section className="authBrand"><div className="authLogo"><span>lv</span><b>Lingva<span>Edu</span></b></div><div className="authBrandCopy"><span>ОБУЧЕНИЕ БЕЗ ГРАНИЦ</span><h1>Языки открывают<br/><em>новые возможности.</em></h1><p>Учитесь в своём темпе, общайтесь с наставниками и отслеживайте прогресс в одном пространстве.</p></div><div className="authQuote"><div className="quoteAvatars"><i>AK</i><i>МИ</i><i>+1K</i></div><p>Более 1 200 учеников уже учатся с LingvaEdu</p></div></section><section className="authFormSide"><div className="authFormWrap">{mode === "check-email" ? <div className="emailSent"><div>✉</div><span>ПРОВЕРЬТЕ ПОЧТУ</span><h2>Письмо уже в пути</h2><p>Мы отправили ссылку на <b>{email}</b>. Перейдите по ней — только после подтверждения почты аккаунт станет активным.</p><button className="authPrimary" onClick={()=>setMode("login")}>Вернуться ко входу</button><small>Не пришло письмо? Проверьте папку «Спам».</small></div> : <><div className="authHeading"><span>{mode === "register" ? "НОВЫЙ АККАУНТ" : mode === "forgot" ? "ВОССТАНОВЛЕНИЕ" : "С ВОЗВРАЩЕНИЕМ"}</span><h2>{mode === "register" ? "Создайте аккаунт" : mode === "forgot" ? "Восстановить пароль" : "Войдите в LingvaEdu"}</h2><p>{mode === "register" ? "Для регистрации понадобится действующая электронная почта." : mode === "forgot" ? "Отправим безопасную ссылку на вашу почту." : "Продолжите обучение с того места, где остановились."}</p></div><form onSubmit={submit}>{mode === "register" && <label>Имя и фамилия<input value={name} onChange={e=>setName(e.target.value)} autoComplete="name" placeholder="Алия Касымова" required/></label>}<label>{mode === "login" ? "Email или имя пользователя" : "Электронная почта"}<input value={email} onChange={e=>setEmail(e.target.value)} type={mode === "login" ? "text" : "email"} autoComplete={mode === "login" ? "username" : "email"} placeholder={mode === "login" ? "name@example.com или alina.k" : "name@example.com"} required/></label>{mode !== "forgot" && <label>Пароль<input value={password} onChange={e=>setPassword(e.target.value)} type="password" autoComplete={mode === "register" ? "new-password" : "current-password"} placeholder="Минимум 8 символов" required/></label>}{mode === "register" && <><label>Повторите пароль<input value={confirm} onChange={e=>setConfirm(e.target.value)} type="password" autoComplete="new-password" required/></label><p className="passwordHint">8+ символов · заглавная буква · минимум одна цифра</p></>}{error && <div className="authError">! {error}</div>}{mode === "login" && <button type="button" className="forgotLink" onClick={()=>setMode("forgot")}>Забыли пароль?</button>}<button className="authPrimary" disabled={busy}>{busy ? "Подождите…" : mode === "register" ? "Создать аккаунт" : mode === "forgot" ? "Отправить ссылку" : "Войти"}</button></form><div className="authSwitch">{mode === "register" ? <>Уже есть аккаунт? <button onClick={()=>setMode("login")}>Войти</button></> : mode === "forgot" ? <button onClick={()=>setMode("login")}>← Вернуться ко входу</button> : <>Нет аккаунта? <button onClick={()=>setMode("register")}>Зарегистрироваться</button></>}</div><p className="authLegal">Продолжая, вы принимаете условия использования и политику конфиденциальности LingvaEdu.</p></>}</div></section></div>;
+  return <div className="authPage"><section className="authBrand"><div className="authLogo"><span>lv</span><b>Lingva<span>Edu</span></b></div><div className="authBrandCopy"><span>ОБУЧЕНИЕ БЕЗ ГРАНИЦ</span><h1>Языки открывают<br/><em>новые возможности.</em></h1><p>Учитесь в своём темпе, общайтесь с наставниками и отслеживайте прогресс в одном пространстве.</p></div><div className="authQuote"><div className="quoteAvatars"><i>AK</i><i>МИ</i><i>+1K</i></div><p>Более 1 200 учеников уже учатся с LingvaEdu</p></div></section><section className="authFormSide"><div className="authFormWrap">{mode === "check-email" ? <div className="emailSent"><div>✉</div><span>ПРОВЕРЬТЕ ПОЧТУ</span><h2>Письмо уже в пути</h2><p>Мы отправили ссылку на <b>{email}</b>. Перейдите по ней — только после подтверждения почты аккаунт станет активным.</p><button className="authPrimary" onClick={()=>setMode("login")}>Вернуться ко входу</button><small>Не пришло письмо? Проверьте папку «Спам».</small></div> : <><div className="authHeading"><span>{mode === "register" ? "НОВЫЙ АККАУНТ" : mode === "forgot" ? "ВОССТАНОВЛЕНИЕ" : "С ВОЗВРАЩЕНИЕМ"}</span><h2>{mode === "register" ? "Создайте аккаунт" : mode === "forgot" ? "Восстановить пароль" : "Войдите в LingvaEdu"}</h2><p>{mode === "register" ? "Для регистрации понадобится действующая электронная почта." : mode === "forgot" ? "Отправим безопасную ссылку на вашу почту." : "Продолжите обучение с того места, где остановились."}</p></div><form onSubmit={submit}>{mode === "register" && <label>Имя и фамилия<input value={name} onChange={e=>setName(e.target.value)} autoComplete="name" placeholder="Алия Касымова" required/></label>}<label>{mode === "login" ? "Email или имя пользователя" : "Электронная почта"}<input value={email} onChange={e=>setEmail(e.target.value)} type={mode === "login" ? "text" : "email"} autoComplete={mode === "login" ? "username" : "email"} placeholder={mode === "login" ? "name@example.com или alina.k" : "name@example.com"} required/></label>{mode !== "forgot" && <label>Пароль<input value={password} onChange={e=>setPassword(e.target.value)} type="password" autoComplete={mode === "register" ? "new-password" : "current-password"} placeholder="Минимум 8 символов" required/></label>}{mode === "register" && <><label>Повторите пароль<input value={confirm} onChange={e=>setConfirm(e.target.value)} type="password" autoComplete="new-password" required/></label><p className="passwordHint">8+ символов · заглавная буква · минимум одна цифра</p></>}{error && <div className="authError" role="alert">! {error}</div>}{mode === "login" && <button type="button" className="forgotLink" onClick={()=>setMode("forgot")}>Забыли пароль?</button>}<button className="authPrimary" disabled={busy}>{busy ? "Подождите…" : mode === "register" ? "Создать аккаунт" : mode === "forgot" ? "Отправить ссылку" : "Войти"}</button></form><div className="authSwitch">{mode === "register" ? <>Уже есть аккаунт? <button onClick={()=>setMode("login")}>Войти</button></> : mode === "forgot" ? <button onClick={()=>setMode("login")}>← Вернуться ко входу</button> : <>Нет аккаунта? <button onClick={()=>setMode("register")}>Зарегистрироваться</button></>}</div><p className="authLegal">Продолжая, вы принимаете условия использования и политику конфиденциальности LingvaEdu.</p></>}</div></section></div>;
 }
 
-function FirstLoginPassword() {
-  const { user, signOut } = useAuth();
+function FirstLoginPassword({ recovery = false }: { recovery?: boolean }) {
+  const { user, signOut, finishRecovery } = useAuth();
   const [nextPassword, setNextPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [error, setError] = useState("");
@@ -101,15 +101,19 @@ function FirstLoginPassword() {
       return;
     }
     setBusy(true);
-    const { error: updateError } = await supabase.auth.updateUser({
-      password: nextPassword,
-      data: { ...user.user_metadata, must_change_password: false },
-    });
-    setBusy(false);
-    if (updateError) setError(updateError.message);
+    try {
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: nextPassword,
+        data: { ...user.user_metadata, must_change_password: false },
+      });
+      if (updateError) throw updateError;
+      finishRecovery();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Не удалось изменить пароль. Попробуйте снова.");
+    } finally { setBusy(false); }
   };
 
-  return <div className="authPage"><section className="authBrand"><div className="authLogo"><span>lv</span><b>Lingva<span>Edu</span></b></div><div className="authBrandCopy"><span>БЕЗОПАСНОСТЬ АККАУНТА</span><h1>Создайте свой<br/><em>новый пароль.</em></h1><p>Временный пароль нужен только для первого входа. После его смены откроется личный кабинет.</p></div></section><section className="authFormSide"><div className="authFormWrap"><div className="authHeading"><span>ПЕРВЫЙ ВХОД</span><h2>Установите новый пароль</h2><p>Придумайте пароль, который будете использовать для следующих входов.</p></div><form onSubmit={submit}><label>Новый пароль<input value={nextPassword} onChange={(event)=>setNextPassword(event.target.value)} type="password" autoComplete="new-password" placeholder="Минимум 8 символов" required/></label><label>Повторите новый пароль<input value={confirmation} onChange={(event)=>setConfirmation(event.target.value)} type="password" autoComplete="new-password" required/></label><p className="passwordHint">8+ символов · заглавная буква · минимум одна цифра</p>{error && <div className="authError">! {error}</div>}<button className="authPrimary" disabled={busy}>{busy ? "Сохраняем…" : "Сохранить новый пароль"}</button></form><div className="authSwitch"><button onClick={()=>void signOut()}>Выйти из аккаунта</button></div></div></section></div>;
+  return <div className="authPage"><section className="authBrand"><div className="authLogo"><span>lv</span><b>Lingva<span>Edu</span></b></div><div className="authBrandCopy"><span>БЕЗОПАСНОСТЬ АККАУНТА</span><h1>Создайте свой<br/><em>новый пароль.</em></h1><p>{recovery ? "Задайте новый пароль, чтобы восстановить доступ к своему аккаунту." : "Временный пароль нужен только для первого входа. После его смены откроется личный кабинет."}</p></div></section><section className="authFormSide"><div className="authFormWrap"><div className="authHeading"><span>{recovery ? "ВОССТАНОВЛЕНИЕ ДОСТУПА" : "ПЕРВЫЙ ВХОД"}</span><h2>Установите новый пароль</h2><p>Придумайте пароль, который будете использовать для следующих входов.</p></div><form onSubmit={submit}><label>Новый пароль<input value={nextPassword} onChange={(event)=>setNextPassword(event.target.value)} type="password" autoComplete="new-password" placeholder="Минимум 8 символов" required/></label><label>Повторите новый пароль<input value={confirmation} onChange={(event)=>setConfirmation(event.target.value)} type="password" autoComplete="new-password" required/></label><p className="passwordHint">8+ символов · заглавная буква · минимум одна цифра</p>{error && <div className="authError" role="alert">! {error}</div>}<button className="authPrimary" disabled={busy}>{busy ? "Сохраняем…" : "Сохранить новый пароль"}</button></form><div className="authSwitch"><button onClick={()=>void signOut()}>Выйти из аккаунта</button></div></div></section></div>;
 }
 
 function AuthSetup() {

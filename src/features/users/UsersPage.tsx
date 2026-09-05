@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
+import { downloadCsv } from "../../lib/csv";
 
 type UserRole = "admin" | "staff" | "student";
 type UserStatus = "active" | "invited" | "blocked";
@@ -53,10 +54,6 @@ function activityLabel(value: string | null) {
     return `${Math.floor(difference / 3_600_000)} ч назад`;
   if (difference < 172_800_000) return "Вчера";
   return date.toLocaleDateString("ru-RU");
-}
-
-function csvCell(value: string | number) {
-  return `"${String(value).replaceAll('"', '""')}"`;
 }
 
 function SummaryIcon({ kind }: { kind: "users" | "activity" | "staff" | "groups" }) {
@@ -267,15 +264,7 @@ export function UsersPage() {
         activityLabel(user.lastSignInAt),
       ]),
     ];
-    const blob = new Blob(
-      [`\uFEFF${rows.map((row) => row.map(csvCell).join(";")).join("\n")}`],
-      { type: "text/csv;charset=utf-8" },
-    );
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `lingvaedu-users-${new Date().toISOString().slice(0, 10)}.csv`;
-    link.click();
-    URL.revokeObjectURL(link.href);
+    downloadCsv(`lingvaedu-users-${new Date().toISOString().slice(0, 10)}.csv`, rows);
   };
 
   return (
