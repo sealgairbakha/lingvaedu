@@ -1,0 +1,37 @@
+/* Shared Overview backdrop. Lesson editor and player opt out in Shell. */
+.mainShell.workspaceBackdrop {
+  --workspace-glow-violet: #b5a1ff80;
+  --workspace-glow-lime: #c5e98b70;
+  position: relative;
+  isolation: isolate;
+  background: var(--bg);
+}
+html[data-theme="dark"] .mainShell.workspaceBackdrop {
+  --workspace-glow-violet: #7657cf40;
+  --workspace-glow-lime: #829e422b;
+}
+.workspaceAmbient { position: absolute; z-index: 0; inset: var(--topbar-height, 68px) 0 0; overflow: hidden; pointer-events: none; }
+.workspaceAmbient > span { position: absolute; width: max(85%, 650px); height: 1000px; left: -25%; top: -240px; background: radial-gradient(ellipse, var(--workspace-glow-violet) 0%, transparent 70%); }
+.workspaceAmbient > span + span { width: max(80%, 600px); height: 1200px; left: auto; right: -25%; top: 260px; background: radial-gradient(ellipse, var(--workspace-glow-lime) 0%, transparent 70%); }
+.mainShell.workspaceBackdrop > .content { position: relative; z-index: 1; background: transparent; }
+.mainShell.workspaceBackdrop > .topbar {
+  background: rgba(255, 255, 255, .8);
+  box-shadow: 0 1px 0 rgba(71, 79, 105, .07);
+  backdrop-filter: blur(18px) saturate(135%);
+}
+html[data-theme="dark"] .mainShell.workspaceBackdrop > .topbar {
+  background: rgba(17, 23, 34, .88);
+  box-shadow: 0 1px 0 rgba(210, 218, 235, .06);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .workspaceAmbient > span { animation: workspaceAuroraViolet 4.8s cubic-bezier(.77, 0, .175, 1) 1 forwards; }
+  .workspaceAmbient > span + span { animation: workspaceAuroraLime 4.8s cubic-bezier(.77, 0, .175, 1) 1 forwards; }
+}
+@keyframes workspaceAuroraViolet {
+  from { transform: translate(-8%, 5%) scale(.9); opacity: .65; }
+  to { transform: translate(8%, 17%) scale(1.12); opacity: 1; }
+}
+@keyframes workspaceAuroraLime {
+  from { transform: translate(10%, 10%) scale(.85); opacity: .55; }
+  to { transform: translate(-20%, -17%) scale(1.15); opacity: .95; }
+}

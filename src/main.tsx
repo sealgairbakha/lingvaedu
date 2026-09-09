@@ -16,6 +16,7 @@ import "./styles/groups.css";
 import "./styles/selects.css";
 import "./styles/responsive.css";
 import "./styles/platform.css";
+import "./styles/workspace-backdrop.css";
 
 // eslint-disable-next-line react-refresh/only-export-components
 const App = lazy(() => import("./App"));

@@ -1,0 +1,145 @@
+/* Overview owns its layout; shared shell, typeface and semantic colors stay intact. */
+.overviewPage {
+  --overview-muted: #606a7c;
+  --overview-subtle: #f1f2f7;
+  --overview-accent: #654bf6;
+  --overview-positive: #217a59;
+  --overview-warning: #98601c;
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  gap: 24px;
+  color: var(--ink);
+}
+html[data-theme="dark"] .overviewPage {
+  --overview-muted: #aab4c7;
+  --overview-subtle: #252e40;
+  --overview-accent: #b5a5ff;
+  --overview-positive: #75d7af;
+  --overview-warning: #efbb75;
+}
+.overviewPage svg { width: 20px; height: 20px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.overviewHeader { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 0; }
+.overviewHeader h1 { margin: 0; font-size: 1.5rem; font-weight: 650; line-height: 1.25; letter-spacing: -.03em; overflow-wrap: anywhere; }
+.overviewHeader p { margin: 8px 0 0; color: var(--overview-muted); font-size: .875rem; line-height: 1.6; }
+.overviewHeaderActions { display: flex; align-items: center; gap: 20px; flex-shrink: 0; }
+.overviewHeader time { color: var(--overview-muted); font-size: .8125rem; white-space: nowrap; }
+.overviewPrimary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 16px; border: 0; border-radius: 10px; background: #654bf6; color: #fff; font-size: .875rem; font-weight: 600; line-height: 1.4; }
+.overviewWelcome { position: relative; isolation: isolate; display: flex; align-items: center; min-height: 310px; overflow: hidden; border-radius: 22px; background: #302657; color: #fff; }
+.overviewWelcomeCopy { position: relative; z-index: 1; width: 57%; padding: 32px 40px; }
+.overviewWelcomeEyebrow { color: #d0c7ee; font-size: .75rem; font-weight: 500; letter-spacing: .025em; }
+.overviewWelcome h2 { margin: 14px 0 12px; color: #fff; font-size: clamp(1.875rem, 3vw, 2.75rem); font-weight: 550; line-height: 1.12; letter-spacing: -.045em; overflow-wrap: anywhere; }
+.overviewGreetingDot { color: #c9f45d; }
+.overviewWelcome p { max-width: 36ch; margin: 0 0 22px; color: #dfdaed; font-size: .875rem; line-height: 1.65; }
+.overviewWelcomeAction { background: #c9f45d; color: #263517; box-shadow: 0 2px 0 #18231726; }
+.overviewWelcomeArt { --art-rest-y: -50%; position: absolute; z-index: 0; right: 1%; top: 50%; width: 46%; height: 100%; object-fit: contain; transform: translateY(var(--art-rest-y)); pointer-events: none; }
+/* A single decorative greeting, after the image loads. It settles within five seconds. */
+@media (prefers-reduced-motion: no-preference) {
+  .overviewWelcomeArtReady { animation: overviewArtFloat 4.8s cubic-bezier(.77, 0, .175, 1) 1; }
+}
+@keyframes overviewArtFloat {
+  0%, 100% { transform: translateY(var(--art-rest-y)) rotate(0deg); }
+  25% { transform: translateY(calc(var(--art-rest-y) - 10px)) rotate(-2deg); }
+  50% { transform: translateY(calc(var(--art-rest-y) + 3px)) rotate(1deg); }
+  75% { transform: translateY(calc(var(--art-rest-y) - 5px)) rotate(-.7deg); }
+}
+.overviewTextButton { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 8px 0; border: 0; background: transparent; color: var(--overview-accent); font-size: .8125rem; font-weight: 600; line-height: 1.4; text-align: left; }
+.overviewMetrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0; padding: 20px 0; border: 1px solid var(--line); border-radius: 16px; background: var(--card); }
+.overviewMetric { min-width: 0; padding: 0 24px; border-inline-start: 1px solid var(--line); }
+.overviewMetric:first-child { border-inline-start: 0; }
+.overviewMetric dt { color: var(--overview-muted); font-size: .8125rem; font-weight: 500; line-height: 1.5; }
+.overviewMetric dd { margin: 0; }
+.overviewMetric strong { display: flex; align-items: center; min-height: 38px; margin: 7px 0 4px; font-size: 2rem; font-weight: 550; line-height: 1.2; letter-spacing: -.035em; font-variant-numeric: tabular-nums; }
+.overviewMetric small { display: block; color: var(--overview-muted); font-size: .75rem; line-height: 1.5; }
+.overviewNotice { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: -10px; padding: 0 4px; color: var(--overview-muted); font-size: .8125rem; line-height: 1.5; }
+.overviewNotice button { min-height: 44px; flex-shrink: 0; padding: 8px; border: 0; border-radius: 6px; background: transparent; color: var(--overview-accent); font-weight: 600; }
+.overviewNotice button:disabled { color: var(--overview-muted); opacity: .6; cursor: default; }
+.overviewColumns { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr); gap: 24px; align-items: start; }
+.overviewPanel { min-width: 0; overflow: visible; border: 1px solid var(--line); border-radius: 16px; background: var(--card); }
+.overviewSectionHeading { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 24px 24px 20px; }
+.overviewSectionHeading h2 { margin: 0; font-size: 1.0625rem; line-height: 1.4; font-weight: 650; letter-spacing: -.015em; }
+.overviewSectionHeading p { margin: 5px 0 0; color: var(--overview-muted); font-size: .8125rem; line-height: 1.5; }
+.overviewSectionHeading > .overviewTextButton { flex-shrink: 0; }
+.overviewChart { display: grid; gap: 14px; list-style: none; padding: 0 24px 24px; margin: 0; }
+.overviewChart li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(60px, .6fr) 30px; align-items: center; gap: 7px 16px; }
+.overviewChartLabel { min-width: 0; color: var(--ink); font-size: .8125rem; font-weight: 500; line-height: 1.5; text-decoration: none; overflow-wrap: anywhere; text-underline-offset: 3px; }
+.overviewChartValue { grid-column: 3; grid-row: 1; color: var(--overview-muted); font-size: .8125rem; font-variant-numeric: tabular-nums; text-align: right; }
+.overviewBar { height: 6px; overflow: hidden; border-radius: 3px; background: var(--overview-subtle); }
+.overviewChart .overviewBar { grid-column: 2; grid-row: 1; }
+.overviewBar > span { display: block; height: 100%; border-radius: inherit; background: var(--overview-accent); }
+.overviewPanelFoot { padding: 14px 24px; border-top: 1px solid var(--line); color: var(--overview-muted); font-size: .75rem; line-height: 1.5; }
+.overviewStatusList { margin: 0; padding: 0 24px; }
+.overviewStatusList > div { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 70px; border-bottom: 1px solid var(--line); }
+.overviewStatusList > div:first-child { border-top: 1px solid var(--line); }
+.overviewStatusList dt { display: flex; align-items: baseline; gap: 10px; font-size: .875rem; font-weight: 550; line-height: 1.5; }
+.overviewStatusList small { display: block; margin-top: 3px; color: var(--overview-muted); font-size: .75rem; font-weight: 400; }
+.overviewStatusList i { width: 7px; height: 7px; flex: 0 0 7px; border-radius: 50%; background: var(--overview-muted); }
+.overviewStatusList i[data-status="published"] { background: var(--overview-positive); }
+.overviewStatusList i[data-status="draft"] { background: var(--overview-warning); }
+.overviewStatusList dd { margin: 0; font-size: 1.375rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.overviewCatalogAction { padding: 10px 24px; }
+.overviewEmpty { padding: 12px 24px 28px; }
+.overviewEmpty h3 { margin: 0 0 8px; font-size: .9375rem; font-weight: 600; }
+.overviewEmpty p { max-width: 65ch; margin: 0; font-size: .875rem; line-height: 1.65; color: var(--overview-muted); }
+.overviewEmpty .overviewTextButton { margin-top: 12px; }
+.overviewRecent { border: 0; background: transparent; }
+.overviewRecent > .overviewSectionHeading { padding: 4px 0 18px; }
+.overviewCourseList { list-style: none; padding: 0; margin: 0; }
+.overviewCourseList > li { min-width: 0; }
+.overviewCourseLink { display: block; color: var(--ink); text-decoration: none; transition: border-color 150ms ease, box-shadow 150ms ease; }
+.overviewCourseLink .courseInfo h3 { overflow-wrap: anywhere; }
+.overviewCourseLink .openCourseBtn { display: block; text-align: center; }
+.overviewCourseProgress { margin: 14px 0; }
+.overviewCourseProgress > span { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 8px; color: var(--overview-muted); font-size: .75rem; line-height: 1.5; }
+.overviewCourseProgress b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.overviewSkeleton { display: block; height: 14px; border-radius: 4px; background: var(--overview-subtle); }
+.overviewNumberSkeleton { width: 72px; height: 32px; }
+.overviewLoading { padding: 0 24px 24px; }
+.overviewLoading > div { display: grid; gap: 12px; padding: 16px 0; }
+.overviewLoading > div > span:first-child { width: 60%; }
+.overviewLoading > div > span:last-child { height: 6px; }
+@media (hover: hover) and (pointer: fine) {
+  .overviewPrimary:hover { background: #543ae0; }
+  .overviewTextButton:hover, .overviewChartLabel:hover { text-decoration: underline; }
+  .overviewWelcomeAction:hover { background: #d6fc7d; }
+  .overviewCourseLink:hover { border-color: var(--overview-accent); box-shadow: 0 6px 20px #3026570a; }
+  .overviewNotice button:enabled:hover { text-decoration: underline; }
+}
+.overviewPrimary:active { background: #4931cb; }
+.overviewWelcomeAction:active { background: #b9e34c; }
+.overviewCourseLink:hover, .overviewCourseLink:active { transform: none; }
+.overviewCourseLink:focus-visible { outline-offset: -4px; }
+@media (max-width: 1100px) {
+  .overviewHeaderActions { gap: 12px; }
+  .overviewMetric { padding-inline: 18px; }
+  .overviewMetric dt { min-height: 3em; }
+  .overviewColumns { grid-template-columns: minmax(0, 1.3fr) minmax(260px, 1fr); gap: 16px; }
+  .overviewWelcomeCopy { padding: 30px; width: 60%; }
+  .overviewWelcomeArt { right: -2%; width: 45%; }
+}
+@media (max-width: 760px) {
+  .overviewPage { gap: 20px; }
+  .overviewHeader { align-items: center; gap: 16px; }
+  .overviewHeader h1 { font-size: 1.5rem; }
+  .overviewHeaderActions { flex-direction: row; align-items: center; }
+  .overviewWelcome { min-height: 300px; border-radius: 18px; align-items: flex-start; }
+  .overviewWelcomeCopy { width: 100%; padding: 26px; }
+  .overviewWelcome h2 { max-width: 80%; font-size: 2rem; }
+  .overviewWelcome p { max-width: 55%; margin-bottom: 20px; font-size: .8125rem; }
+  .overviewWelcomeEyebrow { font-size: .6875rem; }
+  .overviewWelcomeArt { --art-rest-y: 0%; width: 46%; height: auto; right: 0; top: auto; bottom: 18px; }
+  .overviewWelcomeAction { position: relative; font-size: .8125rem; }
+  .overviewMetrics { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0; }
+  .overviewMetric { padding: 20px; }
+  .overviewMetric:nth-child(3) { border-inline-start: 0; }
+  .overviewMetric:nth-child(n+3) { border-top: 1px solid var(--line); }
+  .overviewMetric strong { font-size: 1.75rem; }
+  .overviewColumns { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .overviewSectionHeading { padding: 20px; flex-wrap: wrap; gap: 8px; }
+  .overviewChart { padding-inline: 20px; }
+  .overviewCourseProgress > span { font-size: .75rem; }
+  .overviewNotice { align-items: flex-start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .overviewCourseLink { transition: none; }
+}

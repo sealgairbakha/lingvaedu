@@ -1,6 +1,7 @@
 "use client";
 
 import { lazy, Suspense, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "./auth/AuthProvider";
 import { SelectionTranslator } from "./components/SelectionTranslator";
@@ -8,6 +9,8 @@ import { PageState } from "./components/PageState";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ConnectionNotice } from "./components/ConnectionNotice";
 import { useCourses } from "./features/courses/CourseProvider";
+import { OverviewPage } from "./features/overview/OverviewPage";
+import { StudentGuide } from "./features/overview/StudentGuide";
 import { supabase } from "./lib/supabase";
 
 const CoursesPage = lazy(() => import("./features/courses/CoursesPage").then((module) => ({ default: module.CoursesPage })));
@@ -100,27 +103,6 @@ function NotificationKindIcon({ kind }: { kind: HeaderNotification["kind"] }) {
     meeting: <><rect x="3" y="6" width="13" height="12" rx="3"/><path d="m16 10 5-3v10l-5-3z"/></>,
   } as const;
   return <svg viewBox="0 0 24 24" aria-hidden="true">{paths[kind]}</svg>;
-}
-
-type MetricIconKind = "users" | "courses" | "materials" | "groups" | "completed" | "progress" | "score" | "time" | "return";
-
-function DashboardMetricIcon({ kind }: { kind: MetricIconKind }) {
-  const paths = {
-    users: <><path d="M16 20v-1.5a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4V20"/><circle cx="9.5" cy="7.5" r="3.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 6.7M18 14.7a4 4 0 0 1 3 3.8V20"/></>,
-    courses: <><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5Z"/><path d="M4 5.5v16M8 7h8M8 11h8"/></>,
-    materials: <><path d="m12 3 8 4-8 4-8-4 8-4Z"/><path d="m4 12 8 4 8-4M4 17l8 4 8-4"/></>,
-    groups: <><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3.5 20v-1.5A4.5 4.5 0 0 1 8 14h2a4.5 4.5 0 0 1 4.5 4.5V20M15 14.5a4 4 0 0 1 5.5 3.7V20"/></>,
-    completed: <><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></>,
-    progress: <><path d="M12 3a9 9 0 1 0 9 9h-9V3Z"/><path d="M16 3.9A9 9 0 0 1 20.1 8H16V3.9Z"/></>,
-    score: <path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z"/>,
-    time: <><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></>,
-    return: <><path d="M4 8V3m0 0h5M4 3l4 4"/><path d="M5.5 13a7.5 7.5 0 1 0 2-5"/></>,
-  } as const;
-  return <svg viewBox="0 0 24 24" aria-hidden="true">{paths[kind]}</svg>;
-}
-
-function AddIcon() {
-  return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4v12M4 10h12"/></svg>;
 }
 
 function NotificationCloseIcon() {
@@ -688,6 +670,7 @@ function Shell({
   children: React.ReactNode;
 }) {
   const location = useLocation();
+  const { user, canEditCourses } = useAuth();
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem("lingvaedu-sidebar-collapsed") === "true");
   const compactNavigationQuery = "(max-width: 820px), (max-height: 500px) and (max-width: 1000px)";
@@ -744,8 +727,10 @@ function Shell({
       />
       <div className={page === "editor" || page === "player" ? "mainShell" : "mainShell workspaceBackdrop"}>
         <Header title={title} toggleNav={toggleNav} />
+        {page !== "editor" && page !== "player" && <div className="workspaceAmbient" key={page} aria-hidden="true"><span /><span /></div>}
         {children}
         <ConnectionNotice />
+        {!canEditCourses && user && <StudentGuide key={user.id} userId={user.id} openCourses={() => setPage("courses")} sidebar={<Sidebar page="courses" setPage={() => {}} open={false} close={() => {}} hide={() => {}} />} />}
       </div>
     </div>
   );
@@ -779,163 +764,6 @@ function PageTitle({
   );
 }
 
-type DashboardStats = {
-  studentCount: number;
-  activeUsers30d: number;
-  groupCount: number;
-  enrollmentCount: number;
-};
-
-function Overview({ go }: { go: (p: Page) => void }) {
-  const navigate = useNavigate();
-  const { displayName, canEditCourses, session, user } = useAuth();
-  const { courses, loading, enrolledCourseIds, progress, createCourse } = useCourses();
-  const [organization, setOrganization] = useState<DashboardStats | null>(null);
-  const firstName = displayName.split(/\s+/)[0];
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Доброе утро" : hour < 18 ? "Добрый день" : "Добрый вечер";
-  const currentDate = new Intl.DateTimeFormat("ru-RU", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  }).format(new Date()).toUpperCase();
-
-  useEffect(() => {
-    if (!canEditCourses || !session?.access_token) return;
-    let active = true;
-    void fetch("/api/dashboard", {
-      headers: { Authorization: `Bearer ${session.access_token}` },
-    }).then(async (response) => {
-      const type = response.headers.get("content-type") || "";
-      if (!response.ok || !type.includes("application/json")) return null;
-      return response.json() as Promise<{ stats?: DashboardStats }>;
-    }).then((payload) => {
-      if (active && payload?.stats) setOrganization(payload.stats);
-    }).catch(() => undefined);
-    return () => { active = false; };
-  }, [canEditCourses, session?.access_token]);
-
-  const availableCourses = useMemo(() => canEditCourses
-    ? courses
-    : courses.filter((course) => course.status === "published" && enrolledCourseIds.includes(course.id)),
-  [canEditCourses, courses, enrolledCourseIds]);
-
-  const courseProgress = (course: (typeof courses)[number]) => {
-    const lessons = course.modules.flatMap((module) => module.lessons);
-    if (!lessons.length) return 0;
-    if (canEditCourses) {
-      const ready = lessons.filter((lesson) => lesson.blocks.length > 0).length;
-      return Math.round((ready / lessons.length) * 100);
-    }
-    if (!user?.id) return 0;
-    const completed = progress.filter((item) => item.courseId === course.id && item.status === "completed");
-    return Math.round((lessons.filter((lesson) => completed.some((item) => item.lessonId === lesson.id)).length / lessons.length) * 100);
-  };
-
-  const totalLessons = availableCourses.reduce((sum, course) => sum + course.modules.reduce((count, module) => count + module.lessons.length, 0), 0);
-  const totalBlocks = availableCourses.reduce((sum, course) => sum + course.modules.reduce((moduleSum, module) => moduleSum + module.lessons.reduce((lessonSum, lesson) => lessonSum + lesson.blocks.length, 0), 0), 0);
-  const completedCourses = availableCourses.filter((course) => courseProgress(course) === 100).length;
-  const completedLessons = !canEditCourses && user?.id ? availableCourses.reduce((sum, course) => sum + course.modules.flatMap((module) => module.lessons).filter((lesson) => progress.some((item) => item.courseId === course.id && item.lessonId === lesson.id && item.status === "completed")).length, 0) : 0;
-  const averageProgress = availableCourses.length
-    ? Math.round(availableCourses.reduce((sum, course) => sum + courseProgress(course), 0) / availableCourses.length)
-    : 0;
-  const assignmentCount = organization?.enrollmentCount ?? courses.reduce((sum, course) => sum + course.students, 0);
-  const published = courses.filter((course) => course.status === "published").length;
-  const draft = courses.filter((course) => course.status === "draft").length;
-  const archived = courses.filter((course) => course.status === "archived").length;
-  const recentCourses = [...availableCourses].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).slice(0, 3);
-  const chartCourses = [...availableCourses].sort((a, b) => new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime()).slice(-7);
-  const chartValues = chartCourses.map((course) => course.modules.reduce((sum, module) => sum + module.lessons.reduce((count, lesson) => count + lesson.blocks.length, 0), 0));
-  const chartMax = Math.max(1, ...chartValues);
-
-  const create = () => {
-    const course = createCourse();
-    navigate(`/courses/editor?course=${course.id}`);
-  };
-
-  return (
-    <main className="content fade dashboardReal">
-      <PageTitle
-        eyebrow={currentDate}
-        title={`${greeting}, ${firstName}`}
-        text={canEditCourses ? "Актуальное состояние учебной платформы." : "Ваш прогресс и назначенные курсы."}
-        action={canEditCourses ? <button className="btn primary dashboardCreateButton" onClick={create}><AddIcon />Создать курс</button> : undefined}
-      />
-      <section className="metricGrid">
-        {canEditCourses ? <>
-          <Metric icon="users" label={organization ? "Ученики" : "Назначения ученикам"} value={loading ? "…" : String(organization?.studentCount ?? assignmentCount)} delta="" note={organization ? `${organization.activeUsers30d} активны за 30 дней` : "по всем курсам"} tone="violet" />
-          <Metric icon="courses" label="Опубликовано курсов" value={loading ? "…" : String(published)} delta="" note={`из ${courses.length} курсов`} tone="blue" />
-          <Metric icon="materials" label="Учебные материалы" value={loading ? "…" : String(totalBlocks)} delta="" note={`${totalLessons} уроков`} tone="green" />
-          <Metric icon="groups" label="Учебные группы" value={organization ? String(organization.groupCount) : "—"} delta="" note={organization ? `${assignmentCount} назначений` : "доступно через сервер API"} tone="orange" />
-        </> : <>
-          <Metric icon="courses" label="Назначено курсов" value={loading ? "…" : String(availableCourses.length)} delta="" note={`${completedCourses} завершено`} tone="violet" />
-          <Metric icon="completed" label="Пройдено уроков" value={String(completedLessons)} delta="" note={`из ${totalLessons} уроков`} tone="blue" />
-          <Metric icon="progress" label="Общий прогресс" value={`${averageProgress}%`} delta="" note="по назначенным курсам" tone="green" />
-          <Metric icon="materials" label="Учебные материалы" value={String(totalBlocks)} delta="" note="доступно в курсах" tone="orange" />
-        </>}
-      </section>
-      <div className="overviewGrid">
-        <section className="panel activityPanel">
-          <PanelHead title="Наполнение курсов" text="Количество блоков в последних курсах" />
-          {chartCourses.length ? <div className="chart dashboardChart">
-            <div className="yLabels"><span>{chartMax}</span><span>{Math.round(chartMax / 2)}</span><span>0</span></div>
-            <div className="bars">{chartCourses.map((course, index) => <div className="barCol" key={course.id} title={`${course.title}: ${chartValues[index]} блоков`}>
-              <div className="barTrack"><i style={{ height: `${Math.max(4, (chartValues[index] / chartMax) * 100)}%` }} className={index === chartCourses.length - 1 ? "hot" : ""} /></div>
-            </div>)}</div>
-          </div> : <div className="dashboardEmpty">Курсы появятся здесь после создания.</div>}
-        </section>
-        <section className="panel upcoming dashboardCatalog">
-          <PanelHead title="Состояние каталога" action={<button className="linkBtn" onClick={() => go("courses")}>Открыть курсы</button>} />
-          <div className="dashboardStatusList">
-            <button onClick={() => go("courses")}><i className="published" /> <span><b>Опубликованные</b><small>Доступны ученикам</small></span><strong>{published}</strong></button>
-            <button onClick={() => go("courses")}><i className="draft" /> <span><b>Черновики</b><small>Ожидают публикации</small></span><strong>{draft}</strong></button>
-            <button onClick={() => go("courses")}><i className="archived" /> <span><b>Архив</b><small>Скрытые курсы</small></span><strong>{archived}</strong></button>
-          </div>
-        </section>
-      </div>
-      <section className="panel coursesPanel">
-        <PanelHead title={canEditCourses ? "Недавно обновлённые курсы" : "Продолжить обучение"} text={canEditCourses ? "Реальные данные из каталога" : "Ваш текущий прогресс"} action={<button className="linkBtn" onClick={() => go("courses")}>Все курсы</button>} />
-        {recentCourses.length ? <div className="courseTiles">{recentCourses.map((course, index) => {
-          const lessons = course.modules.reduce((sum, module) => sum + module.lessons.length, 0);
-          const progress = courseProgress(course);
-          const tones = ["violet", "blue", "green"];
-          return <article key={course.id} onClick={() => navigate(canEditCourses ? `/courses/editor?course=${course.id}` : `/courses/learn?course=${course.id}`)}>
-            <div className={`courseIcon ${tones[index % tones.length]}`}>{course.code.slice(0, 3).toUpperCase()}</div>
-            <div className="courseTitle"><b>{course.title}</b><span>{lessons} уроков · {course.students} учеников</span></div>
-            <div className="ring" style={{ "--value": `${progress * 3.6}deg` } as React.CSSProperties}><span>{progress}%</span></div>
-          </article>;
-        })}</div> : <div className="dashboardEmpty">Доступных курсов пока нет.</div>}
-      </section>
-    </main>
-  );
-}
-
-function Metric({
-  icon,
-  label,
-  value,
-  delta,
-  note,
-  tone,
-}: {
-  icon: MetricIconKind;
-  label: string;
-  value: string;
-  delta: string;
-  note: string;
-  tone: string;
-}) {
-  return (
-    <article className="metric">
-      <div className={`metricIcon ${tone}`}><DashboardMetricIcon kind={icon} /></div>
-      <span>{label}</span>
-      <strong>{value}</strong>
-      <p>
-        {delta && <b>↗ {delta}</b>} {note}
-      </p>
-    </article>
-  );
-}
 function PanelHead({
   title,
   text,
@@ -1151,7 +979,7 @@ function Modal({
     document.addEventListener("keydown", onKeyDown);
     return () => { document.body.style.overflow = previousOverflow; document.removeEventListener("keydown", onKeyDown); previousFocus?.focus(); };
   }, []);
-  return (
+  return createPortal(
     <div className="modalLayer">
       <button className="modalScrim" onClick={close} aria-label="Закрыть окно" tabIndex={-1} />
       <section className="modal" ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}>
@@ -1161,7 +989,8 @@ function Modal({
         </div>
         {children}
       </section>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -1204,7 +1033,7 @@ export default function App() {
         </div>
       </main>
     ) : page === "overview" ? (
-      <Overview go={setPage} />
+      <OverviewPage go={setPage} />
     ) : page === "courses" ? (
       <CoursesPage />
     ) : page === "editor" ? (

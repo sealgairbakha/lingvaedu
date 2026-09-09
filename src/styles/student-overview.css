@@ -1,0 +1,59 @@
+.studentOverview { gap: 30px; }
+.studentOverviewHeading { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.studentOverviewHeading p { margin: 0 0 6px; color: var(--overview-muted); font-size: .8rem; }
+.studentOverviewHeading h1 { margin: 0; font-size: clamp(1.5rem, 2.4vw, 2rem); font-weight: 550; letter-spacing: -.04em; overflow-wrap: anywhere; }
+.studentHello { color: var(--overview-accent); font-size: 44px; line-height: 1; }
+.studentJourney { display: grid; grid-template-columns: 1fr 1.05fr; min-height: 440px; border-radius: 24px; overflow: hidden; background: #f8f5ee; color: #292638; }
+.studentJourneyCopy { padding: clamp(28px, 3.5vw, 52px); align-self: center; }
+.studentJourneyEyebrow { font-size: .65rem; font-weight: 650; letter-spacing: .12em; color: #645a76; }
+.studentJourney h2 { margin: 25px 0 18px; font-size: clamp(2.4rem, 4vw, 4rem); line-height: 1.06; font-weight: 500; letter-spacing: -.065em; }
+.studentJourney h2 em { font-style: normal; color: #7152bf; }
+.studentJourneyCopy > p { margin: 0 0 28px; color: #6a6571; font-size: .9rem; line-height: 1.7; }
+.studentResume { display: grid; justify-items: start; gap: 6px; }
+.studentResume > span { font-size: .8rem; font-weight: 600; overflow-wrap: anywhere; }
+.studentResume > small { font-size: .75rem; color: #6a6571; overflow-wrap: anywhere; }
+.studentJourney .overviewPrimary { margin-top: 12px; gap: 24px; padding: 13px 20px; text-decoration: none; }
+.studentPhotoScene { position: relative; isolation: isolate; overflow: hidden; min-height: 420px; background: #aab5a0; }
+.studentPhotoScene > img { width: 100%; height: 100%; position: absolute; inset: 0; object-fit: cover; object-position: 52% center; }
+.studentPhotoScene::after { content: ""; position: absolute; inset: 45% 0 0; background: linear-gradient(transparent, #172018a6); z-index: 0; pointer-events: none; }
+.studentPhotoCaption { position: absolute; bottom: 28px; left: 28px; right: 24px; z-index: 1; color: white; display: grid; gap: 6px; }
+.studentPhotoCaption > span { font-size: .7rem; }
+.studentPhotoCaption strong { font-size: clamp(1.25rem, 2vw, 1.6rem); font-weight: 500; letter-spacing: -.025em; }
+.studentPhotoNote { position: absolute; right: 22px; top: 25px; display: grid; gap: 5px; padding: 16px 20px; background: #e6edc7; color: #364526; border-radius: 3px 18px 18px 18px; transform: rotate(5deg); box-shadow: 0 8px 24px #17201818; }
+.studentPhotoNote > span { font-size: 1.8rem; letter-spacing: -.06em; font-weight: 500; }
+.studentPhotoNote > small { max-width: 18ch; font-size: .65rem; line-height: 1.4; }
+.studentPhotoScene.is-unavailable { background: radial-gradient(ellipse at 20% 25%, #d2dca7, transparent 65%), #667e63; }
+.studentCourses { min-width: 0; }
+.studentCourses .overviewSectionHeading { margin-bottom: 20px; }
+.studentEmpty { padding: 28px; background: var(--card); border: 1px solid var(--line); border-radius: 18px; }
+.studentEmpty h3 { margin: 0 0 8px; font-size: 1rem; }
+.studentEmpty p { margin: 0; color: var(--overview-muted); line-height: 1.6; }
+html[data-theme="dark"] .studentJourney { background: #262638; color: #f1edf6; }
+html[data-theme="dark"] .studentJourney h2 em { color: #c4afff; }
+html[data-theme="dark"] .studentJourneyEyebrow,
+html[data-theme="dark"] .studentJourneyCopy > p,
+html[data-theme="dark"] .studentResume > small { color: #b9b3c8; }
+@media (prefers-reduced-motion: no-preference) {
+  .studentPhotoScene.is-ready > img { animation: studentPhotoArrive 4.8s cubic-bezier(.23, 1, .32, 1) both; }
+  .studentPhotoScene.is-ready .studentPhotoNote { animation: studentNoteArrive 250ms 60ms cubic-bezier(.23, 1, .32, 1) both; }
+}
+@keyframes studentPhotoArrive { from { transform: scale(1.09) translateX(-1%); } to { transform: scale(1); } }
+@keyframes studentNoteArrive { from { opacity: 0; transform: translateY(10px) rotate(8deg); } to { opacity: 1; transform: rotate(5deg); } }
+@media (max-width: 900px) {
+  .studentJourneyCopy { padding: 28px; }
+  .studentJourney h2 { font-size: 2.6rem; }
+  .studentPhotoNote { right: 14px; padding: 12px 14px; }
+}
+@media (max-width: 620px) {
+  .studentOverview { gap: 24px; }
+  .studentJourney { grid-template-columns: 1fr; border-radius: 20px; }
+  .studentJourneyCopy { padding: 28px 24px; }
+  .studentJourney h2 { margin-top: 18px; font-size: clamp(2.6rem, 9vw, 3.4rem); }
+  .studentJourneyCopy > p { margin-bottom: 16px; }
+  .studentPhotoScene { min-height: 250px; }
+  .studentPhotoScene > img { object-position: center 60%; }
+  .studentPhotoCaption { bottom: 20px; left: 24px; }
+  .studentPhotoNote { top: 20px; right: 22px; }
+  .studentPhotoNote > span { font-size: 1.4rem; }
+  .studentPhotoNote > small { display: none; }
+}

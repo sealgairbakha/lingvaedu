@@ -1,11 +1,11 @@
-import { useMemo, useState, type CSSProperties } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
 import { useCourses, type CourseLessonProgress } from "./CourseProvider";
 import type { Course, CourseStatus } from "./types";
+import { CourseCover, CourseCardInfo } from "./CourseCard";
 
 const labels: Record<CourseStatus | "all", string> = { all: "Все курсы", published: "Опубликованные", draft: "Черновики", archived: "Архив" };
-const statusLabel: Record<CourseStatus, string> = { published: "Опубликован", draft: "Черновик", archived: "В архиве" };
 const courseLessons = (course: Course) => course.modules.flatMap((module) => module.lessons);
 
 function getCourseProgress(course: Course, progress: CourseLessonProgress[]) {
@@ -18,15 +18,6 @@ function getCourseProgress(course: Course, progress: CourseLessonProgress[]) {
   const percent = lessons.length ? Math.round((completed / lessons.length) * 100) : 0;
   const remainingMinutes = lessons.filter((lesson) => !entries.some((item) => item.lessonId === lesson.id && item.status === "completed")).reduce((sum, lesson) => sum + (lesson.estimatedMinutes || 0), 0);
   return { lessons, completed, last, lastLesson, percent, remainingMinutes };
-}
-
-function CourseCover({ course }: { course: Course }) {
-  const showNewRibbon = course.showNewRibbon ?? course.code === "NEW";
-  return <span className={`courseCoverArt ${course.color} cover-${course.coverStyle || "orbit"} ${course.coverImage ? "has-image" : ""}`} style={course.coverImage ? { "--cover-image": `url(${course.coverImage})` } as CSSProperties : undefined} aria-hidden="true">
-    {!course.coverImage && <><i /><i /><i /></>}
-    {showNewRibbon && <span className="courseNewRibbon">NEW</span>}
-    <small>{course.language.toUpperCase()}</small>
-  </span>;
 }
 
 function MentorVerifiedIcon() {
@@ -98,11 +89,9 @@ function AdminCourses() {
       const mentorAvatar = isCurrentAuthor ? avatarUrl : course.mentorAvatar;
       return <article className="courseCard" key={course.id}>
         <button className="courseCoverButton" aria-label={`Открыть курс ${course.title}`} onClick={() => navigate(`/courses/learn?course=${course.id}`)}><CourseCover course={course} /></button>
-        <div className="courseInfo">
-          <div className="statusRow"><span className={course.status === "published" ? "published" : "draft"}>● {statusLabel[course.status]}</span><small>{new Date(course.updatedAt).toLocaleDateString("ru-RU")}</small></div>
-          <h3>{course.title}</h3><p>{course.description}</p>
-          <div className="courseStats"><span>▤ {courseLessons(course).length} уроков</span><span>♙ {course.students} учеников</span></div>
-          <button className="openCourseBtn" onClick={() => navigate(`/courses/learn?course=${course.id}`)}>Открыть курс</button>
+        <CourseCardInfo course={course}
+          stats={<><span>▤ {courseLessons(course).length} уроков</span><span>♙ {course.students} учеников</span></>}
+          action={<button className="openCourseBtn" onClick={() => navigate(`/courses/learn?course=${course.id}`)}>Открыть курс</button>}>
           <div className="courseExtras">
             <div className="courseMentorCard">
               <span className="courseMentorAvatar">{mentorAvatar ? <img src={mentorAvatar} alt={mentorName} /> : mentorName.slice(0, 2).toUpperCase()}<i aria-hidden="true" /></span>
@@ -111,7 +100,7 @@ function AdminCourses() {
             </div>
             <div className="courseActions" aria-busy={busyId === course.id}><button disabled={Boolean(busyId)} onClick={() => void runAction(course.id, () => duplicateCourse(course.id))}>Дублировать</button><button disabled={Boolean(busyId)} onClick={() => void runAction(course.id, () => saveCourse({ ...course, status: course.status === "archived" ? "draft" : "archived" }))}>{course.status === "archived" ? "Вернуть" : "В архив"}</button><button className="editCourseAction" onClick={() => edit(course.id)}>Редактировать</button><button disabled={Boolean(busyId)} className="dangerText" onClick={() => { if (confirm(`Удалить курс «${course.title}»?`)) void runAction(course.id, () => removeCourse(course.id)); }}>Удалить</button></div>
           </div>
-        </div>
+        </CourseCardInfo>
       </article>;
     })}</div>}
   </main>;

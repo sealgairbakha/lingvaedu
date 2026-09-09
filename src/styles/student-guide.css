@@ -1,0 +1,70 @@
+.studentGuide { width: min(560px, calc(100% - 28px)); max-height: calc(100dvh - 28px); padding: 0; border: 0; border-radius: 20px; background: var(--card); color: var(--ink); box-shadow: 0 24px 80px #0d102c40; overflow-y: auto; }
+.studentGuide::backdrop { background: #10132699; }
+.studentGuideTop { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 22px; font-size: .8rem; }
+.studentGuideTop button, .guideBack { min-height: 44px; border: 0; background: transparent; color: var(--ink); padding: 8px 10px; font: inherit; cursor: pointer; }
+.studentGuideIllustration { position: relative; margin: 0 22px; padding: 25px 24px 30px; border-radius: 14px; background: #eee9fc; color: #292638; }
+.guideWindow { background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 12px 25px #40305c18; }
+.guideWindowTop { display: flex; gap: 10px; align-items: center; height: 34px; padding: 0 12px; border-bottom: 1px solid #ece9f2; font-size: 10px; font-weight: 650; }
+.guideWindowTop svg { width: 16px; height: 16px; stroke: #655a7a; fill: none; stroke-width: 1.8; }
+.guideWindowTop i { width: 14px; height: 14px; border-radius: 50%; background: #dbe9ae; margin-left: auto; }
+.guideWindowBody { display: grid; grid-template-columns: 85px 1fr; min-height: 168px; }
+.guideSide { display: flex; flex-direction: column; gap: 10px; padding: 18px 8px; background: #f7f6fa; font-size: 9px; }
+.guideSide > * { padding: 7px 5px; }
+.guideCanvas { display: flex; flex-direction: column; gap: 10px; padding: 16px; font-size: 12px; min-width: 0; justify-content: center; }
+.guideCover { height: 48px; border-radius: 7px; background: #c6b3f3; position: relative; overflow: hidden; }
+.guideCover::after { content: ""; position: absolute; width: 65px; height: 65px; border: 12px solid #dfd4f9; border-radius: 50%; right: 15%; top: -24px; }
+.guideLines { display: grid; gap: 6px; }
+.guideLines i { height: 5px; width: 85%; background: #e8e5ef; border-radius: 4px; }
+.guideLines i + i { width: 60%; }
+.guideTarget { background: #654bf6; color: white; border-radius: 6px; outline: 3px solid #bbabff; outline-offset: 3px; }
+.guideButton { padding: 9px 7px; text-align: center; font-size: 10px; font-weight: 600; }
+.guideAnswer { padding: 8px; border: 1px solid #ded9e7; border-radius: 6px; font-size: 10px; }
+.guideSmall { font-size: 10px; color: #655a7a; }
+.guideIllustrationLabel { position: absolute; bottom: 8px; left: 24px; color: #6b607c; font-size: 9px; }
+.studentGuideCopy { padding: 22px 26px 10px; }
+.studentGuideCount { color: var(--muted); font-size: .75rem; }
+.studentGuideCopy h2 { margin: 10px 0; font-size: clamp(1.3rem, 3vw, 1.6rem); line-height: 1.25; letter-spacing: -.03em; }
+.studentGuideCopy h2:focus { outline: none; }
+.studentGuideCopy p { font-size: .9rem; line-height: 1.65; color: var(--muted); margin: 0; min-height: 95px; }
+.studentGuideFooter { display: flex; gap: 12px; justify-content: space-between; align-items: center; padding: 12px 22px 0; }
+.guideBack:disabled { opacity: .4; cursor: default; }
+.guideNext { min-height: 44px; padding: 10px 18px; background: #654bf6; color: white; border: 0; border-radius: 9px; font: inherit; font-size: .875rem; cursor: pointer; }
+.guideSteps { display: flex; gap: 6px; }
+.guideSteps span { width: 6px; height: 6px; background: var(--line); border-radius: 50%; }
+.guideSteps [aria-current] { background: var(--purple); width: 18px; border-radius: 4px; }
+.studentGuideHint { padding: 4px 26px 18px; font-size: .7rem; color: var(--muted); text-align: center; }
+.guideDontShow { display: flex; gap: 10px; align-items: center; min-height: 44px; margin: 12px 26px 0; font-size: .8rem; cursor: pointer; }
+.guideDontShow input { width: 18px; height: 18px; margin: 0; accent-color: var(--purple); flex-shrink: 0; }
+.guideReplicaFrame { height: 280px; overflow: hidden; border-radius: 10px; position: relative; background: var(--bg); }
+.guideReplica { position: relative; width: 178.572%; height: 500px; transform: scale(.56); transform-origin: top left; color: var(--ink); }
+.guideReplicaHeader { display: flex; height: 68px; align-items: center; gap: 14px; padding: 0 18px; background: var(--card); border-bottom: 1px solid var(--line); }
+.studentGuide .guideReplica .menuBtn { display: flex; opacity: 1; transform: none; pointer-events: auto; }
+.guideReplicaContent { padding: 24px; display: grid; gap: 22px; }
+.guideReplicaContent strong { font-size: 26px; }
+.guideReplicaContent img { width: 100%; height: 240px; object-fit: cover; border-radius: 18px; }
+.guideOriginalSidebar { position: absolute; inset: 0; pointer-events: none; }
+.studentGuide .guideOriginalSidebar .sidebar { position: absolute; inset: 0 auto 0 0; width: 250px; height: 500px; min-height: 0; transform: none; visibility: visible; transition: none; }
+.studentGuide .guideOriginalSidebar .closeNav { opacity: 1; transform: none; visibility: visible; }
+.guideDevice-desktop .guideMenuVisible .guideReplicaHeader,
+.guideDevice-desktop .guideMenuVisible .guideReplicaContent { margin-left: 250px; }
+.guideDevice-phone .guideMenuVisible .guideReplicaContent { opacity: .4; }
+.guideReplicaFrame .guideIllustrationLabel { left: auto; right: 8px; bottom: 6px; padding: 4px 6px; border-radius: 4px; background: var(--card); color: var(--ink); }
+.guideDevice-phone > .guideWindow { max-width: 280px; margin: auto; }
+.guideButton, .guideReplica .menuBtn { position: relative; }
+.studentGuide .guideTapHand { position: absolute; width: 23px; height: 28px; right: 20%; top: 65%; z-index: 5; color: #202331; pointer-events: none; }
+.studentGuide .guideReplica .guideTapHand { width: 36px; height: 44px; right: -8px; top: 22px; }
+.guideNavTap { position: absolute; top: 154px; left: 156px; z-index: 45; }
+.guideTapRays { opacity: 0; }
+@media (prefers-reduced-motion: no-preference) {
+  .guideTapHand { animation: guideHandTap 1100ms 1 cubic-bezier(.23,1,.32,1); }
+  .guideTapRays { animation: guideTapFlash 1100ms 1 ease; }
+}
+@keyframes guideHandTap { 0%, 100% { transform: translateY(0); } 45% { transform: translateY(3px) scale(.94); } }
+@keyframes guideTapFlash { 0%, 30%, 100% { opacity: 0; } 45%, 65% { opacity: 1; } }
+.studentGuideIllustration > .guideWindow .guideCanvas { min-height: 210px; }
+@media (prefers-reduced-motion: no-preference) { .guideOriginalSidebar { animation: guideSidebarOpen 250ms cubic-bezier(.23,1,.32,1) both; } }
+@keyframes guideSidebarOpen { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: none; } }
+.studentGuideReplay { color: var(--overview-accent); background: transparent; border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; min-height: 44px; font: inherit; font-size: .8rem; cursor: pointer; flex-shrink: 0; }
+html[data-theme="dark"] .studentGuideIllustration { background: #353048; }
+html[data-theme="dark"] .guideIllustrationLabel { color: #c8bed9; }
+@media (max-width: 480px) { .studentGuideTop { padding: 10px 14px; } .studentGuideIllustration { margin: 0 14px; padding: 18px 12px 26px; } .guideWindowBody { grid-template-columns: 70px 1fr; } .guideSide { font-size: 8px; } .guidePointerStep0 { left: 66px; top: 118px; } .studentGuideCopy { padding: 18px 18px 6px; } .studentGuideFooter { padding: 12px 14px 0; } .studentGuideReplay { padding: 10px; } }

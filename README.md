@@ -12,6 +12,12 @@
 
 Проект не использует Next.js, Vinext, Cloudflare Workers, D1 или R2.
 
+## Навыки дизайна для разработки
+
+В проект подключены навыки Emil Kowalski, Impeccable и Taste Skill.
+Правила работы с ними: [AGENTS.md](AGENTS.md). Выбранные навыки, контекст
+LingvaEdu и зафиксированные версии: [docs/design-skills.md](docs/design-skills.md).
+
 ## Локальный запуск
 
 ```bash
