@@ -1,16 +1,17 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { GuideCoursesScene, GuideLessonScene } from "./StudentGuideScenes";
 import "../../styles/student-guide.css";
 
 const compactQuery = "(max-width: 820px), (max-height: 500px) and (max-width: 1000px)";
 const learningSteps = [
   { title: "Выберите «Мои курсы»", text: "Нажмите «Мои курсы» в боковой панели. Здесь находятся курсы, которые назначил вам наставник.", label: "Найти курсы" },
-  { title: "Откройте свой курс", text: "Нажмите «Открыть курс» на карточке. Если курсов пока нет, дождитесь назначения от наставника — они появятся здесь автоматически.", label: "Открыть курс" },
+  { title: "Откройте свой курс", text: "Нажмите «Начать» или «Продолжить» на карточке курса. Если курсов пока нет, дождитесь назначения от наставника — они появятся здесь автоматически.", label: "Открыть курс" },
   { title: "Проходите урок шаг за шагом", text: "Выберите урок в списке, изучите материалы и выполните задания. Нажимайте кнопку проверки под заданием и следуйте подсказкам. Названия кнопок могут зависеть от языка курса.", label: "Пройти урок" },
   { title: "Возвращайтесь к обучению", text: "В «Обзоре» нажмите кнопку под названием курса, чтобы продолжить обучение. Все назначенные курсы всегда доступны в разделе «Курсы».", label: "Продолжить обучение" },
 ];
 
 function TapHand() {
-  return <svg className="guideTapHand" viewBox="0 0 40 48" aria-hidden="true"><g className="guideTapRays" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M15 2V0M7 5 5 3M23 5l2-2M4 12H1M27 12h3" /></g><path fill="white" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" d="M12 29V13a3 3 0 0 1 6 0v11-4a3 3 0 0 1 6 0v5-2a3 3 0 0 1 6 0v4-1a3 3 0 0 1 6 0v8c0 7-4 12-11 12h-4c-4 0-7-2-9-5L4 30c-2-4 2-6 5-3l3 2Z" /></svg>;
+  return <svg className="guideTapHand" viewBox="0 0 40 48" aria-hidden="true"><circle className="guideTapGlow" cx="15" cy="12" r="15" /><g className="guideTapRays" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M15 2V0M7 5 5 3M23 5l2-2M4 12H1M27 12h3" /></g><path fill="white" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" d="M12 29V13a3 3 0 0 1 6 0v11-4a3 3 0 0 1 6 0v5-2a3 3 0 0 1 6 0v4-1a3 3 0 0 1 6 0v8c0 7-4 12-11 12h-4c-4 0-7-2-9-5L4 30c-2-4 2-6 5-3l3 2Z" /></svg>;
 }
 
 export function StudentGuide({ userId, openCourses, sidebar }: { userId: string; openCourses: () => void; sidebar?: ReactNode }) {
@@ -19,6 +20,7 @@ export function StudentGuide({ userId, openCourses, sidebar }: { userId: string;
     try { return localStorage.getItem(storageKey) !== "hidden"; } catch { return true; }
   });
   const [step, setStep] = useState(0);
+  const [direction, setDirection] = useState<"forward" | "backward">("forward");
   const [compact, setCompact] = useState(() => window.matchMedia(compactQuery).matches);
   const [menuOpen, setMenuOpen] = useState(false);
   const [dontShow, setDontShow] = useState(() => { try { return localStorage.getItem(storageKey) === "hidden"; } catch { return false; } });
@@ -33,7 +35,7 @@ export function StudentGuide({ userId, openCourses, sidebar }: { userId: string;
   const heading = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
-    const replay = () => { setStep(0); setMenuOpen(false); setOpen(true); };
+    const replay = () => { setStep(0); setDirection("forward"); setMenuOpen(false); setOpen(true); };
     window.addEventListener("lingvaedu:student-guide", replay);
     return () => window.removeEventListener("lingvaedu:student-guide", replay);
   }, []);
@@ -45,43 +47,49 @@ export function StudentGuide({ userId, openCourses, sidebar }: { userId: string;
     const previousOverflow = document.body.style.overflow;
     element.showModal();
     document.body.style.overflow = "hidden";
-    heading.current?.focus();
+    heading.current?.focus({ preventScroll: true });
     return () => { element.close(); document.body.style.overflow = previousOverflow; previousFocus?.focus(); };
   }, [open]);
 
-  useEffect(() => { if (open) heading.current?.focus(); }, [open, step]);
+  useEffect(() => {
+    if (!open) return;
+    heading.current?.focus({ preventScroll: true });
+    if (dialog.current) dialog.current.scrollTop = 0;
+  }, [open, step]);
 
   const dismiss = () => {
     try { if (dontShow) localStorage.setItem(storageKey, "hidden"); else localStorage.removeItem(storageKey); } catch { /* The guide remains available when storage is disabled. */ }
     setOpen(false);
   };
 
+  const changeStep = (offset: -1 | 1) => {
+    setDirection(offset > 0 ? "forward" : "backward");
+    setMenuOpen(false);
+    setStep((value) => Math.max(0, Math.min(steps.length - 1, value + offset)));
+  };
+
   if (!open) return null;
   return <dialog className="studentGuide" ref={dialog} aria-labelledby="student-guide-title" aria-describedby="student-guide-description" onCancel={(event) => { event.preventDefault(); dismiss(); }}>
     <header className="studentGuideTop"><span>Знакомство с LingvaEdu</span><button onClick={dismiss}>Пропустить</button></header>
-    <div key={`${compact}-${step}`} className={`studentGuideIllustration guideDevice-${compact ? "phone" : "desktop"}`}>
+    <div className={`studentGuideIllustration guideDevice-${compact ? "phone" : "desktop"}`}>
       {step < 2 ? <div className="guideReplicaFrame">
         <div className={`guideReplica ${(step > 0 || menuOpen) ? "guideMenuVisible" : ""}`}>
           <div className="guideReplicaHeader"><button className="menuBtn" aria-label="Открыть меню на иллюстрации" onClick={() => setMenuOpen((value) => !value)}><span/><span/><span/>{!menuOpen && step === 0 && <TapHand />}</button><span>LingvaEdu</span></div>
           <div className="guideReplicaContent" aria-hidden="true"><strong>Обзор</strong><img src="/overview/student-journey.png" alt="" /></div>
-          {(step > 0 || menuOpen) && <div className="guideOriginalSidebar" inert aria-hidden="true">{sidebar}<div className="guideNavTap"><TapHand /></div></div>}
+          <div className="guideOriginalSidebar" inert aria-hidden="true">{sidebar}<div className="guideNavTap"><TapHand /></div></div>
         </div>
-        <span className="guideIllustrationLabel">{compact ? "На телефоне" : "На компьютере"}</span>
-      </div> : <div className="guideWindow" aria-hidden="true">
-        <div className="guideWindowTop"><span>LingvaEdu</span><i /></div>
-        <div className="guideCanvas">
-          {step === 2 && <><div className="guideCover" /><strong>Ваш курс</strong><span className="guideTarget guideButton">Открыть курс<TapHand /></span></>}
-          {step === 3 && <><strong>Урок</strong><div className="guideLines"><i /><i /></div><span className="guideAnswer">Ваш ответ</span><span className="guideTarget guideButton">Проверить / Check<TapHand /></span></>}
-          {step === 4 && <><strong>Привет!</strong><span className="guideSmall">Ваш курс · следующий урок</span><span className="guideTarget guideButton">Продолжить урок<TapHand /></span></>}
-        </div>
-        <span className="guideIllustrationLabel">{compact ? "На телефоне" : "На компьютере"} · схема урока</span>
+      </div> : <div key={step} className={`guideWindow guideScene-${direction}`} aria-hidden="true">
+        {step === 2 ? <GuideCoursesScene cursor={<TapHand />} /> : step === 3 ? <GuideLessonScene cursor={<TapHand />} /> : <>
+          <div className="guideWindowTop"><span>LingvaEdu</span><i /></div>
+          <div className="guideCanvas"><strong>Привет!</strong><span className="guideSmall">Ваш курс · следующий урок</span><span className="guideTarget guideButton">Продолжить урок<TapHand /></span></div>
+        </>}
       </div>}
     </div>
-    <div className="studentGuideCopy"><span className="studentGuideCount">Шаг {step + 1} из {steps.length}</span><h2 id="student-guide-title" ref={heading} tabIndex={-1}>{steps[step].title}</h2><p id="student-guide-description">{steps[step].text}</p></div>
+    <div key={step} className={`studentGuideCopy guideScene-${direction}`}><span className="studentGuideCount">Шаг {step + 1} из {steps.length}</span><h2 id="student-guide-title" ref={heading} tabIndex={-1}>{steps[step].title}</h2><p id="student-guide-description">{steps[step].text}</p></div>
     <footer className="studentGuideFooter">
-      <button className="guideBack" disabled={step === 0} onClick={() => setStep((value) => value - 1)}>Назад</button>
+      <button className="guideBack" disabled={step === 0} onClick={() => changeStep(-1)}>Назад</button>
       <div className="guideSteps" aria-label="Этапы знакомства">{steps.map((item, index) => <span key={item.label} aria-current={step === index ? "step" : undefined} aria-label={`${index + 1}. ${item.label}`} />)}</div>
-      <button className="guideNext" onClick={() => { if (step < steps.length - 1) setStep((value) => value + 1); else { dismiss(); openCourses(); } }}>{step === steps.length - 1 ? "К моим курсам" : "Далее"}</button>
+      <button className="guideNext" onClick={() => { if (step < steps.length - 1) changeStep(1); else { dismiss(); openCourses(); } }}>{step === steps.length - 1 ? "К моим курсам" : "Далее"}</button>
     </footer>
     <label className="guideDontShow"><input type="checkbox" checked={dontShow} onChange={(event) => setDontShow(event.target.checked)} />Не показывать в следующий раз</label>
     <p className="studentGuideHint">Повторить: «Обзор» → «Как учиться».</p>

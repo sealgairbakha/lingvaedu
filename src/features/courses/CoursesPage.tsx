@@ -4,21 +4,10 @@ import { useAuth } from "../../auth/AuthProvider";
 import { useCourses, type CourseLessonProgress } from "./CourseProvider";
 import type { Course, CourseStatus } from "./types";
 import { CourseCover, CourseCardInfo } from "./CourseCard";
+import { StudentCourseCard } from "./StudentCourseCard";
+import { courseLessons, getCourseProgress } from "./courseProgress";
 
 const labels: Record<CourseStatus | "all", string> = { all: "Все курсы", published: "Опубликованные", draft: "Черновики", archived: "Архив" };
-const courseLessons = (course: Course) => course.modules.flatMap((module) => module.lessons);
-
-function getCourseProgress(course: Course, progress: CourseLessonProgress[]) {
-  const lessons = courseLessons(course);
-  const lessonIds = new Set(lessons.map((lesson) => lesson.id));
-  const entries = progress.filter((item) => item.courseId === course.id && lessonIds.has(item.lessonId));
-  const completed = new Set(entries.filter((item) => item.status === "completed").map((item) => item.lessonId)).size;
-  const last = [...entries].sort((a, b) => Date.parse(b.lastOpenedAt) - Date.parse(a.lastOpenedAt))[0];
-  const lastLesson = lessons.find((lesson) => lesson.id === last?.lessonId) || lessons[0];
-  const percent = lessons.length ? Math.round((completed / lessons.length) * 100) : 0;
-  const remainingMinutes = lessons.filter((lesson) => !entries.some((item) => item.lessonId === lesson.id && item.status === "completed")).reduce((sum, lesson) => sum + (lesson.estimatedMinutes || 0), 0);
-  return { lessons, completed, last, lastLesson, percent, remainingMinutes };
-}
 
 function MentorVerifiedIcon() {
   return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m10 2.5 2 1.3 2.4.2 1 2.2 1.8 1.6-.6 2.4.6 2.4-1.8 1.6-1 2.2-2.4.2-2 1.3-2-1.3-2.4-.2-1-2.2-1.8-1.6.6-2.4-.6-2.4 1.8-1.6 1-2.2 2.4-.2 2-1.3Z"/><path d="m7 10 2 2 4-4"/></svg>;
@@ -41,15 +30,7 @@ function StudentCourses({ courses, progress, loading }: { courses: Course[]; pro
         </div>
       </section>}
       <section className="studentCourseLibrary"><div className="studentSectionHead"><div><small>ВАШИ ПРОГРАММЫ</small><h2>Все курсы</h2></div><span>{courses.length}</span></div><div className="studentCourseGrid">
-        {stats.map((item) => <article className="studentCourseCard" key={item.course.id}>
-          <button className="studentCoverButton" onClick={() => open(item.course, item.lastLesson?.id)} aria-label={`Открыть курс ${item.course.title}`}><CourseCover course={item.course} /></button>
-          <div className="studentCourseInfo"><p className="courseMeta">{item.course.language}{item.course.level ? ` · ${item.course.level}` : ""}</p><h3>{item.course.title}</h3>
-            {item.course.mentor && <p className="studentMentor">{item.course.mentorAvatar ? <img src={item.course.mentorAvatar} alt="" /> : <i>{item.course.mentor.slice(0, 2).toUpperCase()}</i>}<span>{item.course.mentor}</span></p>}
-            <div className="studentProgressLabel"><b>{item.percent}%</b><span>{item.completed} из {item.lessons.length} уроков</span></div><div className="studentProgressBar"><i style={{ width: `${item.percent}%` }} /></div>
-            {item.lastLesson && <p className="studentLastLesson">Последний урок: <b>{item.lastLesson.title}</b></p>}{item.remainingMinutes > 0 && <small className="remainingTime">Осталось примерно {item.remainingMinutes} мин</small>}
-            <button className="studentContinueButton" onClick={() => open(item.course, item.lastLesson?.id)}>{item.last ? "Продолжить" : "Начать"} <span>→</span></button>
-          </div>
-        </article>)}
+        {courses.map((course) => <StudentCourseCard key={course.id} course={course} progress={progress} onOpen={open} />)}
       </div></section>
     </>}
   </main>;

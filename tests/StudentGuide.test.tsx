@@ -1,12 +1,35 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { StudentGuide } from "../src/features/overview/StudentGuide";
+import { blankCourse, type Course } from "../src/features/courses/types";
+
+const store = vi.hoisted(() => ({ courses: [] as Course[], enrolledCourseIds: [] as string[], progress: [], loading: false, progressLoading: false, loadError: "", progressError: "" }));
+vi.mock("../src/features/courses/CourseProvider", () => ({ useCourses: () => store }));
 
 beforeEach(() => {
   localStorage.clear();
+  Object.assign(store, { courses: [], enrolledCourseIds: [], loading: false, progressLoading: false, loadError: "", progressError: "" });
+  vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
   vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
   HTMLDialogElement.prototype.showModal = function () { this.setAttribute("open", ""); };
   HTMLDialogElement.prototype.close = function () { this.removeAttribute("open"); };
+});
+
+it("shows only assigned published course cards and keeps preview actions inside the guide", () => {
+  const assigned = { ...blankCourse("Наставник"), id: "assigned", title: "Назначенный курс", status: "published" as const };
+  store.courses = [assigned, { ...assigned, id: "other", title: "Чужой курс" }, { ...assigned, id: "draft", title: "Черновик", status: "draft" }];
+  store.enrolledCourseIds = ["assigned", "draft"];
+  const openCourses = vi.fn();
+  const { container } = render(<StudentGuide userId="cards" openCourses={openCourses} />);
+  fireEvent.click(screen.getByRole("button", { name: "Далее" }));
+  fireEvent.click(screen.getByRole("button", { name: "Далее" }));
+  expect(screen.getByText("Назначенный курс")).toBeTruthy();
+  expect(screen.queryByText("Чужой курс")).toBeNull();
+  expect(screen.queryByText("Черновик")).toBeNull();
+  expect(screen.queryByRole("button", { name: "Открыть курс Назначенный курс" })).toBeNull();
+  fireEvent.click(container.querySelector(".studentContinueButton")!);
+  expect(openCourses).not.toHaveBeenCalled();
+  expect(screen.getByText("Шаг 3 из 5")).toBeTruthy();
 });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
