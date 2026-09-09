@@ -39,15 +39,17 @@ type Page =
   | "assignments";
 
 function AccountMenuIcon({ kind }: { kind: "profile" | "settings" | "sun" | "moon" | "logout" }) {
-  const paths = {
-    profile: <><circle cx="12" cy="8" r="3.25" /><path d="M5.75 19c.65-3.25 2.75-5 6.25-5s5.6 1.75 6.25 5" /></>,
-    settings: <><path d="M4 7h10M17 7h3M4 17h3M10 17h10" /><circle cx="16" cy="7" r="2" /><circle cx="8" cy="17" r="2" /></>,
-    sun: <><circle cx="12" cy="12" r="4" /><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M18.7 5.3l-1.4 1.4M6.7 17.3l-1.4 1.4" /></>,
-    moon: <path d="M20 15.2A8.5 8.5 0 0 1 8.8 4 8.5 8.5 0 1 0 20 15.2Z" />,
-    logout: <><path d="M10 5H5.5A1.5 1.5 0 0 0 4 6.5v11A1.5 1.5 0 0 0 5.5 19H10M14.5 8l4 4-4 4M18.5 12H9" /></>,
+  const imageSources = {
+    profile: "/account-icons/user.png",
+    settings: "/account-icons/settings.png",
+    moon: "/account-icons/moon-stars.png",
+    logout: "/account-icons/logout.png",
   } as const;
+  if (kind !== "sun") {
+    return <img src={imageSources[kind]} alt="" aria-hidden="true" />;
+  }
 
-  return <svg viewBox="0 0 24 24" aria-hidden="true">{paths[kind]}</svg>;
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M18.7 5.3l-1.4 1.4M6.7 17.3l-1.4 1.4" /></svg>;
 }
 
 type HeaderNotification = {

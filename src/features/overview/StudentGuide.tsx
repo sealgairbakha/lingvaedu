@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { GuideCoursesScene, GuideLessonScene } from "./StudentGuideScenes";
+import { GuideCoursesScene, GuideLessonScene, GuideReturnScene } from "./StudentGuideScenes";
 import "../../styles/student-guide.css";
 
 const compactQuery = "(max-width: 820px), (max-height: 500px) and (max-width: 1000px)";
@@ -75,14 +75,11 @@ export function StudentGuide({ userId, openCourses, sidebar }: { userId: string;
       {step < 2 ? <div className="guideReplicaFrame">
         <div className={`guideReplica ${(step > 0 || menuOpen) ? "guideMenuVisible" : ""}`}>
           <div className="guideReplicaHeader"><button className="menuBtn" aria-label="Открыть меню на иллюстрации" onClick={() => setMenuOpen((value) => !value)}><span/><span/><span/>{!menuOpen && step === 0 && <TapHand />}</button><span>LingvaEdu</span></div>
-          <div className="guideReplicaContent" aria-hidden="true"><strong>Обзор</strong><img src="/overview/student-journey.png" alt="" /></div>
+          <div className="guideReplicaContent" aria-hidden="true"><strong>Обзор</strong><span className="courseCoverArt guideReplicaCourseCover"><i /><i /><i /></span></div>
           <div className="guideOriginalSidebar" inert aria-hidden="true">{sidebar}<div className="guideNavTap"><TapHand /></div></div>
         </div>
       </div> : <div key={step} className={`guideWindow guideScene-${direction}`} aria-hidden="true">
-        {step === 2 ? <GuideCoursesScene cursor={<TapHand />} /> : step === 3 ? <GuideLessonScene cursor={<TapHand />} /> : <>
-          <div className="guideWindowTop"><span>LingvaEdu</span><i /></div>
-          <div className="guideCanvas"><strong>Привет!</strong><span className="guideSmall">Ваш курс · следующий урок</span><span className="guideTarget guideButton">Продолжить урок<TapHand /></span></div>
-        </>}
+        {step === 2 ? <GuideCoursesScene cursor={<TapHand />} /> : step === 3 ? <GuideLessonScene cursor={<TapHand />} /> : <GuideReturnScene cursor={<TapHand />} />}
       </div>}
     </div>
     <div key={step} className={`studentGuideCopy guideScene-${direction}`}><span className="studentGuideCount">Шаг {step + 1} из {steps.length}</span><h2 id="student-guide-title" ref={heading} tabIndex={-1}>{steps[step].title}</h2><p id="student-guide-description">{steps[step].text}</p></div>
@@ -91,7 +88,6 @@ export function StudentGuide({ userId, openCourses, sidebar }: { userId: string;
       <div className="guideSteps" aria-label="Этапы знакомства">{steps.map((item, index) => <span key={item.label} aria-current={step === index ? "step" : undefined} aria-label={`${index + 1}. ${item.label}`} />)}</div>
       <button className="guideNext" onClick={() => { if (step < steps.length - 1) changeStep(1); else { dismiss(); openCourses(); } }}>{step === steps.length - 1 ? "К моим курсам" : "Далее"}</button>
     </footer>
-    <label className="guideDontShow"><input type="checkbox" checked={dontShow} onChange={(event) => setDontShow(event.target.checked)} />Не показывать в следующий раз</label>
-    <p className="studentGuideHint">Повторить: «Обзор» → «Как учиться».</p>
+    <label className="guideDontShow"><input type="checkbox" checked={dontShow} onChange={(event) => setDontShow(event.target.checked)} />Больше не показывать</label>
   </dialog>;
 }

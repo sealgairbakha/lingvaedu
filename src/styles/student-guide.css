@@ -26,21 +26,26 @@
 .studentGuideCopy h2:focus { outline: none; }
 .studentGuideCopy p { font-size: .9rem; line-height: 1.65; color: var(--muted); margin: 0; min-height: 95px; }
 .studentGuideFooter { display: flex; gap: 12px; justify-content: space-between; align-items: center; padding: 12px 22px 0; }
+.guideBack { font-size: .8rem; }
 .guideBack:disabled { opacity: .4; cursor: default; }
-.guideNext { min-height: 44px; padding: 10px 18px; background: #654bf6; color: white; border: 0; border-radius: 9px; font: inherit; font-size: .875rem; cursor: pointer; }
+.guideNext { min-height: 44px; padding: 10px 18px; background: #654bf6; color: white; border: 0; border-radius: 9px; font: inherit; font-size: .8rem; cursor: pointer; }
 .guideSteps { display: flex; gap: 6px; }
 .guideSteps span { width: 6px; height: 6px; background: var(--line); border-radius: 50%; }
 .guideSteps [aria-current] { background: var(--purple); width: 18px; border-radius: 4px; }
-.studentGuideHint { padding: 4px 26px 18px; font-size: .7rem; color: var(--muted); text-align: center; }
-.guideDontShow { display: flex; gap: 10px; align-items: center; min-height: 44px; margin: 12px 26px 0; font-size: .8rem; cursor: pointer; }
-.guideDontShow input { width: 18px; height: 18px; margin: 0; accent-color: var(--purple); flex-shrink: 0; }
+.guideDontShow { display: flex; gap: 11px; align-items: center; min-height: 44px; margin: 12px 26px 18px; font-size: .8rem; cursor: pointer; }
+.guideDontShow input { appearance: none; -webkit-appearance: none; display: grid; place-items: center; width: 22px; height: 22px; margin: 0; flex: 0 0 22px; border: 1.5px solid color-mix(in srgb, var(--muted) 62%, var(--line)); border-radius: 7px; background: var(--card); cursor: pointer; transition: background-color 160ms cubic-bezier(.23,1,.32,1), border-color 160ms cubic-bezier(.23,1,.32,1), box-shadow 160ms cubic-bezier(.23,1,.32,1); }
+.guideDontShow input::before { content: ""; width: 11px; height: 9px; background: #fff; clip-path: polygon(14% 44%,0 59%,40% 100%,100% 18%,83% 0,39% 65%); opacity: 0; transform: scale(.72); transition: opacity 120ms cubic-bezier(.23,1,.32,1), transform 120ms cubic-bezier(.23,1,.32,1); }
+.guideDontShow input:checked { border-color: var(--purple); background: var(--purple); }
+.guideDontShow input:checked::before { opacity: 1; transform: scale(1); }
+.guideDontShow input:focus-visible { outline: 3px solid color-mix(in srgb, var(--purple) 32%, transparent); outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) { .guideDontShow:hover input { border-color: var(--purple); } }
 .guideReplicaFrame { height: 280px; overflow: hidden; border-radius: 10px; position: relative; background: var(--bg); }
 .guideReplica { position: relative; width: 178.572%; height: 500px; transform: scale(.56); transform-origin: top left; color: var(--ink); }
 .guideReplicaHeader { display: flex; height: 68px; align-items: center; gap: 14px; padding: 0 18px; background: var(--card); border-bottom: 1px solid var(--line); }
 .studentGuide .guideReplica .menuBtn { display: flex; opacity: 1; transform: none; pointer-events: auto; }
 .guideReplicaContent { padding: 24px; display: grid; gap: 22px; }
 .guideReplicaContent strong { font-size: 26px; }
-.guideReplicaContent img { width: 100%; height: 240px; object-fit: cover; border-radius: 18px; }
+.guideReplicaCourseCover { width: 100%; min-height: 240px; height: 240px; border-radius: 18px; }
 .guideOriginalSidebar { position: absolute; inset: 0 auto 0 0; width: 250px; pointer-events: none; transform: translateX(-100%); opacity: 0; }
 .guideMenuVisible .guideOriginalSidebar { transform: translateX(0); opacity: 1; }
 .studentGuide .guideOriginalSidebar .sidebar { position: absolute; inset: 0 auto 0 0; width: 250px; height: 500px; min-height: 0; transform: none; visibility: visible; transition: none; }
@@ -73,12 +78,26 @@
 .guideDevice-phone .guideAnswer { padding: 3px 6px; }
 .guideDevice-phone .guideButton { padding: 5px 7px; }
 .guideScaledViewport { position: relative; flex: 1; min-height: 0; overflow: hidden; background: var(--bg); color: var(--ink); }
-.guideScaledPage { position: absolute; top: 0; width: 760px; transform-origin: top left; }
-.guidePageBar { display: flex; align-items: center; gap: 18px; height: 54px; padding: 0 24px; background: var(--card); border-bottom: 1px solid var(--line); font-size: 16px; font-weight: 600; }
-.guidePageBar > span { color: var(--muted); font-weight: 400; }
+.guideScaledPage { position: absolute; top: 0; width: 840px; transform-origin: top left; }
+.guidePageBar { display: flex; align-items: center; gap: 14px; height: 68px; padding: 0 18px; background: var(--card); border-bottom: 1px solid var(--line); font-size: 16px; font-weight: 600; }
+.guideSceneMenu { display: grid; align-content: center; gap: 4px; width: 36px; height: 36px; padding: 0 9px; border: 1px solid var(--line); border-radius: 9px; background: var(--card); }
+.guideSceneMenu > i { display: block; width: 16px; height: 2px; border-radius: 2px; background: currentColor; }
+.guidePageBar > b { font: inherit; }
 .guideCatalog { padding: 20px 24px 24px; }
 .guideCatalog > h3 { margin: 0 0 18px; font-size: 26px; }
-.guideCatalogCards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start; }
+.guideCatalogCards { display: grid; place-items: start center; }
+.guideCourseCard { width: 390px; transform-origin: 50% 58%; }
+.guideCourseCard:hover { transform: none; box-shadow: 0 10px 28px rgba(31,40,66,.06); }
+.guideCourseCover { position: relative; height: 112px; overflow: hidden; background: #c8bafb; }
+.guideCourseCover > i { position: absolute; width: 160px; height: 160px; border: 22px solid #ded6fd; border-radius: 50%; right: -28px; top: -68px; }
+.guideCourseCover > i + i { width: 12px; height: 12px; border: 0; background: var(--lime); right: 34px; top: 82px; }
+.guideCourseCard .studentCourseInfo { display: grid; gap: 12px; padding: 18px; }
+.guideCourseCard .guideTextLines { gap: 8px; }
+.guideCourseCard .guideTextLines > i { height: 9px; }
+.guideCourseMeta { display: flex; justify-content: space-between; gap: 40px; }
+.guideCourseMeta > i { display: block; width: 86px; height: 8px; border-radius: 4px; background: var(--line); }
+.guideCourseMeta > i:last-child { width: 112px; }
+.guideCourseCard .studentProgressBar > i { width: 42%; }
 .guideCatalogCards .studentContinueButton { position: relative; }
 .studentGuide .guideCatalogCards .guideTapHand { width: 36px; height: 44px; top: 12px; right: 28px; }
 .guideCatalogLoading { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; padding: 30px 0; }
@@ -101,7 +120,21 @@
 .studentGuide .guideLessonCursor .guideTapHand { width: 36px; height: 44px; right: 12px; top: 12px; }
 .guideTaskChecked { display: flex; align-items: center; gap: 8px; color: var(--ink); font-size: 14px; }
 .guideTaskChecked svg { width: 24px; height: 24px; fill: none; stroke: var(--purple); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.guideReturnPage { min-height: 440px; background: var(--bg); }
+.guideReturnContent { display: grid; gap: 24px; padding: 28px; }
+.guideReturnContent > .guideTextLines { width: 48%; }
+.guideReturnCourse { display: grid; grid-template-columns: 210px 1fr; gap: 24px; overflow: hidden; border-radius: 16px; background: var(--card); box-shadow: 0 12px 25px #40305c18; }
+.guideReturnCourse .guideCourseCover { height: 210px; }
+.guideReturnCourse > div:last-child { display: grid; align-content: center; gap: 28px; padding: 24px 24px 24px 0; }
+.guideReturnCourse .guideReturnButton { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 8px; justify-self: start; min-width: 178px; transform-origin: center; }
+.studentGuide .guideReturnButton .guideTapHand { width: 36px; height: 44px; right: -14px; top: -4px; }
 @media (prefers-reduced-motion: no-preference) {
+  .guideReturnButton { animation: guideReturnButtonPress 1600ms infinite cubic-bezier(.23,1,.32,1); }
+  .guideCourseCard { animation: guideCourseApproach 5600ms infinite cubic-bezier(.77,0,.175,1); }
+  .guideCourseButton { animation: guideCourseButtonPress 5600ms infinite cubic-bezier(.23,1,.32,1); }
+  .studentGuide .guideCatalogCards .guideTapHand { animation: guideCourseHandPress 5600ms infinite cubic-bezier(.23,1,.32,1); }
+  .studentGuide .guideCatalogCards .guideTapGlow { animation: guideCourseGlow 5600ms infinite; }
+  .studentGuide .guideCatalogCards .guideTapRays { animation: guideCourseRays 5600ms infinite; }
   .guideLessonTrack { animation: guideLessonScroll 6400ms infinite cubic-bezier(.77,0,.175,1); }
   .guideLessonCursor { animation: guideLessonCursorReveal 6400ms infinite; }
   .guideLessonCursor .guideTapHand { animation: guideLessonPress 6400ms infinite cubic-bezier(.23,1,.32,1); }
@@ -110,6 +143,12 @@
   .guideTaskActions .taskCheckButton { animation: guideLessonButtonPress 6400ms infinite cubic-bezier(.23,1,.32,1); }
   .guideTaskChecked { animation: guideLessonChecked 6400ms infinite; }
 }
+@keyframes guideReturnButtonPress { 0%, 42%, 58%, 100% { transform: scale(1); } 45%, 55% { transform: scale(.97); } }
+@keyframes guideCourseApproach { 0% { opacity: .35; transform: scale(.76); } 8% { opacity: 1; } 36%, 90% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1); } }
+@keyframes guideCourseHandPress { 0%, 42%, 100% { opacity: 0; transform: translate(14px, 14px); } 50% { opacity: 1; transform: translate(14px, 14px); } 58%, 65%, 90% { opacity: 1; transform: translate(0, 0); } 62% { opacity: 1; transform: translateY(3px) scale(.94); } }
+@keyframes guideCourseButtonPress { 0%, 60%, 65%, 100% { transform: scale(1); } 62% { transform: scale(.97); } }
+@keyframes guideCourseGlow { 0%, 60%, 65%, 100% { opacity: 0; } 62% { opacity: .3; } }
+@keyframes guideCourseRays { 0%, 60%, 65%, 100% { opacity: 0; } 62% { opacity: 1; } }
 @keyframes guideLessonScroll {
   0%, 10% { transform: translateY(0); }
   55%, 100% { transform: translateY(calc(374px - 100%)); }

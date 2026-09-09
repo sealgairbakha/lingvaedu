@@ -1,6 +1,5 @@
 import { useLayoutEffect, useRef, type ReactNode } from "react";
-import { useCourses } from "../courses/CourseProvider";
-import { StudentCourseCard } from "../courses/StudentCourseCard";
+import { ActionChevron } from "../../components/ActionChevron";
 
 // Fit the original components into the illustration without changing their proportions.
 function ScaledScene({ children }: { children: ReactNode }) {
@@ -25,16 +24,26 @@ function ScaledScene({ children }: { children: ReactNode }) {
   return <div className="guideScaledViewport" ref={viewport} inert aria-hidden="true"><div className="guideScaledPage" ref={page}>{children}</div></div>;
 }
 
+function GuideSceneHeader() {
+  return <div className="guidePageBar"><span className="guideSceneMenu"><i /><i /><i /></span><b>LingvaEdu</b></div>;
+}
+
 export function GuideCoursesScene({ cursor }: { cursor: ReactNode }) {
-  const { courses, enrolledCourseIds, progress, loading, progressLoading, loadError, progressError } = useCourses();
-  const available = courses.filter((course) => course.status === "published" && enrolledCourseIds.includes(course.id)).slice(0, 2);
   return <ScaledScene>
-    <div className="guidePageBar">LingvaEdu <span>/ Мои курсы</span></div>
+    <GuideSceneHeader />
     <div className="guideCatalog">
       <h3>Мои курсы</h3>
-      {loading || progressLoading ? <div className="guideCatalogLoading"><GuideTextLines /><GuideTextLines /></div> : loadError || progressError ? <p>Не удалось загрузить курсы. Попробуйте открыть «Мои курсы» ещё раз.</p> : available.length ? <div className="guideCatalogCards">
-        {available.map((course, index) => <StudentCourseCard key={course.id} course={course} progress={progress} onOpen={() => {}} actionDecoration={index === 0 ? cursor : undefined} />)}
-      </div> : <div className="courseEmpty studentCourseEmpty"><h3>У вас пока нет доступных курсов.</h3><p>Назначенные курсы появятся здесь.</p></div>}
+      <div className="guideCatalogCards">
+        <article className="studentCourseCard guideCourseCard">
+          <div className="guideCourseCover"><i /><i /></div>
+          <div className="studentCourseInfo">
+            <GuideTextLines />
+            <div className="guideCourseMeta"><i /><i /></div>
+            <div className="studentProgressBar"><i /></div>
+            <button className="studentContinueButton guideCourseButton" tabIndex={-1}>Продолжить<ActionChevron />{cursor}</button>
+          </div>
+        </article>
+      </div>
     </div>
   </ScaledScene>;
 }
@@ -46,7 +55,7 @@ function GuideTextLines() {
 export function GuideLessonScene({ cursor }: { cursor: ReactNode }) {
   return <ScaledScene>
     <div className="guideLessonPage coursePlayer">
-      <div className="guidePageBar">LingvaEdu <span>/ Урок</span></div>
+      <GuideSceneHeader />
       <div className="guideLessonViewport">
         <div className="guideLessonTrack">
           <div className="learningBlock"><GuideTextLines /><GuideTextLines /></div>
@@ -57,6 +66,21 @@ export function GuideLessonScene({ cursor }: { cursor: ReactNode }) {
             <div className="guideTaskAnswer"><span /><div className="guideTextLines"><i /></div></div>
             <div className="taskActions guideTaskActions"><span className="guideTaskChecked"><svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6" /></svg>Ответ проверен</span><button className="taskCheckButton" tabIndex={-1}>Проверить<span className="guideLessonCursor">{cursor}</span></button></div>
           </div>
+        </div>
+      </div>
+    </div>
+  </ScaledScene>;
+}
+
+export function GuideReturnScene({ cursor }: { cursor: ReactNode }) {
+  return <ScaledScene>
+    <div className="guideReturnPage">
+      <GuideSceneHeader />
+      <div className="guideReturnContent">
+        <GuideTextLines />
+        <div className="guideReturnCourse">
+          <div className="guideCourseCover"><i /><i /></div>
+          <div><GuideTextLines /><button className="btn primary guideReturnButton" tabIndex={-1}>Продолжить<ActionChevron />{cursor}</button></div>
         </div>
       </div>
     </div>

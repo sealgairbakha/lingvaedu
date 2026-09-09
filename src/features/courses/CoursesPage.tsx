@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
+import { ActionChevron } from "../../components/ActionChevron";
 import { useCourses, type CourseLessonProgress } from "./CourseProvider";
 import type { Course, CourseStatus } from "./types";
 import { CourseCover, CourseCardInfo } from "./CourseCard";
@@ -26,7 +27,7 @@ function StudentCourses({ courses, progress, loading }: { courses: Course[]; pro
         <div className="continueLearningContent"><small>ПРОДОЛЖИТЬ ОБУЧЕНИЕ</small><h2>{active.course.title}</h2><p>{active.course.language}{active.course.level ? ` · ${active.course.level}` : ""}</p>
           <div className="studentProgressLabel"><b>{active.percent}% завершено</b><span>{active.completed} из {active.lessons.length} уроков</span></div><div className="studentProgressBar"><i style={{ width: `${active.percent}%` }} /></div>
           {active.lastLesson && <p className="lastLesson">Последний урок: <b>{active.lastLesson.title}</b></p>}
-          <button className="btn primary" onClick={() => open(active.course, active.lastLesson?.id)}>{active.last ? "Продолжить" : "Начать обучение"} <span>→</span></button>
+          <button className="btn primary" onClick={() => open(active.course, active.lastLesson?.id)}>{active.last ? "Продолжить" : "Начать обучение"}<ActionChevron /></button>
         </div>
       </section>}
       <section className="studentCourseLibrary"><div className="studentSectionHead"><div><small>ВАШИ ПРОГРАММЫ</small><h2>Все курсы</h2></div><span>{courses.length}</span></div><div className="studentCourseGrid">

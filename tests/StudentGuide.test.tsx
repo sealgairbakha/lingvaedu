@@ -1,32 +1,23 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { StudentGuide } from "../src/features/overview/StudentGuide";
-import { blankCourse, type Course } from "../src/features/courses/types";
-
-const store = vi.hoisted(() => ({ courses: [] as Course[], enrolledCourseIds: [] as string[], progress: [], loading: false, progressLoading: false, loadError: "", progressError: "" }));
-vi.mock("../src/features/courses/CourseProvider", () => ({ useCourses: () => store }));
 
 beforeEach(() => {
   localStorage.clear();
-  Object.assign(store, { courses: [], enrolledCourseIds: [], loading: false, progressLoading: false, loadError: "", progressError: "" });
   vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
   vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
   HTMLDialogElement.prototype.showModal = function () { this.setAttribute("open", ""); };
   HTMLDialogElement.prototype.close = function () { this.removeAttribute("open"); };
 });
 
-it("shows only assigned published course cards and keeps preview actions inside the guide", () => {
-  const assigned = { ...blankCourse("Наставник"), id: "assigned", title: "Назначенный курс", status: "published" as const };
-  store.courses = [assigned, { ...assigned, id: "other", title: "Чужой курс" }, { ...assigned, id: "draft", title: "Черновик", status: "draft" }];
-  store.enrolledCourseIds = ["assigned", "draft"];
+it("shows one text-free course preview and keeps its action inside the guide", () => {
   const openCourses = vi.fn();
   const { container } = render(<StudentGuide userId="cards" openCourses={openCourses} />);
   fireEvent.click(screen.getByRole("button", { name: "Далее" }));
   fireEvent.click(screen.getByRole("button", { name: "Далее" }));
-  expect(screen.getByText("Назначенный курс")).toBeTruthy();
-  expect(screen.queryByText("Чужой курс")).toBeNull();
-  expect(screen.queryByText("Черновик")).toBeNull();
-  expect(screen.queryByRole("button", { name: "Открыть курс Назначенный курс" })).toBeNull();
+  expect(container.querySelectorAll(".guideCourseCard")).toHaveLength(1);
+  expect(container.querySelector(".guideCourseCard h3, .guideCourseCard p")).toBeNull();
+  expect(container.querySelector(".guideCourseButton")?.textContent).toContain("Продолжить");
   fireEvent.click(container.querySelector(".studentContinueButton")!);
   expect(openCourses).not.toHaveBeenCalled();
   expect(screen.getByText("Шаг 3 из 5")).toBeTruthy();
@@ -35,13 +26,15 @@ afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 it("shows all steps, supports going back and opens courses on completion", () => {
   const openCourses = vi.fn();
-  render(<StudentGuide userId="complete" openCourses={openCourses} />);
+  const { container } = render(<StudentGuide userId="complete" openCourses={openCourses} />);
   expect(screen.getByRole("heading", { name: "Откройте боковую панель" })).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: "Далее" }));
   expect(screen.getByRole("heading", { name: "Выберите «Мои курсы»" })).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: "Назад" }));
   expect(screen.getByText("Шаг 1 из 5")).toBeTruthy();
   for (let index = 0; index < 4; index++) fireEvent.click(screen.getByRole("button", { name: "Далее" }));
+  expect(container.querySelector(".guideReturnButton")?.textContent).toContain("Продолжить");
+  expect(container.querySelector(".guideReturnButton .courseActionChevron")).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: "К моим курсам" }));
   expect(openCourses).toHaveBeenCalledOnce();
   expect(screen.queryByRole("dialog")).toBeNull();
@@ -50,7 +43,7 @@ it("shows all steps, supports going back and opens courses on completion", () =>
 
 it("remembers skipping per student and allows replay from the beginning", () => {
   const first = render(<StudentGuide userId="skip" openCourses={vi.fn()} />);
-  fireEvent.click(screen.getByRole("checkbox", { name: "Не показывать в следующий раз" }));
+  fireEvent.click(screen.getByRole("checkbox", { name: "Больше не показывать" }));
   fireEvent.click(screen.getByRole("button", { name: "Пропустить" }));
   first.unmount();
   render(<StudentGuide userId="skip" openCourses={vi.fn()} />);

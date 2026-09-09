@@ -1495,7 +1495,7 @@ html[data-theme="dark"] .taskBlockInspector .taskRowNumber {
   }
 }
 
-/* Account menu uses one consistent outlined icon language. */
+/* Account menu icons share one visual footprint across SVG and supplied image assets. */
 .accountDropdown > button .accountMenuIcon {
   display: grid;
   flex: 0 0 24px;
@@ -1515,6 +1515,13 @@ html[data-theme="dark"] .taskBlockInspector .taskRowNumber {
   stroke-width: 1.7;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+.accountDropdown > button .accountMenuIcon img {
+  display: block;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
 }
 
 .accountDropdown > button:hover .accountMenuIcon,
@@ -4696,7 +4703,7 @@ html:not([data-theme="dark"]) .coursePlayer {
 .continueLearningContent { display:flex;flex-direction:column;justify-content:center;padding:38px 46px; }
 .continueLearningContent h2 { margin:10px 0 5px;font-size:30px;letter-spacing:-.7px; }
 .continueLearningContent>p { margin:0;color:var(--muted); }
-.continueLearningContent .btn { align-self:flex-start;min-width:178px;margin-top:20px; }
+.continueLearningContent .btn { display:inline-flex;align-items:center;justify-content:center;gap:8px;align-self:flex-start;min-width:178px;margin-top:20px; }
 .continueLearningContent .lastLesson { margin-top:14px;color:var(--muted); }
 .studentSectionHead { display:flex;align-items:center;justify-content:space-between;margin-bottom:16px; }
 .studentSectionHead h2 { margin:5px 0 0;font-size:22px; }
@@ -4718,6 +4725,7 @@ html:not([data-theme="dark"]) .coursePlayer {
 .studentLastLesson { margin:16px 0 4px;color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
 .remainingTime { color:var(--muted);font-size:10px; }
 .studentContinueButton { display:flex;justify-content:space-between;width:100%;margin-top:18px;padding:14px 0 0;border:0;border-top:1px solid var(--line);background:none;color:var(--purple);font-weight:900;text-align:left; }
+.courseActionChevron { display:block;width:18px;height:18px;flex:0 0 18px;stroke:currentColor;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round; }
 .studentCourseEmpty>span { display:grid;place-items:center;width:48px;height:48px;margin:0 auto 12px;border-radius:14px;background:#eeebff;color:var(--purple);font-size:22px; }
 .courseCoverArt { position:relative;display:block;min-height:125px;overflow:hidden;padding:20px;background:linear-gradient(135deg,#ddd7ff,#9f8cff);color:#fff;isolation:isolate; }
 .courseCoverArt.blue { background:linear-gradient(135deg,#d7eaff,#4a8fe5)!important;color:#fff!important; }.courseCoverArt.green { background:linear-gradient(135deg,#d6f1e5,#39ad7f)!important;color:#fff!important; }.courseCoverArt.orange { background:linear-gradient(135deg,#ffe3bf,#ee9944)!important;color:#fff!important; }.courseCoverArt.pink { background:linear-gradient(135deg,#f9d9e7,#df6592)!important;color:#fff!important; }.courseCoverArt.dark { background:linear-gradient(135deg,#273149,#101728)!important;color:#fff!important; }
