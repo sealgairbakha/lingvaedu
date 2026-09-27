@@ -22,6 +22,10 @@ import "./styles/workspace-backdrop.css";
 const App = lazy(() => import("./App"));
 // eslint-disable-next-line react-refresh/only-export-components
 const VideoRoomPage = lazy(() => import("./features/video/VideoRoomsPage").then((module) => ({ default: module.VideoRoomPage })));
+// eslint-disable-next-line react-refresh/only-export-components
+const GuestLandingPage = lazy(() => import("./features/guest/GuestLandingPage"));
+// eslint-disable-next-line react-refresh/only-export-components
+const GuestTrialPage = lazy(() => import("./features/guest/GuestTrialPage"));
 
 let savedTheme: string | null = null;
 try { savedTheme = localStorage.getItem("lingvaedu-theme"); } catch { /* Use the system theme if storage is restricted. */ }
@@ -34,6 +38,8 @@ function RootRoutes() {
   const location = useLocation();
   const { user } = useAuth();
   const isVideoRoom = /^\/video-room\/[a-f0-9]{32}\/?$/i.test(location.pathname);
+  if (location.pathname === "/welcome" || location.pathname === "/welcome/") return <GuestLandingPage />;
+  if (/^\/trial\/[^/]+\/?$/.test(location.pathname)) return <GuestTrialPage />;
   return isVideoRoom
     ? <VideoRoomPage />
     : <AuthGate><CourseProvider key={user?.id || "anonymous"}><App /></CourseProvider></AuthGate>;

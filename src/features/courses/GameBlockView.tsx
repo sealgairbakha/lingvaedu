@@ -82,7 +82,13 @@ function MemoryGame({ block, game, onResult }: { block: LessonBlock; game: Extra
         const isMatched = matched.includes(card.pairId);
         const visible = opened.includes(card.key) || isMatched;
         return <button type="button" key={card.key} className={`${visible ? "visible" : ""} ${isMatched ? "matched" : ""}`} onClick={() => choose(card.key)} aria-label={visible ? card.text || labels.emoji : labels.openCard}>
-          <span className="memoryBack">{isMatched ? "✓" : "?"}</span><span className="memoryFace">{card.image && (isImageUrl(card.image) ? <img src={card.image} alt="" /> : <span className="gameCardEmoji" aria-hidden="true">{card.image}</span>)}{card.text}</span>
+          <span className="memoryBack" aria-hidden="true">
+            <svg viewBox="0 0 40 40">
+              <rect x="6.5" y="9" width="13" height="17" rx="4" />
+              <rect x="20.5" y="14" width="13" height="17" rx="4" />
+              <path d="M16.5 30.5h-4M29 9.5h-3.5M9.5 5.5v-2M6.5 7 5 5.5M12.5 7 14 5.5" />
+            </svg>
+          </span><span className="memoryFace">{card.image && (isImageUrl(card.image) ? <img src={card.image} alt="" /> : <span className="gameCardEmoji" aria-hidden="true">{card.image}</span>)}{card.text}</span>
         </button>;
       })}</div>}
   </section>;
@@ -115,7 +121,7 @@ function BuildWordGame({ block, game, onResult }: { block: LessonBlock; game: Ex
     {!items.length ? <p className="gameEmpty">{labels.emptyWord}</p> : complete ? <GameComplete score={score} total={items.length} onRestart={restart} /> : item && <div className="buildWordBoard">
       {item.image && (isImageUrl(item.image) ? <img className="gamePromptImage" src={item.image} alt="" /> : <span className="gamePromptEmoji" aria-hidden="true">{item.image}</span>)}
       <p className="gameClue">{item.clue || labels.buildWord}</p>
-      <div className={`wordSlots ${feedback}`}>{[...item.word].map((_, index) => <button type="button" key={index} onClick={() => setChosen((value) => value.filter((__, chosenIndex) => chosenIndex !== index))}>{answer[index] || ""}</button>)}</div>
+      <div className={`wordSlots ${feedback}`}>{[...item.word].map((_, index) => <button type="button" key={index} className={answer[index] ? "filled" : ""} disabled={!answer[index]} aria-label={answer[index] ? `Убрать букву ${answer[index]} из позиции ${index + 1}` : `Пустая позиция ${index + 1}`} onClick={() => setChosen((value) => value.filter((__, chosenIndex) => chosenIndex !== index))}>{answer[index] || ""}</button>)}</div>
       <div className="letterBank">{letters.map((entry, index) => <button type="button" key={`${entry.index}-${index}`} disabled={chosen.includes(index)} onClick={() => setChosen((value) => [...value, index])}>{entry.letter}</button>)}</div>
       <div className="gameActions"><button type="button" className="secondary" onClick={() => setChosen([])}>{labels.clear}</button><button type="button" className="primary" disabled={chosen.length !== [...item.word].length} onClick={check}>{labels.check}</button></div>
     </div>}

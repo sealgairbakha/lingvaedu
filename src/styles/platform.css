@@ -18,6 +18,17 @@ html[data-theme="dark"] {
   outline-offset: 3px;
 }
 
+.authGuestLink {
+  display: inline-flex;
+  margin-top: 18px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid currentColor;
+  color: var(--lime);
+  font-size: 14px;
+  font-weight: 750;
+  text-decoration: none;
+}
+
 .skipContent {
   position: fixed;
   z-index: 10000;

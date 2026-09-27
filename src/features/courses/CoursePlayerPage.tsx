@@ -1018,6 +1018,13 @@ export function CoursePlayerPage() {
         const currentY = window.scrollY;
         const previousY = lastScrollYRef.current;
         const travel = currentY - headerScrollAnchorRef.current;
+        const scrollDelta = currentY - previousY;
+        if (Math.abs(scrollDelta) >= 2) {
+          playerRef.current?.setAttribute(
+            "data-scroll-direction",
+            scrollDelta > 0 ? "down" : "up",
+          );
+        }
         if (mobileTreeOpen || currentY < 96) {
           setHeaderHidden(false);
           headerScrollAnchorRef.current = currentY;
@@ -1159,6 +1166,37 @@ export function CoursePlayerPage() {
   }, [completed, course, current, progressReady, saveLessonProgress, user]);
   const isLastLesson = currentIndex === lessons.length - 1;
   const currentRun = current ? lessonRuns[current.id] : undefined;
+  useEffect(() => {
+    const player = playerRef.current;
+    if (!player || !current || !("IntersectionObserver" in window)) return;
+
+    const elements = Array.from(
+      player.querySelectorAll<HTMLElement>(".lessonScrollMotion"),
+    );
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const element = entry.target as HTMLElement;
+          if (!entry.isIntersecting) {
+            element.dataset.scrollMotionVisible = "false";
+            return;
+          }
+          if (element.dataset.scrollMotionVisible === "true") return;
+          element.dataset.scrollMotionVisible = "true";
+        });
+      },
+      { threshold: 0.12, rootMargin: "-76px 0px -10% 0px" },
+    );
+
+    elements.forEach((element) => {
+      const bounds = element.getBoundingClientRect();
+      const alreadyVisible = bounds.bottom > 76 && bounds.top < window.innerHeight * 0.9;
+      element.dataset.scrollMotionVisible = String(alreadyVisible);
+      observer.observe(element);
+    });
+
+    return () => observer.disconnect();
+  }, [activeLessonTabId, completedLessonNotice, current, currentRun?.expired]);
   const isRestricted = Boolean(
     current && (current.timeLimit > 0 || current.attempts > 0),
   );
@@ -1306,6 +1344,7 @@ export function CoursePlayerPage() {
       ref={playerRef}
       className={`coursePlayer fade ${headerHidden ? "courseHeaderHidden" : ""}`}
       data-lesson-pattern={course.lessonPattern || "space"}
+      data-scroll-direction="down"
     >
       <header className={`playerHeader ${headerHidden ? "playerHeaderHidden" : ""}`}>
         <button
@@ -1503,7 +1542,7 @@ export function CoursePlayerPage() {
                 </nav>
               )}
               {currentRun?.expired ? (
-                <section className="lessonExpiredCard">
+                <section className="lessonExpiredCard lessonScrollMotion">
                   <span className="expiredIcon" aria-hidden="true">
                     <svg viewBox="0 0 24 24">
                       <circle cx="12" cy="12" r="8" />
@@ -1538,7 +1577,7 @@ export function CoursePlayerPage() {
                       {visibleBlocks.map((block) => {
                         const taskIndex = currentTaskBlocks.findIndex((item) => item.id === block.id);
                         const nextTask = taskIndex >= 0 ? currentTaskBlocks[taskIndex + 1] : undefined;
-                        return <div className="lessonBlockAnchor" id={`learning-block-${block.id}`} key={block.id}>
+                        return <div className="lessonBlockAnchor lessonScrollMotion" id={`learning-block-${block.id}`} key={block.id}>
                           <LessonBlockView
                             block={block}
                             courseLanguage={course.language}
@@ -1556,17 +1595,17 @@ export function CoursePlayerPage() {
                       })}
                     </div>
                   ) : (
-                    <div className="learningBlock emptyMaterial">
+                    <div className="learningBlock emptyMaterial lessonScrollMotion">
                       В этом уроке пока нет учебных материалов.
                     </div>
                   )}
                   {completedLessonNotice === current.id && (
-                    <section className="lessonCompletedCard" aria-live="polite">
+                    <section className="lessonCompletedCard lessonScrollMotion" aria-live="polite">
                       <span>✓</span><div><small>УРОК ЗАВЕРШЁН</small><h2>{current.title} пройден</h2><p>Курс завершён на {percent}%.</p></div>
                       {currentIndex < lessons.length - 1 && <button className="btn primary" onClick={() => selectLesson(lessons[currentIndex + 1].lesson.id)}>Перейти к {lessons[currentIndex + 1].lesson.title} →</button>}
                     </section>
                   )}
-                  <footer className="readerFooter">
+                  <footer className="readerFooter lessonScrollMotion">
                     <button
                       className="btn ghost readerBackButton"
                       disabled={currentIndex === 0}
