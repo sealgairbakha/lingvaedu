@@ -47,7 +47,7 @@ function RootRoutes() {
   if (location.pathname === "/welcome" || location.pathname === "/welcome/") return <GuestLandingPage />;
   if (location.pathname === "/welcome/students" || location.pathname === "/welcome/students/") return <GuestStudentPage />;
   if (location.pathname === "/welcome/teachers" || location.pathname === "/welcome/teachers/") return <GuestTeacherPage />;
-  if (trialCourseId !== null) return <GuestTrialPage courseId={trialCourseId} />;
+  if (trialCourseId !== null) return <GuestTrialPage key={trialCourseId} courseId={trialCourseId} />;
   return isVideoRoom
     ? <VideoRoomPage />
     : <AuthGate><CourseProvider key={user?.id || "anonymous"}><App /></CourseProvider></AuthGate>;

@@ -52,6 +52,21 @@ html[data-theme="dark"] .guestPage{--guest-ink:#e9ecf6;--guest-muted:#aab3c8;--g
 .guestCourseLink:hover .guestCourseOpen{text-decoration:underline;text-underline-offset:3px}
 .guestTrialTopbar>a:last-child{display:inline-flex;align-items:center;gap:7px}
 
+/* The guest reader uses the same course-player structure and block styles. */
+.guestTrialTopbar{height:68px}
+.guestCoursePlayer{min-height:calc(100svh - 68px)}
+.guestCoursePlayer .playerHeader{top:68px}
+.guestCoursePlayer .playerProgress{width:auto;min-width:185px}
+.guestCoursePlayer .guestTrialNotice{margin:-8px 4px 26px;color:var(--muted);font-size:13px;line-height:1.5}
+.guestTrialSyncError{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 4px 20px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--muted);font-size:13px}
+.guestTrialSyncError button{border:0;background:none;color:var(--purple);font-weight:750}
+.guestCoursePlayer .playerTreeContent>div>button{cursor:pointer}
+.guestCoursePlayer .lessonCompletedCard .btn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
+.guestTrialMore,.guestTrialTaskProgress{margin:18px 4px 0;color:var(--muted);font-size:13px}
+.guestTrialMore a{color:var(--purple);font-weight:750}
+.guestTrialMore a:hover{text-decoration:underline;text-underline-offset:3px}
+@media(max-width:900px){.guestCoursePlayer .playerHeader{top:68px}}
+
 /* Distinct student and teacher entry points, within the LingvaEdu palette. */
 .guestAudienceHero{position:relative;isolation:isolate;overflow:hidden;color:#fff;background:#101726}
 .guestAudienceLabel{display:inline-block;color:var(--guest-lime);font-size:11px;font-weight:800;letter-spacing:.14em}

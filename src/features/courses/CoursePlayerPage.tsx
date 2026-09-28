@@ -6,37 +6,11 @@ import { useCourses } from "./CourseProvider";
 import { CourseAssignmentBlock } from "./CourseAssignmentBlock";
 import { GameBlockView } from "./GameBlockView";
 import { LearningBlockHeader } from "./LearningBlockHeader";
+import { LessonReaderIntro, LessonTabBar } from "./LessonPresentation";
+import { lessonFontFamilies, lessonTabs, taskBlockKinds, visibleLessonBlocks } from "./lessonPresentationData";
 import type { LessonBlock } from "./types";
 import { getCourseTaskLocale, type CourseTaskLocale } from "./courseTaskLocale";
 import { sanitizeRichText } from "./richText";
-
-const lessonFontFamilies = {
-  onest: '"Onest Variable", Onest, sans-serif',
-  serif: 'Georgia, "Times New Roman", serif',
-  rounded: '"Trebuchet MS", Arial, sans-serif',
-  mono: '"Cascadia Code", Consolas, monospace',
-} as const;
-
-const taskBlockKinds = new Set<LessonBlock["kind"]>([
-  "drag-words",
-  "select-words",
-  "fill-blank",
-  "match",
-  "true-false",
-  "quiz",
-  "assignment",
-  "game-memory",
-  "game-build-word",
-  "game-listen-choice",
-  "game-missing",
-  "game-odd-one-out",
-  "game-speed",
-  "game-truth",
-  "game-categories",
-  "game-sentence",
-  "game-translate-sentence",
-  "game-adventure",
-]);
 
 type LessonRun = {
   used: number;
@@ -1134,18 +1108,12 @@ export function CoursePlayerPage() {
     : Math.min(requestedIndex, lastUnlockedIndex);
   const current = lessons[currentIndex]?.lesson || lessons[0]?.lesson;
   const currentModule = lessons[currentIndex]?.module || lessons[0]?.module;
-  const currentTabs = current?.tabs?.filter((tab) => tab.id) || [];
+  const currentTabs = current ? lessonTabs(current) : [];
   const activeTabId =
     currentTabs.find((tab) => tab.id === activeLessonTabId)?.id ||
     currentTabs[0]?.id ||
     "";
-  const visibleBlocks = current
-    ? currentTabs.length
-      ? current.blocks.filter(
-          (block) => (block.tabId || currentTabs[0].id) === activeTabId,
-        )
-      : current.blocks
-    : [];
+  const visibleBlocks = current ? visibleLessonBlocks(current, currentTabs, activeTabId) : [];
   const currentTaskBlocks = current?.blocks.filter((block) => taskBlockKinds.has(block.kind)) || [];
   const currentTasksPassed =
     completed.includes(current?.id || "") ||
@@ -1465,28 +1433,7 @@ export function CoursePlayerPage() {
         <article className="lessonReader">
           {current ? (
             <>
-              <div className="readerIntro">
-                <small>
-                  УРОК {currentIndex + 1} ИЗ {lessons.length}
-                </small>
-                <h1>{current.title}</h1>
-                {(current.goal || current.description) && <p style={{
-                  fontFamily: lessonFontFamilies[current.descriptionStyle?.fontFamily || "onest"],
-                  fontSize: `${current.descriptionStyle?.fontSize || 17}px`,
-                  fontWeight: current.descriptionStyle?.fontWeight || 400,
-                  textAlign: current.descriptionStyle?.textAlign || "left",
-                }}>{current.goal || current.description}</p>}
-                <div className="readerMeta">
-                  {current.estimatedMinutes && current.estimatedMinutes > 0 && (
-                    <span className="readerLimit">
-                      <small>Время</small><b>≈ {current.estimatedMinutes} мин</b>
-                    </span>
-                  )}
-                  {currentTaskBlocks.length > 0 && (
-                    <span className="readerLimit">
-                      <small>Практика</small><b>{currentTaskBlocks.length} {currentTaskBlocks.length === 1 ? "задание" : "заданий"}</b>
-                    </span>
-                  )}
+              <LessonReaderIntro lesson={current} index={currentIndex} total={lessons.length} taskCount={currentTaskBlocks.length}>
                   {current.timeLimit > 0 && !completed.includes(current.id) && (
                     <span
                       className={`readerLimit timerLimit ${secondsRemaining !== null && secondsRemaining < 60 ? "ending" : ""}`}
@@ -1524,22 +1471,9 @@ export function CoursePlayerPage() {
                       <b>Завершено</b>
                     </span>
                   )}
-                </div>
-              </div>
+              </LessonReaderIntro>
               {currentTabs.length > 0 && !currentRun?.expired && (
-                <nav className="learnerLessonTabs" aria-label="Разделы урока">
-                  {currentTabs.map((tab, index) => (
-                    <button
-                      type="button"
-                      key={tab.id}
-                      className={tab.id === activeTabId ? "active" : ""}
-                      aria-current={tab.id === activeTabId ? "page" : undefined}
-                      onClick={() => setActiveLessonTabId(tab.id)}
-                    >
-                      {tab.title || `Вкладка ${index + 1}`}
-                    </button>
-                  ))}
-                </nav>
+                <LessonTabBar tabs={currentTabs} activeTabId={activeTabId} onSelect={setActiveLessonTabId} />
               )}
               {currentRun?.expired ? (
                 <section className="lessonExpiredCard lessonScrollMotion">

@@ -1,5 +1,5 @@
 import { supabase } from "../../lib/supabase";
-import type { CourseLesson } from "../courses/types";
+import type { CourseLesson, LessonPattern } from "../courses/types";
 
 export type GuestCourse = {
   courseId: string;
@@ -30,6 +30,9 @@ export type GuestTrial = {
   courseId: string;
   courseTitle: string;
   courseLanguage: string;
+  moduleTitle: string;
+  lessonPattern: LessonPattern;
+  lessonCount: number;
   lesson: CourseLesson;
 };
 
@@ -69,6 +72,9 @@ export function parseGuestTrial(value: unknown): GuestTrial | null {
     courseId: row.courseId,
     courseTitle: row.courseTitle,
     courseLanguage: row.courseLanguage,
+    moduleTitle: typeof row.moduleTitle === "string" ? row.moduleTitle : "Первый модуль",
+    lessonPattern: row.lessonPattern === "none" || row.lessonPattern === "dinosaurs" || row.lessonPattern === "cars" ? row.lessonPattern : "space",
+    lessonCount: typeof row.lessonCount === "number" && Number.isInteger(row.lessonCount) && row.lessonCount > 0 ? row.lessonCount : 1,
     lesson: typedLesson as CourseLesson,
   };
 }
