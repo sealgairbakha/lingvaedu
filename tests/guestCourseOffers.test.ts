@@ -25,4 +25,11 @@ describe("guest course categories", () => {
     expect(course?.selfPacedPriceKzt).toBeNull();
     expect(course?.withTeacherPriceKzt).toBeNull();
   });
+
+  it("uses the saved course-cover design from the public catalog", () => {
+    const course = parseGuestCourse({ ...base, course_code: "NEW", course_color: "green", course_cover_style: "waves", course_show_new_ribbon: true });
+    expect(course).toMatchObject({ code: "NEW", color: "green", coverStyle: "waves", showNewRibbon: true });
+    expect(parseGuestCourse({ ...base, course_color: "invalid", course_cover_style: "invalid" }))
+      .toMatchObject({ color: "purple", coverStyle: "orbit" });
+  });
 });

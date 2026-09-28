@@ -1,26 +1,22 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { CourseCover } from "../courses/CourseCard";
 import { loadGuestCourses, type GuestCourse, type StudentCategory } from "./guestTrialData";
 import { GuestChevron } from "./GuestUi";
 
 const priceLabel = (price: number) => `${price.toLocaleString("ru-RU")} ₸`;
 
-function CourseCard({ course, index, category }: { course: GuestCourse; index: number; category: StudentCategory }) {
+function CourseCard({ course, category }: { course: GuestCourse; category: StudentCategory }) {
   const price = category === "self-paced" ? course.selfPacedPriceKzt : category === "with-teacher" ? course.withTeacherPriceKzt : null;
   return <article className="guestCourseCard">
     <Link className="guestCourseLink" to={`/trial/${encodeURIComponent(course.courseId)}`} aria-label={`Открыть пробный урок курса ${course.title}`}>
-      <div className="guestCourseVisual">
-        {course.coverImage && <img className="guestCourseCoverImage" src={course.coverImage} alt="" loading="lazy" />}
-        <span className="guestCourseIndex">{String(index + 1).padStart(2, "0")}</span>
-        <span className="guestCourseOrbit" aria-hidden="true" />
-        <span className="guestCourseVisualLabel">{course.language || "Языковой курс"}</span>
-      </div>
+      <CourseCover course={course} />
       <div className="guestCourseBody">
         <div className="guestCourseMeta"><span>{category === "free" ? "ПРОБНЫЙ УРОК" : category === "self-paced" ? "САМОСТОЯТЕЛЬНО" : "С УЧИТЕЛЕМ"}</span>{course.level && <span>{course.level}</span>}</div>
         <h3>{course.title}</h3>
         <p>{course.description || `Первый урок — «${course.lessonTitle}». Попробуйте без регистрации.`}</p>
         {price !== null && <div className="guestCoursePrice">{priceLabel(price)} <small>за курс · первый урок бесплатно</small></div>}
-        <div className="guestCourseFoot"><span>01 / {course.lessonTitle}</span><span className="guestCourseOpen"><GuestChevron />Открыть урок</span></div>
+        <div className="guestCourseFoot"><span>Первый урок: {course.lessonTitle}</span><span className="guestCourseOpen">Попробовать<GuestChevron /></span></div>
       </div>
     </Link>
   </article>;
@@ -48,7 +44,7 @@ export function GuestCatalog({ title = "Выберите первый урок."
       {status === "loading" && <div className="guestCatalogMessage" role="status">Загружаем доступные уроки…</div>}
       {status === "error" && <div className="guestCatalogMessage" role="alert"><p>{error}</p><button type="button" className="guestButton guestButtonPrimary" onClick={() => { setStatus("loading"); setRetry((value) => value + 1); }}><GuestChevron />Попробовать ещё раз</button></div>}
       {status === "ready" && courses.length === 0 && <div className="guestCatalogMessage"><h3>{category === "free" ? "Пробных уроков пока нет" : "Курсов в этой категории пока нет"}</h3><p>{category === "free" ? "Здесь появится первый урок каждого опубликованного курса." : "Здесь появятся опубликованные курсы, которым назначены эта категория и цена."}</p></div>}
-      {status === "ready" && courses.length > 0 && <div className="guestCourseGrid">{courses.map((course, index) => <CourseCard key={course.courseId} course={course} index={index} category={category} />)}</div>}
+      {status === "ready" && courses.length > 0 && <div className="guestCourseGrid">{courses.map((course) => <CourseCard key={course.courseId} course={course} category={category} />)}</div>}
     </div>
   </section>;
 }

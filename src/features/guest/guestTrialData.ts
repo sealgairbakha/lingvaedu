@@ -12,6 +12,10 @@ export type GuestCourse = {
   lessonTitle: string;
   selfPacedPriceKzt: number | null;
   withTeacherPriceKzt: number | null;
+  code: string;
+  color: string;
+  coverStyle: "orbit" | "grid" | "waves";
+  showNewRibbon?: boolean;
 };
 
 export type StudentCategory = "free" | "self-paced" | "with-teacher";
@@ -45,6 +49,10 @@ export function parseGuestCourse(value: unknown): GuestCourse | null {
     lessonTitle: row.lesson_title,
     selfPacedPriceKzt: typeof row.self_paced_price_kzt === "number" && row.self_paced_price_kzt >= 30000 ? row.self_paced_price_kzt : null,
     withTeacherPriceKzt: typeof row.with_teacher_price_kzt === "number" && row.with_teacher_price_kzt >= 50000 ? row.with_teacher_price_kzt : null,
+    code: typeof row.course_code === "string" ? row.course_code : "",
+    color: typeof row.course_color === "string" && ["purple", "blue", "green", "orange", "pink", "dark"].includes(row.course_color) ? row.course_color : "purple",
+    coverStyle: row.course_cover_style === "grid" || row.course_cover_style === "waves" ? row.course_cover_style : "orbit",
+    showNewRibbon: typeof row.course_show_new_ribbon === "boolean" ? row.course_show_new_ribbon : undefined,
   };
 }
 
@@ -67,7 +75,10 @@ export function parseGuestTrial(value: unknown): GuestTrial | null {
 
 export async function loadGuestCourses(category: StudentCategory = "free"): Promise<GuestCourse[]> {
   if (!supabase) throw new Error("Каталог пока недоступен: подключение к курсам не настроено.");
-  let { data, error } = await supabase.rpc("guest_course_catalog");
+  let { data, error } = await supabase.rpc("guest_course_catalog_visuals");
+  if (error?.code === "PGRST202") {
+    ({ data, error } = await supabase.rpc("guest_course_catalog"));
+  }
   if (error?.code === "PGRST202" && category === "free") {
     ({ data, error } = await supabase.rpc("guest_trial_catalog"));
   }

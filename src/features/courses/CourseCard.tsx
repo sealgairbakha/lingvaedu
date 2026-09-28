@@ -3,7 +3,7 @@ import type { Course } from "./types";
 
 const statusLabels = { published: "Опубликован", draft: "Черновик", archived: "В архиве" };
 
-export function CourseCover({ course }: { course: Course }) {
+export function CourseCover({ course }: { course: Pick<Course, "code" | "color" | "coverStyle" | "coverImage" | "showNewRibbon" | "language"> }) {
   const showNewRibbon = course.showNewRibbon ?? course.code === "NEW";
   return <span className={`courseCoverArt ${course.color} cover-${course.coverStyle || "orbit"} ${course.coverImage ? "has-image" : ""}`} style={course.coverImage ? { "--cover-image": `url(${course.coverImage})` } as CSSProperties : undefined} aria-hidden="true">
     {!course.coverImage && <><i /><i /><i /></>}
