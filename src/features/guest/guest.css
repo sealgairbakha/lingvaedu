@@ -15,3 +15,91 @@ html[data-theme="dark"] .guestPage{--guest-ink:#e9ecf6;--guest-muted:#aab3c8;--g
 @media(max-width:420px){.guestBrand{font-size:19px}.guestBrandMark{width:34px;height:34px}.guestHeroActions{display:grid}.guestHeroActions .guestButton{justify-content:space-between}.guestEyebrow{font-size:9px}.guestCatalogHead{align-items:start}.guestCatalogCount{padding-top:15px}.guestTeacherPanel{width:90%}.guestTeacherRing{width:310px;height:310px}.guestPriceValue{font-size:31px}}
 @media(hover:none){.guestCourseCard:hover,.guestButton:hover{transform:none}}
 @media(prefers-reduced-motion:reduce){.guestArrow,.guestButton,.guestCourseCard{transition:none}}
+
+/* Use the supplied check artwork for pricing features instead of a font glyph. */
+.guestPriceCard li::before{content:"";width:20px;height:20px;background:url("/guest/check.png") center/23px 23px no-repeat}
+
+/* Shared guest navigation and whole-card trial links. */
+.guestBrand{gap:0;letter-spacing:-.045em}.guestBrand>span{color:var(--guest-lime)}
+.guestChevron{display:inline-flex;align-items:center;justify-content:center;flex:none;width:17px;height:17px}
+.guestChevron .courseActionChevron{width:17px;height:17px;flex-basis:17px;stroke-width:2.7}
+.guestChevronBack{transform:rotate(180deg)}
+.guestButton{gap:10px}
+.guestHeader nav a[aria-current="page"]{color:#fff}
+.guestCourseLink{display:flex;flex-direction:column;min-height:100%;color:inherit}
+.guestCourseLink .guestCourseBody{display:flex;flex:1;flex-direction:column}
+.guestCourseLink .guestCourseFoot{margin-top:auto}
+.guestCourseLink:focus-visible{outline:3px solid var(--focus-ring);outline-offset:-4px;border-radius:20px}
+.guestCourseOpen{display:inline-flex;align-items:center;gap:7px;color:var(--guest-purple);font-size:12px;font-weight:800;white-space:nowrap}
+.guestCourseLink:hover .guestCourseOpen{text-decoration:underline;text-underline-offset:3px}
+.guestTrialTopbar>a:last-child{display:inline-flex;align-items:center;gap:7px}
+
+/* Distinct student and teacher entry points, within the LingvaEdu palette. */
+.guestAudienceHero{position:relative;isolation:isolate;overflow:hidden;color:#fff;background:#101726}
+.guestAudienceLabel{display:inline-block;color:var(--guest-lime);font-size:11px;font-weight:800;letter-spacing:.14em}
+.guestAudienceHero h1{margin:24px 0;font-size:clamp(48px,6vw,84px);line-height:1.03;letter-spacing:-.04em}
+.guestAudienceHero h1 em{color:var(--guest-lime);font-style:normal}
+.guestAudienceHero p{max-width:565px;margin-bottom:32px;color:#d4dced;font-size:18px;line-height:1.6}
+.guestStudentHero{min-height:565px;display:flex;align-items:center}
+.guestStudentHero>img{position:absolute;z-index:-2;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 43%}
+.guestStudentHero:after{content:"";position:absolute;z-index:-1;inset:0;background:linear-gradient(90deg,#0b142bea 0%,#0b142ba8 42%,#0b142b27 100%)}
+.guestAudienceHeroInner{padding-block:85px 95px}
+.guestAudienceRibbon{background:#e7e4fd;color:#38315c}
+.guestAudienceRibbon>.guestContainer{display:flex;justify-content:space-between;gap:25px;padding-block:21px}
+.guestAudienceRibbon span{font-size:13px;font-weight:700}
+.guestAudienceAfter{display:grid;grid-template-columns:1.3fr .7fr;gap:75px;align-items:center;padding-block:108px}
+.guestAudienceAfter h2,.guestTeacherTools h2,.guestTeacherAccess h2{margin:16px 0 18px;font-size:clamp(36px,4.5vw,62px);line-height:1.08;letter-spacing:-.04em}
+.guestAudienceAfter>div:first-child>p,.guestTeacherToolsHead>p,.guestTeacherAccess p{max-width:600px;color:var(--guest-muted);font-size:16px;line-height:1.7}
+.guestAudienceAction{padding:34px;border-radius:18px;background:#e9e6ff;color:#242049}
+.guestAudienceAction strong{display:block;font-size:37px;letter-spacing:-.04em}
+.guestAudienceAction>span{color:#5d5780;font-size:13px}
+.guestAudienceAction p{margin:26px 0 22px;color:#5d5780;font-size:14px}
+.guestTeacherAudienceHero{background:#171d36}
+.guestTeacherAudienceInner{display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:55px;min-height:610px;padding-block:85px}
+.guestTeacherAudienceHero .guestTeacherIllustration{min-height:390px}
+.guestTeacherAudienceHero .guestTeacherPanel{transform:rotate(-3deg)}
+.guestTeacherTools{padding-block:108px}
+.guestTeacherToolsHead{display:flex;justify-content:space-between;align-items:end;gap:55px}
+.guestTeacherToolsHead>p{max-width:410px;margin-bottom:22px}
+.guestTeacherToolRows{margin-top:32px;border-top:1px solid var(--guest-border)}
+.guestTeacherToolRows article{display:grid;grid-template-columns:170px minmax(240px,1fr) minmax(220px,.8fr);align-items:center;gap:28px;padding:32px 0;border-bottom:1px solid var(--guest-border)}
+.guestTeacherToolRows article>span{color:var(--guest-purple);font-size:11px;font-weight:800;letter-spacing:.1em}
+.guestTeacherToolRows h3{margin:0;font-size:23px;letter-spacing:-.025em}
+.guestTeacherToolRows p{margin:0;color:var(--guest-muted);font-size:14px;line-height:1.6}
+.guestTeacherAccess{background:#242148;color:#fff}
+.guestTeacherAccessInner{display:flex;align-items:center;justify-content:space-between;gap:40px;padding-block:80px}
+.guestTeacherAccess .guestKicker{color:var(--guest-lime)}
+.guestTeacherAccess h2{max-width:680px}
+.guestTeacherAccess p{color:#c6c5de}
+.guestTeacherAccess .guestButton{flex:none}
+html[data-theme="dark"] .guestAudienceRibbon{background:#292348;color:#ded8ff}
+html[data-theme="dark"] .guestAudienceAction{background:#292348;color:#f0edff}
+html[data-theme="dark"] .guestAudienceAction>span,html[data-theme="dark"] .guestAudienceAction p{color:#c6bfeb}
+@media(max-width:900px){.guestTeacherAudienceInner{gap:25px}.guestTeacherToolRows article{grid-template-columns:100px 1fr;gap:10px}.guestTeacherToolRows p{grid-column:2}}
+@media(max-width:700px){.guestAudienceHero h1{font-size:clamp(43px,9vw,66px)}.guestAudienceHero p{font-size:16px}.guestStudentHero{min-height:670px;align-items:end}.guestStudentHero>img{object-position:62% center}.guestStudentHero:after{background:linear-gradient(0deg,#0b142b 0%,#0b142bc9 39%,#0b142b38 100%)}.guestAudienceHeroInner{padding-block:230px 62px}.guestAudienceRibbon>.guestContainer{flex-direction:column;gap:12px}.guestAudienceAfter{grid-template-columns:1fr;gap:20px;padding-block:75px}.guestTeacherAudienceInner{grid-template-columns:1fr;padding-block:78px}.guestTeacherAudienceHero .guestTeacherIllustration{min-height:320px}.guestTeacherTools{padding-block:75px}.guestTeacherToolsHead{display:block}.guestTeacherToolRows article{grid-template-columns:1fr;gap:9px;padding:25px 0}.guestTeacherToolRows p{grid-column:auto}.guestTeacherAccessInner{display:block;padding-block:66px}.guestTeacherAccess .guestButton{margin-top:15px}}
+@media(prefers-reduced-motion:reduce){.guestChevron{transition:none}}
+
+/* Course formats and their catalogue, keeping the existing guest palette. */
+.guestPricingGrid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.guestPriceCard{min-width:0;min-height:500px;padding:30px}
+.guestPriceCardFeatured{background:#f0eeff;border-color:#d5cffa}
+.guestPriceCard h3{font-size:clamp(23px,2vw,27px)}
+.guestPriceValue{font-size:clamp(29px,2.7vw,36px);white-space:nowrap}
+.guestPriceValue small{white-space:normal}
+.guestTeacherPricingNote{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-top:20px;padding:24px 30px;border:1px solid var(--guest-border);border-radius:16px;background:#fff}
+.guestTeacherPricingNote>div{display:grid;gap:4px}
+.guestTeacherPricingNote strong{font-size:17px}
+.guestTeacherPricingNote span{color:var(--guest-muted);font-size:13px}
+.guestTeacherPricingNote>a{display:inline-flex;align-items:center;gap:7px;flex:none;color:var(--guest-purple);font-weight:750}
+.guestStudentCategories{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding-block:42px}
+.guestStudentCategories>a{display:grid;gap:4px;min-width:0;padding:21px 23px;border:1px solid var(--guest-border);border-radius:14px;background:#fff;color:var(--guest-ink)}
+.guestStudentCategories>a[aria-current="page"]{border-color:var(--guest-purple);background:#f1edff}
+.guestStudentCategories strong{font-size:17px}
+.guestStudentCategories span{color:var(--guest-muted);font-size:13px}
+.guestCoursePrice{margin-top:18px;color:var(--guest-ink);font-size:20px;font-weight:750}
+.guestCoursePrice small{display:block;color:var(--guest-muted);font-size:11px;font-weight:500}
+html[data-theme="dark"] .guestPriceCardFeatured,html[data-theme="dark"] .guestStudentCategories>a[aria-current="page"]{background:#262345}
+html[data-theme="dark"] .guestTeacherPricingNote,html[data-theme="dark"] .guestStudentCategories>a{background:#1b2436}
+html[data-theme="dark"] .guestStudentCategories>a[aria-current="page"]{background:#262345}
+@media(max-width:1000px){.guestPricingGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.guestPriceCard{min-height:0}.guestStudentCategories{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:700px){.guestPricingGrid,.guestStudentCategories{grid-template-columns:1fr}.guestTeacherPricingNote{align-items:flex-start;flex-direction:column;padding:22px}.guestStudentCategories{padding-block:24px}.guestStudentCategories>a{padding:16px 19px}}

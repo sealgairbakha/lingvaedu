@@ -4897,6 +4897,18 @@ html[data-theme="dark"] .courseNewRibbonSetting>button,html[data-theme="dark"] .
 .lessonSettingsSidebar .lessonSettingsHint>span { display:grid;place-items:center;width:15px;height:15px;flex:0 0 15px;border-radius:50%;background:#eeeaff;color:var(--purple);font-size:9px;font-weight:900; }
 .lessonSettingsSidebar .lessonSettingField:focus-within { border-color:color-mix(in srgb,var(--purple) 48%,var(--line));box-shadow:0 0 0 3px rgba(101,75,246,.08); }
 .coursePanelSettings input { width:100%;height:40px;margin-top:7px;padding:0 11px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--ink); }
+.coursePanelSettings>.courseOffersSetting{display:grid;gap:15px;min-width:0;margin:8px 0 0;padding:18px;border:1px solid var(--line);border-radius:14px;background:color-mix(in srgb,var(--card) 72%,var(--bg))}
+.courseOffersSetting legend{padding:0 5px;color:var(--ink);font-size:15px;font-weight:800}
+.courseOffersSetting>p,.courseOffersSetting>small{margin:0;color:var(--muted);font-size:12px;line-height:1.5}
+.courseOfferRow{display:grid;gap:8px;padding-top:13px;border-top:1px solid var(--line)}
+.courseOfferToggle{display:flex!important;align-items:center;gap:10px;cursor:pointer}
+.courseOfferToggle input{width:18px;height:18px;margin:0;accent-color:var(--purple)}
+.coursePanelSettings .courseOfferToggle>span{color:var(--ink)!important;font-size:14px!important}
+.courseOfferPrice{display:grid;gap:5px}
+.courseOfferPrice input{margin:0!important}
+.courseOfferPrice input:invalid{border-color:#d64d5d}
+.courseOfferPrice small{color:#c74352;font-size:11px;line-height:1.4}
+@media(max-width:900px){.coursePanelSettings>.courseOffersSetting{grid-column:1/-1}}
 .coursePanelSettings>.courseCoverDesigner { display:grid;align-items:stretch;justify-content:stretch;gap:13px;width:100%;margin:5px 0 0;padding:14px;border:1px solid var(--line);border-radius:14px;background:color-mix(in srgb,var(--card) 72%,var(--bg)); }
 .courseCoverDesigner>label,.courseCoverUploadField { display:grid;gap:7px; }
 .courseCoverDesigner>label>span,.courseCoverUploadField>span { color:#737d90;font-size:var(--font-size-ui);font-weight:750; }

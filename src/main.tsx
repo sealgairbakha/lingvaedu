@@ -8,6 +8,7 @@ import { useAuth } from "./auth/AuthProvider";
 import { AuthGate } from "./auth/AuthGate";
 import { AuthProvider } from "./auth/AuthProvider";
 import { CourseProvider } from "./features/courses/CourseProvider";
+import { trialCourseIdFromPath } from "./features/guest/guestRoutes";
 import "./styles/index.css";
 import "./styles/video-room-layout.css";
 import "./styles/typography.css";
@@ -26,6 +27,10 @@ const VideoRoomPage = lazy(() => import("./features/video/VideoRoomsPage").then(
 const GuestLandingPage = lazy(() => import("./features/guest/GuestLandingPage"));
 // eslint-disable-next-line react-refresh/only-export-components
 const GuestTrialPage = lazy(() => import("./features/guest/GuestTrialPage"));
+// eslint-disable-next-line react-refresh/only-export-components
+const GuestStudentPage = lazy(() => import("./features/guest/GuestStudentPage"));
+// eslint-disable-next-line react-refresh/only-export-components
+const GuestTeacherPage = lazy(() => import("./features/guest/GuestTeacherPage"));
 
 let savedTheme: string | null = null;
 try { savedTheme = localStorage.getItem("lingvaedu-theme"); } catch { /* Use the system theme if storage is restricted. */ }
@@ -38,8 +43,11 @@ function RootRoutes() {
   const location = useLocation();
   const { user } = useAuth();
   const isVideoRoom = /^\/video-room\/[a-f0-9]{32}\/?$/i.test(location.pathname);
+  const trialCourseId = trialCourseIdFromPath(location.pathname);
   if (location.pathname === "/welcome" || location.pathname === "/welcome/") return <GuestLandingPage />;
-  if (/^\/trial\/[^/]+\/?$/.test(location.pathname)) return <GuestTrialPage />;
+  if (location.pathname === "/welcome/students" || location.pathname === "/welcome/students/") return <GuestStudentPage />;
+  if (location.pathname === "/welcome/teachers" || location.pathname === "/welcome/teachers/") return <GuestTeacherPage />;
+  if (trialCourseId !== null) return <GuestTrialPage courseId={trialCourseId} />;
   return isVideoRoom
     ? <VideoRoomPage />
     : <AuthGate><CourseProvider key={user?.id || "anonymous"}><App /></CourseProvider></AuthGate>;

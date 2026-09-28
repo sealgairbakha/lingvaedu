@@ -233,6 +233,10 @@ export function CourseProvider({ children }: { children: React.ReactNode }) {
   }, [avatarUrl, cache, canEditCourses, displayName, user?.id]);
   const saveCourse = useCallback(async (value: Course) => {
     if (!canEditCourses) throw new Error("Недостаточно прав для сохранения курса");
+    if (value.offers?.selfPacedPriceKzt !== undefined && (!Number.isInteger(value.offers.selfPacedPriceKzt) || value.offers.selfPacedPriceKzt < 30000))
+      throw new Error("Цена самостоятельного курса должна быть не ниже 30 000 ₸.");
+    if (value.offers?.withTeacherPriceKzt !== undefined && (!Number.isInteger(value.offers.withTeacherPriceKzt) || value.offers.withTeacherPriceKzt < 50000))
+      throw new Error("Цена курса с учителем должна быть не ниже 50 000 ₸.");
     if (savingCourseIds.current.has(value.id)) throw new Error("Курс уже сохраняется. Дождитесь завершения и повторите попытку.");
     savingCourseIds.current.add(value.id);
     // Advance even when two saves share a millisecond or the device clock lags.

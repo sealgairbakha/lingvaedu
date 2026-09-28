@@ -114,6 +114,10 @@ export type Course = {
   mentor: string;
   mentorAvatar?: string;
   status: CourseStatus;
+  offers?: {
+    selfPacedPriceKzt?: number;
+    withTeacherPriceKzt?: number;
+  };
   color: string;
   coverStyle?: "orbit" | "grid" | "waves";
   coverImage?: string;

@@ -10,7 +10,17 @@ export type GuestCourse = {
   coverImage: string;
   lessonId: string;
   lessonTitle: string;
+  selfPacedPriceKzt: number | null;
+  withTeacherPriceKzt: number | null;
 };
+
+export type StudentCategory = "free" | "self-paced" | "with-teacher";
+
+export function courseMatchesCategory(course: GuestCourse, category: StudentCategory): boolean {
+  if (category === "self-paced") return course.selfPacedPriceKzt !== null;
+  if (category === "with-teacher") return course.withTeacherPriceKzt !== null;
+  return true;
+}
 
 export type GuestTrial = {
   courseId: string;
@@ -33,6 +43,8 @@ export function parseGuestCourse(value: unknown): GuestCourse | null {
     coverImage: typeof row.course_cover_image === "string" ? row.course_cover_image : "",
     lessonId: row.lesson_id,
     lessonTitle: row.lesson_title,
+    selfPacedPriceKzt: typeof row.self_paced_price_kzt === "number" && row.self_paced_price_kzt >= 30000 ? row.self_paced_price_kzt : null,
+    withTeacherPriceKzt: typeof row.with_teacher_price_kzt === "number" && row.with_teacher_price_kzt >= 50000 ? row.with_teacher_price_kzt : null,
   };
 }
 
@@ -53,12 +65,16 @@ export function parseGuestTrial(value: unknown): GuestTrial | null {
   };
 }
 
-export async function loadGuestCourses(): Promise<GuestCourse[]> {
+export async function loadGuestCourses(category: StudentCategory = "free"): Promise<GuestCourse[]> {
   if (!supabase) throw new Error("Каталог пока недоступен: подключение к курсам не настроено.");
-  const { data, error } = await supabase.rpc("guest_trial_catalog");
+  let { data, error } = await supabase.rpc("guest_course_catalog");
+  if (error?.code === "PGRST202" && category === "free") {
+    ({ data, error } = await supabase.rpc("guest_trial_catalog"));
+  }
+  if (error?.code === "PGRST202") throw new Error("Каталог платных курсов пока недоступен. Попробуйте позже.");
   if (error) throw new Error("Не удалось загрузить пробные уроки. Попробуйте ещё раз.");
   if (!Array.isArray(data)) throw new Error("Каталог вернул неожиданный ответ.");
-  return data.map(parseGuestCourse).filter((course): course is GuestCourse => course !== null);
+  return data.map(parseGuestCourse).filter((course): course is GuestCourse => course !== null).filter((course) => courseMatchesCategory(course, category));
 }
 
 export async function loadGuestTrial(courseId: string): Promise<GuestTrial> {

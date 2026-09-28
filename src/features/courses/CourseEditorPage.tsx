@@ -1290,6 +1290,8 @@ export function CourseEditorPage() {
   };
   useEffect(() => {
     if (!autoSaveEnabled || !course || saved || saving || saveError) return;
+    if ((course.offers?.selfPacedPriceKzt !== undefined && (!Number.isInteger(course.offers.selfPacedPriceKzt) || course.offers.selfPacedPriceKzt < 30000)) ||
+        (course.offers?.withTeacherPriceKzt !== undefined && (!Number.isInteger(course.offers.withTeacherPriceKzt) || course.offers.withTeacherPriceKzt < 50000))) return;
     const snapshot = structuredClone(course);
     const version = changeVersionRef.current;
     const timer = window.setTimeout(async () => {
@@ -2440,6 +2442,33 @@ export function CourseEditorPage() {
                 <option value="archived">Архив</option>
               </select>
             </label>
+            <fieldset className="courseOffersSetting">
+              <legend>Предложения для учеников</legend>
+              <p>Первый урок опубликованного курса всегда доступен бесплатно. Выберите форматы полного курса и укажите цену за курс.</p>
+              {([
+                { key: "selfPacedPriceKzt", label: "Самостоятельно", min: 30000 },
+                { key: "withTeacherPriceKzt", label: "С учителем", min: 50000 },
+              ] as const).map(({ key, label, min }) => {
+                const price = course.offers?.[key];
+                return <div className="courseOfferRow" key={key}>
+                  <label className="courseOfferToggle">
+                    <input type="checkbox" checked={price !== undefined} onChange={(event) => mutate((value) => {
+                      const offers = { ...value.offers };
+                      if (event.target.checked) offers[key] = min;
+                      else delete offers[key];
+                      return { ...value, offers };
+                    })} />
+                    <span>{label}</span>
+                  </label>
+                  {price !== undefined && <label className="courseOfferPrice">
+                    <span>Цена, ₸ (от {min.toLocaleString("ru-RU")})</span>
+                    <input type="number" min={min} step="1" value={price} onChange={(event) => mutate((value) => ({ ...value, offers: { ...value.offers, [key]: event.target.value === "" ? 0 : Number(event.target.value) } }))} />
+                    {(!Number.isInteger(price) || price < min) && <small role="alert">Укажите сумму не ниже {min.toLocaleString("ru-RU")} ₸.</small>}
+                  </label>}
+                </div>;
+              })}
+              <small>Платные предложения появятся в гостевом каталоге после публикации курса.</small>
+            </fieldset>
             <label className="courseProgressLockSetting">
               <span>Последовательное прохождение</span>
               <button

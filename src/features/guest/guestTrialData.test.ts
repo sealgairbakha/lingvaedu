@@ -12,4 +12,5 @@ describe("guest trial data", () => {
     expect(parseGuestTrial({ courseId: "c", courseTitle: "English", courseLanguage: "English", lesson: { id: "l", title: "Hello" } })).toBeNull();
     expect(parseGuestTrial({ courseId: "c", courseTitle: "English", courseLanguage: "English", lesson: { id: "l", title: "Hello", blocks: [] } })?.lesson.id).toBe("l");
   });
+
 });
