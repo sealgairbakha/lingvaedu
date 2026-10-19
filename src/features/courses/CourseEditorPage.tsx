@@ -1290,7 +1290,7 @@ export function CourseEditorPage() {
   };
   useEffect(() => {
     if (!autoSaveEnabled || !course || saved || saving || saveError) return;
-    if ((course.offers?.selfPacedPriceKzt !== undefined && (!Number.isInteger(course.offers.selfPacedPriceKzt) || course.offers.selfPacedPriceKzt < 30000)) ||
+    if ((course.offers?.selfPacedPriceKzt !== undefined && (!Number.isInteger(course.offers.selfPacedPriceKzt) || course.offers.selfPacedPriceKzt < 20000)) ||
         (course.offers?.withTeacherPriceKzt !== undefined && (!Number.isInteger(course.offers.withTeacherPriceKzt) || course.offers.withTeacherPriceKzt < 50000))) return;
     const snapshot = structuredClone(course);
     const version = changeVersionRef.current;
@@ -2446,8 +2446,8 @@ export function CourseEditorPage() {
               <legend>Предложения для учеников</legend>
               <p>Первый урок опубликованного курса всегда доступен бесплатно. Выберите форматы полного курса и укажите цену за курс.</p>
               {([
-                { key: "selfPacedPriceKzt", label: "Самостоятельно", min: 30000 },
-                { key: "withTeacherPriceKzt", label: "С учителем", min: 50000 },
+                { key: "selfPacedPriceKzt", label: "Групповой", min: 20000 },
+                { key: "withTeacherPriceKzt", label: "Индивидуальный", min: 50000 },
               ] as const).map(({ key, label, min }) => {
                 const price = course.offers?.[key];
                 return <div className="courseOfferRow" key={key}>

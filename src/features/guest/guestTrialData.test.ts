@@ -7,6 +7,12 @@ describe("guest trial data", () => {
     expect(parseGuestCourse({ course_id: "c", course_title: "English" })).toBeNull();
   });
 
+  it("accepts the 20 000 ₸ group offer minimum", () => {
+    const course = { course_id: "c", course_title: "English", lesson_id: "l", lesson_title: "Hello" };
+    expect(parseGuestCourse({ ...course, self_paced_price_kzt: 20000 })?.selfPacedPriceKzt).toBe(20000);
+    expect(parseGuestCourse({ ...course, self_paced_price_kzt: 19999 })?.selfPacedPriceKzt).toBeNull();
+  });
+
   it("rejects a missing or malformed lesson", () => {
     expect(parseGuestTrial(null)).toBeNull();
     expect(parseGuestTrial({ courseId: "c", courseTitle: "English", courseLanguage: "English", lesson: { id: "l", title: "Hello" } })).toBeNull();

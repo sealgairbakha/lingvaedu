@@ -50,7 +50,7 @@ export function parseGuestCourse(value: unknown): GuestCourse | null {
     coverImage: typeof row.course_cover_image === "string" ? row.course_cover_image : "",
     lessonId: row.lesson_id,
     lessonTitle: row.lesson_title,
-    selfPacedPriceKzt: typeof row.self_paced_price_kzt === "number" && row.self_paced_price_kzt >= 30000 ? row.self_paced_price_kzt : null,
+    selfPacedPriceKzt: typeof row.self_paced_price_kzt === "number" && row.self_paced_price_kzt >= 20000 ? row.self_paced_price_kzt : null,
     withTeacherPriceKzt: typeof row.with_teacher_price_kzt === "number" && row.with_teacher_price_kzt >= 50000 ? row.with_teacher_price_kzt : null,
     code: typeof row.course_code === "string" ? row.course_code : "",
     color: typeof row.course_color === "string" && ["purple", "blue", "green", "orange", "pink", "dark"].includes(row.course_color) ? row.course_color : "purple",

@@ -21,7 +21,7 @@ describe("guest course categories", () => {
   });
 
   it("ignores prices below the published minimum", () => {
-    const course = parseGuestCourse({ ...base, self_paced_price_kzt: 29999, with_teacher_price_kzt: 49999 });
+    const course = parseGuestCourse({ ...base, self_paced_price_kzt: 19999, with_teacher_price_kzt: 49999 });
     expect(course?.selfPacedPriceKzt).toBeNull();
     expect(course?.withTeacherPriceKzt).toBeNull();
   });

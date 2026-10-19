@@ -12,7 +12,7 @@ function CourseCard({ course, category }: { course: GuestCourse; category: Stude
     <Link className="guestCourseLink" to={`/trial/${encodeURIComponent(course.courseId)}`} aria-label={`Открыть пробный урок курса ${course.title}`}>
       <CourseCover course={course} />
       <div className="guestCourseBody">
-        <div className="guestCourseMeta"><span>{category === "free" ? "ПРОБНЫЙ УРОК" : category === "self-paced" ? "САМОСТОЯТЕЛЬНО" : "С УЧИТЕЛЕМ"}</span>{course.level && <span>{course.level}</span>}</div>
+        <div className="guestCourseMeta"><span>{category === "free" ? "ПРОБНЫЙ УРОК" : category === "self-paced" ? "ГРУППОВОЙ" : "ИНДИВИДУАЛЬНЫЙ"}</span>{course.level && <span>{course.level}</span>}</div>
         <h3>{course.title}</h3>
         <p>{course.description || `Первый урок — «${course.lessonTitle}». Попробуйте без регистрации.`}</p>
         {price !== null && <div className="guestCoursePrice">{priceLabel(price)} <small>за курс · первый урок бесплатно</small></div>}
